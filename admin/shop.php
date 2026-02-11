@@ -4,25 +4,174 @@ require_once 'check-auth.php';
 $conn = getDBConnection();
 $active_tab = $_GET['tab'] ?? 'products';
 
+// Setup upload directories
+$upload_dir_images = '../assets/images/';
+if (!file_exists($upload_dir_images)) {
+    mkdir($upload_dir_images, 0777, true);
+}
+
+$upload_dir_videos = '../assets/videos/';
+if (!file_exists($upload_dir_videos)) {
+    mkdir($upload_dir_videos, 0777, true);
+}
+
+// Handle shop hero image/video removal
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['remove_shop_hero_image'])) {
+    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_hero_image'");
+    if ($result) {
+        $row = $result->fetch_assoc();
+        if ($row && is_array($row) && !empty($row['content_value'])) {
+            $image_path = '../' . $row['content_value'];
+            if (file_exists($image_path)) {
+                unlink($image_path);
+            }
+        }
+    }
+    $stmt = $conn->prepare("DELETE FROM site_content WHERE content_key='shop_hero_image'");
+    $stmt->execute();
+    $stmt->close();
+    header('Location: shop.php?tab=hero&saved=1');
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['remove_shop_hero_video'])) {
+    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_hero_video'");
+    if ($result) {
+        $row = $result->fetch_assoc();
+        if ($row && is_array($row) && !empty($row['content_value'])) {
+            $video_path = '../assets/videos/' . $row['content_value'];
+            if (file_exists($video_path)) {
+                unlink($video_path);
+            }
+        }
+    }
+    $stmt = $conn->prepare("DELETE FROM site_content WHERE content_key='shop_hero_video'");
+    $stmt->execute();
+    $stmt->close();
+    header('Location: shop.php?tab=hero&saved=1');
+    exit;
+}
+
 // Handle shop hero content save
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['shop_hero_action'])) {
     $hero_title = sanitize($_POST['shop_hero_title'] ?? '');
     $hero_subtitle = sanitize($_POST['shop_hero_subtitle'] ?? '');
     
     if ($hero_title) {
-        $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES ('shop_hero_title', ?) 
-                                ON DUPLICATE KEY UPDATE content_value = ?");
-        $stmt->bind_param("ss", $hero_title, $hero_title);
+        // Check if record exists
+        $check = $conn->query("SELECT id FROM site_content WHERE content_key='shop_hero_title'");
+        if ($check && $check->num_rows > 0) {
+            $stmt = $conn->prepare("UPDATE site_content SET content_value = ? WHERE content_key = 'shop_hero_title'");
+            $stmt->bind_param("s", $hero_title);
+        } else {
+            $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES ('shop_hero_title', ?)");
+            $stmt->bind_param("s", $hero_title);
+        }
         $stmt->execute();
+        if ($stmt->error) {
+            error_log("Shop hero title save error: " . $stmt->error);
+        }
         $stmt->close();
     }
     
     if ($hero_subtitle) {
-        $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES ('shop_hero_subtitle', ?) 
-                                ON DUPLICATE KEY UPDATE content_value = ?");
-        $stmt->bind_param("ss", $hero_subtitle, $hero_subtitle);
+        // Check if record exists
+        $check = $conn->query("SELECT id FROM site_content WHERE content_key='shop_hero_subtitle'");
+        if ($check && $check->num_rows > 0) {
+            $stmt = $conn->prepare("UPDATE site_content SET content_value = ? WHERE content_key = 'shop_hero_subtitle'");
+            $stmt->bind_param("s", $hero_subtitle);
+        } else {
+            $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES ('shop_hero_subtitle', ?)");
+            $stmt->bind_param("s", $hero_subtitle);
+        }
         $stmt->execute();
+        if ($stmt->error) {
+            error_log("Shop hero subtitle save error: " . $stmt->error);
+        }
         $stmt->close();
+    }
+    
+    // Handle shop hero image upload
+    if (isset($_FILES['shop_hero_image']) && $_FILES['shop_hero_image']['error'] == 0) {
+        // Remove old image if exists
+        $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_hero_image'");
+        if ($result) {
+            $row = $result->fetch_assoc();
+            if ($row && is_array($row) && !empty($row['content_value'])) {
+                $old_image_path = '../' . $row['content_value'];
+                if (file_exists($old_image_path)) {
+                    unlink($old_image_path);
+                }
+            }
+        }
+        
+        $file_ext = strtolower(pathinfo($_FILES['shop_hero_image']['name'], PATHINFO_EXTENSION));
+        $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        if (in_array($file_ext, $allowed_extensions)) {
+            $file_name = 'shop-hero.' . $file_ext;
+            $target_file = $upload_dir_images . $file_name;
+            
+            if (move_uploaded_file($_FILES['shop_hero_image']['tmp_name'], $target_file)) {
+                $image_path = 'assets/images/' . $file_name;
+                // Check if record exists
+                $check = $conn->query("SELECT id FROM site_content WHERE content_key='shop_hero_image'");
+                if ($check && $check->num_rows > 0) {
+                    $stmt = $conn->prepare("UPDATE site_content SET content_value = ? WHERE content_key = 'shop_hero_image'");
+                    $stmt->bind_param("s", $image_path);
+                } else {
+                    $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES ('shop_hero_image', ?)");
+                    $stmt->bind_param("s", $image_path);
+                }
+                $stmt->execute();
+                if ($stmt->error) {
+                    error_log("Shop hero image save error: " . $stmt->error);
+                }
+                $stmt->close();
+            } else {
+                error_log("Failed to move uploaded shop hero image file");
+            }
+        }
+    }
+    
+    // Handle shop hero video upload
+    if (isset($_FILES['shop_hero_video']) && $_FILES['shop_hero_video']['error'] == 0) {
+        // Remove old video if exists
+        $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_hero_video'");
+        if ($result) {
+            $row = $result->fetch_assoc();
+            if ($row && is_array($row) && !empty($row['content_value'])) {
+                $old_video_path = '../assets/videos/' . $row['content_value'];
+                if (file_exists($old_video_path)) {
+                    unlink($old_video_path);
+                }
+            }
+        }
+        
+        $file_ext = strtolower(pathinfo($_FILES['shop_hero_video']['name'], PATHINFO_EXTENSION));
+        $allowed_extensions = ['mp4', 'webm', 'ogg', 'mov'];
+        if (in_array($file_ext, $allowed_extensions)) {
+            $file_name = 'shop-hero.' . $file_ext;
+            $target_file = $upload_dir_videos . $file_name;
+            
+            if (move_uploaded_file($_FILES['shop_hero_video']['tmp_name'], $target_file)) {
+                // Check if record exists
+                $check = $conn->query("SELECT id FROM site_content WHERE content_key='shop_hero_video'");
+                if ($check && $check->num_rows > 0) {
+                    $stmt = $conn->prepare("UPDATE site_content SET content_value = ? WHERE content_key = 'shop_hero_video'");
+                    $stmt->bind_param("s", $file_name);
+                } else {
+                    $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES ('shop_hero_video', ?)");
+                    $stmt->bind_param("s", $file_name);
+                }
+                $stmt->execute();
+                if ($stmt->error) {
+                    error_log("Shop hero video save error: " . $stmt->error);
+                }
+                $stmt->close();
+            } else {
+                error_log("Failed to move uploaded shop hero video file");
+            }
+        }
     }
     
     header('Location: shop.php?tab=hero&saved=1');
@@ -226,15 +375,39 @@ $all_categories = $conn->query("SELECT * FROM categories WHERE deleted_at IS NUL
 // Get shop hero content
 $shop_hero_title = 'Shop Premium Leather Goods';
 $shop_hero_subtitle = 'Discover our exquisite collection of handcrafted leather products';
-$columns_check = $conn->query("SHOW COLUMNS FROM site_content LIKE 'content_value'");
-if ($columns_check && $columns_check->num_rows > 0) {
-    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_hero_title'");
-    if ($result && $row = $result->fetch_assoc() && !empty($row['content_value'])) {
-        $shop_hero_title = $row['content_value'];
-    }
-    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_hero_subtitle'");
-    if ($result && $row = $result->fetch_assoc() && !empty($row['content_value'])) {
-        $shop_hero_subtitle = $row['content_value'];
+$shop_hero_image = '';
+$shop_hero_video = '';
+
+// Check if site_content table exists and has content_value column
+$table_check = $conn->query("SHOW TABLES LIKE 'site_content'");
+if ($table_check && $table_check->num_rows > 0) {
+    $columns_check = $conn->query("SHOW COLUMNS FROM site_content LIKE 'content_value'");
+    if ($columns_check && $columns_check->num_rows > 0) {
+        $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_hero_title'");
+        if ($result && $row = $result->fetch_assoc()) {
+            $shop_hero_title = !empty($row['content_value']) ? $row['content_value'] : $shop_hero_title;
+        }
+        
+        $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_hero_subtitle'");
+        if ($result && $row = $result->fetch_assoc()) {
+            $shop_hero_subtitle = !empty($row['content_value']) ? $row['content_value'] : $shop_hero_subtitle;
+        }
+        
+        $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_hero_image'");
+        if ($result) {
+            $row = $result->fetch_assoc();
+            if ($row && is_array($row) && !empty($row['content_value'])) {
+                $shop_hero_image = $row['content_value'];
+            }
+        }
+        
+        $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_hero_video'");
+        if ($result) {
+            $row = $result->fetch_assoc();
+            if ($row && is_array($row) && !empty($row['content_value'])) {
+                $shop_hero_video = $row['content_value'];
+            }
+        }
     }
 }
 
@@ -521,7 +694,7 @@ $conn->close();
                         <div class="success-message">Shop hero content saved successfully!</div>
                     <?php endif; ?>
                     
-                    <form method="POST" class="admin-form">
+                    <form method="POST" class="admin-form" enctype="multipart/form-data">
                         <input type="hidden" name="shop_hero_action" value="save">
                         
                         <div class="form-group">
@@ -534,6 +707,51 @@ $conn->close();
                             <label for="shop_hero_subtitle">Hero Subtitle *</label>
                             <textarea id="shop_hero_subtitle" name="shop_hero_subtitle" rows="3" required><?php echo htmlspecialchars($shop_hero_subtitle); ?></textarea>
                             <small>The descriptive text displayed below the title</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Hero Image</label>
+                            <?php if (!empty($shop_hero_image)): 
+                                $image_path = '../' . $shop_hero_image;
+                                if (file_exists($image_path)): ?>
+                                <div style="margin-bottom: 15px;">
+                                    <img src="../<?php echo htmlspecialchars($shop_hero_image); ?>" alt="Current Hero Image" id="currentHeroImage" style="max-width: 100%; max-height: 400px; display: block; margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 4px; object-fit: cover;">
+                                    <form method="POST" style="display: inline;">
+                                        <input type="hidden" name="remove_shop_hero_image" value="1">
+                                        <button type="submit" class="btn-delete" onclick="return confirm('Remove hero image?')">Remove Image</button>
+                                    </form>
+                                </div>
+                            <?php endif; endif; ?>
+                            <input type="file" id="shop_hero_image" name="shop_hero_image" accept="image/*" onchange="previewImage(this, 'imagePreview')">
+                            <small>Upload an image for the hero background. Image will be displayed as background. Accepted formats: JPG, PNG, GIF, WebP</small>
+                            <div id="imagePreview" style="margin-top: 10px; display: none;">
+                                <img id="imagePreviewImg" src="" alt="Preview" style="max-width: 100%; max-height: 300px; border: 1px solid var(--border-color); border-radius: 4px; object-fit: cover;">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Hero Video</label>
+                            <?php if (!empty($shop_hero_video)): 
+                                $video_path = '../assets/videos/' . $shop_hero_video;
+                                if (file_exists($video_path)): ?>
+                                <div style="margin-bottom: 15px;">
+                                    <video id="currentHeroVideo" controls style="max-width: 100%; max-height: 400px; display: block; margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 4px;">
+                                        <source src="../assets/videos/<?php echo htmlspecialchars($shop_hero_video); ?>" type="video/<?php echo pathinfo($shop_hero_video, PATHINFO_EXTENSION); ?>">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                    <form method="POST" style="display: inline;">
+                                        <input type="hidden" name="remove_shop_hero_video" value="1">
+                                        <button type="submit" class="btn-delete" onclick="return confirm('Remove hero video?')">Remove Video</button>
+                                    </form>
+                                </div>
+                            <?php endif; endif; ?>
+                            <input type="file" id="shop_hero_video" name="shop_hero_video" accept="video/*" onchange="previewVideo(this, 'videoPreview')">
+                            <small>Upload a video for the hero background. Video will be displayed as background (if image is not set). Accepted formats: MP4, WebM, OGG, MOV</small>
+                            <div id="videoPreview" style="margin-top: 10px; display: none;">
+                                <video id="videoPreviewVideo" controls style="max-width: 100%; max-height: 300px; border: 1px solid var(--border-color); border-radius: 4px;">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
                         </div>
                         
                         <div class="form-actions">
@@ -728,6 +946,36 @@ $conn->close();
             heroSubtitleInput.addEventListener('input', function() {
                 previewSubtitle.textContent = this.value || 'Discover our exquisite collection of handcrafted leather products';
             });
+        }
+        
+        // Image preview function
+        function previewImage(input, previewId) {
+            const preview = document.getElementById(previewId);
+            const previewImg = document.getElementById(previewId + 'Img');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+        
+        // Video preview function
+        function previewVideo(input, previewId) {
+            const preview = document.getElementById(previewId);
+            const previewVideo = document.getElementById(previewId + 'Video');
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const url = URL.createObjectURL(file);
+                previewVideo.src = url;
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
         }
         
         // Close modal on outside click

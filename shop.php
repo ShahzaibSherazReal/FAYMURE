@@ -8,15 +8,39 @@ $categories = $conn->query("SELECT * FROM categories WHERE deleted_at IS NULL OR
 // Get shop hero content
 $shop_hero_title = 'Shop Premium Leather Goods';
 $shop_hero_subtitle = 'Discover our exquisite collection of handcrafted leather products';
-$columns_check = $conn->query("SHOW COLUMNS FROM site_content LIKE 'content_value'");
-if ($columns_check && $columns_check->num_rows > 0) {
-    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_hero_title'");
-    if ($result && $row = $result->fetch_assoc() && !empty($row['content_value'])) {
-        $shop_hero_title = $row['content_value'];
-    }
-    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_hero_subtitle'");
-    if ($result && $row = $result->fetch_assoc() && !empty($row['content_value'])) {
-        $shop_hero_subtitle = $row['content_value'];
+$shop_hero_image = '';
+$shop_hero_video = '';
+
+// Check if site_content table exists and has content_value column
+$table_check = $conn->query("SHOW TABLES LIKE 'site_content'");
+if ($table_check && $table_check->num_rows > 0) {
+    $columns_check = $conn->query("SHOW COLUMNS FROM site_content LIKE 'content_value'");
+    if ($columns_check && $columns_check->num_rows > 0) {
+        $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_hero_title'");
+        if ($result && $row = $result->fetch_assoc()) {
+            $shop_hero_title = !empty($row['content_value']) ? $row['content_value'] : $shop_hero_title;
+        }
+        
+        $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_hero_subtitle'");
+        if ($result && $row = $result->fetch_assoc()) {
+            $shop_hero_subtitle = !empty($row['content_value']) ? $row['content_value'] : $shop_hero_subtitle;
+        }
+        
+        $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_hero_image'");
+        if ($result) {
+            $row = $result->fetch_assoc();
+            if ($row && is_array($row) && !empty($row['content_value'])) {
+                $shop_hero_image = $row['content_value'];
+            }
+        }
+        
+        $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_hero_video'");
+        if ($result) {
+            $row = $result->fetch_assoc();
+            if ($row && is_array($row) && !empty($row['content_value'])) {
+                $shop_hero_video = $row['content_value'];
+            }
+        }
     }
 }
 
@@ -60,6 +84,23 @@ $conn->close();
 
             <!-- Hero Section -->
             <section class="shop-hero">
+                <?php
+                // Prioritize image over video
+                if (!empty($shop_hero_image)): 
+                    $image_path = __DIR__ . '/' . $shop_hero_image;
+                    if (file_exists($image_path)): ?>
+                        <img src="<?php echo htmlspecialchars($shop_hero_image); ?>" alt="Shop Hero" class="shop-hero-image">
+                    <?php endif;
+                elseif (!empty($shop_hero_video)): 
+                    $video_path = __DIR__ . '/assets/videos/' . $shop_hero_video;
+                    if (file_exists($video_path)): ?>
+                        <video class="shop-hero-video" autoplay muted loop playsinline>
+                            <source src="assets/videos/<?php echo htmlspecialchars($shop_hero_video); ?>" type="video/<?php echo pathinfo($shop_hero_video, PATHINFO_EXTENSION); ?>">
+                            Your browser does not support the video tag.
+                        </video>
+                    <?php endif;
+                endif; ?>
+                <div class="shop-hero-overlay"></div>
                 <div class="shop-hero-content">
                     <h1 class="shop-hero-title reveal"><?php echo htmlspecialchars($shop_hero_title); ?></h1>
                     <p class="shop-hero-subtitle reveal" data-delay="100"><?php echo htmlspecialchars($shop_hero_subtitle); ?></p>
@@ -267,6 +308,10 @@ $conn->close();
             text-align: center;
             position: relative;
             overflow: hidden;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .shop-hero::before {
@@ -278,11 +323,33 @@ $conn->close();
             bottom: 0;
             background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
             opacity: 0.3;
+            z-index: 1;
+        }
+        
+        .shop-hero-image,
+        .shop-hero-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+        }
+        
+        .shop-hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 31, 63, 0.6);
+            z-index: 2;
         }
 
         .shop-hero-content {
             position: relative;
-            z-index: 1;
+            z-index: 2;
             max-width: 800px;
             margin: 0 auto;
             padding: 0 40px;
