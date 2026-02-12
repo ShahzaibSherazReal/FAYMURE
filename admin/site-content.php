@@ -501,6 +501,30 @@ $conn->close();
                     </div>
                 </div>
                 
+                <!-- Manufacturing Section -->
+                <div class="content-section collapsible-section">
+                    <h2 class="section-header" onclick="toggleSection(this)">
+                        <span>Manufacturing</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </h2>
+                    <div class="section-content">
+                    <div class="form-group">
+                        <label for="manufacturing_title">Page Title</label>
+                        <input type="text" id="manufacturing_title" name="manufacturing_title" value="<?php echo htmlspecialchars($content_map['manufacturing_title'] ?? 'Manufacturing'); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="manufacturing_content">Content Paragraph (HTML allowed)</label>
+                        <textarea id="manufacturing_content" name="manufacturing_content" rows="10" style="font-family: monospace;"><?php echo htmlspecialchars($content_map['manufacturing_content'] ?? ''); ?></textarea>
+                        <small>This content appears above the form on the manufacturing page. You can use HTML tags for formatting.</small>
+                    </div>
+                    <div class="form-group">
+                        <a href="../manufacturing.php" target="_blank" class="btn-secondary" style="display: inline-block; margin-top: 10px;">
+                            <i class="fas fa-external-link-alt"></i> View Manufacturing Page
+                        </a>
+                    </div>
+                    </div>
+                </div>
+                
                 <!-- Footer -->
                 <div class="content-section collapsible-section">
                     <h2 class="section-header" onclick="toggleSection(this)">

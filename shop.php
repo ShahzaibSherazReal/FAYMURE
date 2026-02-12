@@ -1,8 +1,44 @@
 <?php
 require_once 'config/config.php';
 require_once 'includes/header.php';
+require_once 'includes/cart-functions.php';
 
 $conn = getDBConnection();
+
+// Check if shop is in coming soon mode
+$shop_coming_soon = false;
+$result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_coming_soon'");
+if ($result) {
+    $row = $result->fetch_assoc();
+    if ($row && is_array($row) && !empty($row['content_value']) && $row['content_value'] == '1') {
+        $shop_coming_soon = true;
+    }
+}
+
+// If coming soon, show message and exit
+if ($shop_coming_soon) {
+    ?>
+    <main style="min-height: 70vh; display: flex; align-items: center; justify-content: center; padding: 100px 20px;">
+        <div style="text-align: center; max-width: 600px;">
+            <div style="font-size: 80px; color: var(--accent-color); margin-bottom: 30px;">
+                <i class="fas fa-clock"></i>
+            </div>
+            <h1 style="font-family: 'Playfair Display', serif; font-size: 48px; color: var(--primary-color); margin-bottom: 20px; font-weight: 500;">
+                Shop Coming Soon
+            </h1>
+            <p style="font-size: 18px; color: var(--text-color); line-height: 1.8; margin-bottom: 40px;">
+                We're working hard to bring you an amazing shopping experience. Our shop will be available soon!
+            </p>
+            <a href="index.php" class="btn-primary" style="display: inline-block;">
+                <i class="fas fa-arrow-left"></i> Back to Home
+            </a>
+        </div>
+    </main>
+    <?php
+    require_once 'includes/footer.php';
+    exit;
+}
+
 $categories = $conn->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY sort_order, name")->fetch_all(MYSQLI_ASSOC);
 
 // Get shop hero content
@@ -135,12 +171,59 @@ $conn->close();
                 </div>
             </section>
         </div>
+        
+        <!-- Cart Icon -->
+        <a href="cart.php" class="cart-icon-link" title="View Cart">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="cart-count"><?php echo getCartCount(); ?></span>
+        </a>
     </main>
 
     <style>
         .shop-page {
             position: relative;
             min-height: 100vh;
+        }
+        
+        .cart-icon-link {
+            position: fixed;
+            top: 100px;
+            right: 30px;
+            z-index: 1000;
+            background: var(--primary-color);
+            color: #fff;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: 0 4px 16px rgba(0, 31, 63, 0.3);
+            transition: all 0.3s ease;
+            font-size: 24px;
+        }
+        
+        .cart-icon-link:hover {
+            background: var(--dark-color);
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 31, 63, 0.4);
+        }
+        
+        .cart-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--accent-color);
+            color: #fff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
         }
 
         /* Sidebar Styles */

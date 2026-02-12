@@ -52,6 +52,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['remove_shop_hero_video
     exit;
 }
 
+// Handle shop coming soon toggle
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['shop_coming_soon_toggle'])) {
+    $coming_soon = isset($_POST['shop_coming_soon']) ? '1' : '0';
+    
+    // Check if record exists
+    $check = $conn->query("SELECT id FROM site_content WHERE content_key='shop_coming_soon'");
+    if ($check && $check->num_rows > 0) {
+        $stmt = $conn->prepare("UPDATE site_content SET content_value = ? WHERE content_key = 'shop_coming_soon'");
+        $stmt->bind_param("s", $coming_soon);
+    } else {
+        $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES ('shop_coming_soon', ?)");
+        $stmt->bind_param("s", $coming_soon);
+    }
+    $stmt->execute();
+    if ($stmt->error) {
+        error_log("Shop coming soon toggle save error: " . $stmt->error);
+    }
+    $stmt->close();
+    header('Location: shop.php?tab=hero&saved=1');
+    exit;
+}
+
 // Handle shop hero content save
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['shop_hero_action'])) {
     $hero_title = sanitize($_POST['shop_hero_title'] ?? '');
@@ -411,6 +433,16 @@ if ($table_check && $table_check->num_rows > 0) {
     }
 }
 
+// Get shop coming soon status (before closing connection)
+$shop_coming_soon = '0';
+$result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_coming_soon'");
+if ($result) {
+    $row = $result->fetch_assoc();
+    if ($row && is_array($row) && !empty($row['content_value'])) {
+        $shop_coming_soon = $row['content_value'];
+    }
+}
+
 $conn->close();
 ?>
 <!DOCTYPE html>
@@ -686,6 +718,32 @@ $conn->close();
             
             <!-- Shop Hero Tab -->
             <div class="tab-content <?php echo $active_tab == 'hero' ? 'active' : ''; ?>" id="heroTab">
+                <!-- Shop Coming Soon Toggle -->
+                <div class="admin-form-container" style="margin-bottom: 30px;">
+                    <h2>Shop Status</h2>
+                    <p class="form-description">Enable "Coming Soon" mode to lock the shop and display a coming soon message on the site.</p>
+                    
+                    <form method="POST" class="admin-form" style="padding: 30px;">
+                        <input type="hidden" name="shop_coming_soon_toggle" value="1">
+                        <div class="form-group" style="display: flex; align-items: center; gap: 15px; margin-bottom: 0;">
+                            <label style="margin: 0; font-size: 16px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" name="shop_coming_soon" value="1" <?php echo $shop_coming_soon == '1' ? 'checked' : ''; ?> 
+                                       onchange="this.form.submit()" style="width: 20px; height: 20px; cursor: pointer;">
+                                <span>Enable "Coming Soon" Mode</span>
+                            </label>
+                            <?php if ($shop_coming_soon == '1'): ?>
+                                <span style="color: var(--accent-color); font-weight: 500;">
+                                    <i class="fas fa-lock"></i> Shop is currently locked
+                                </span>
+                            <?php else: ?>
+                                <span style="color: #28a745; font-weight: 500;">
+                                    <i class="fas fa-unlock"></i> Shop is currently active
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                    </form>
+                </div>
+                
                 <div class="admin-form-container">
                     <h2>Edit Shop Hero Section</h2>
                     <p class="form-description">Customize the hero section that appears at the top of the shop page.</p>

@@ -3,14 +3,24 @@ require_once 'config/config.php';
 require_once 'includes/header.php';
 
 $conn = getDBConnection();
+$manufacturing_title = 'Manufacturing';
 $manufacturing_content = '';
 
 // Get manufacturing content from database
 $columns_check = $conn->query("SHOW COLUMNS FROM site_content LIKE 'content_value'");
 if ($columns_check && $columns_check->num_rows > 0) {
+    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='manufacturing_title'");
+    if ($result && $row = $result->fetch_assoc()) {
+        if ($row && is_array($row) && !empty($row['content_value'])) {
+            $manufacturing_title = $row['content_value'];
+        }
+    }
+    
     $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='manufacturing_content'");
     if ($result && $row = $result->fetch_assoc()) {
-        $manufacturing_content = $row['content_value'] ?? '';
+        if ($row && is_array($row) && !empty($row['content_value'])) {
+            $manufacturing_content = $row['content_value'];
+        }
     }
 }
 
@@ -99,7 +109,7 @@ $conn->close();
                 </a>
             </div>
 
-            <h1 class="page-title">Manufacturing</h1>
+            <h1 class="page-title"><?php echo htmlspecialchars($manufacturing_title); ?></h1>
             
             <!-- Content Paragraph -->
             <div class="content-section">

@@ -95,7 +95,7 @@ $conn->close();
                     <h1><?php echo SITE_NAME; ?></h1>
                 </div>
                 <p class="hero-tagline reveal" data-delay="120"><?php echo $hero_tagline; ?></p>
-                <a href="categories.php" class="btn-explore btn-press reveal" data-delay="240"><?php echo t('explore'); ?> <i class="fas fa-arrow-right"></i></a>
+                <a href="explore.php" class="btn-explore btn-press reveal" data-delay="240"><?php echo t('explore'); ?> <i class="fas fa-arrow-right"></i></a>
             </div>
         </section>
 

@@ -64,12 +64,36 @@ function t($key) {
     <script defer src="assets/js/faymure-font.js"></script>
 </head>
 <body>
+    <?php
+    // Check if shop is in coming soon mode
+    $conn = getDBConnection();
+    $shop_coming_soon = false;
+    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_coming_soon'");
+    if ($result) {
+        $row = $result->fetch_assoc();
+        if ($row && is_array($row) && !empty($row['content_value']) && $row['content_value'] == '1') {
+            $shop_coming_soon = true;
+        }
+    }
+    $conn->close();
+    ?>
     <header id="siteHeader" class="main-header">
         <div class="header-top">
             <div class="container">
-                <a href="shop.php" class="shop-btn">
-                    <i class="fas fa-shopping-bag"></i> <?php echo t('shop'); ?>
-                </a>
+                <?php if ($shop_coming_soon): ?>
+                    <div style="display: flex; align-items: center; gap: 12px; justify-content: center;">
+                        <span class="shop-btn" style="cursor: not-allowed; opacity: 0.6; pointer-events: none;">
+                            <i class="fas fa-shopping-bag"></i> <?php echo t('shop'); ?>
+                        </span>
+                        <span style="color: var(--accent-color); font-size: 12px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase;">
+                            <i class="fas fa-clock"></i> <?php echo t('coming_soon'); ?>
+                        </span>
+                    </div>
+                <?php else: ?>
+                    <a href="shop.php" class="shop-btn">
+                        <i class="fas fa-shopping-bag"></i> <?php echo t('shop'); ?>
+                    </a>
+                <?php endif; ?>
             </div>
         </div>
         <nav class="header-nav">

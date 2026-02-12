@@ -9,6 +9,7 @@
         <nav class="admin-nav">
             <a href="dashboard.php" class="nav-link"><i class="fas fa-home"></i> Dashboard</a>
             <a href="shop.php" class="nav-link"><i class="fas fa-store"></i> Shop</a>
+            <a href="explore.php" class="nav-link"><i class="fas fa-compass"></i> Explore</a>
             <a href="orders.php" class="nav-link"><i class="fas fa-shopping-cart"></i> Orders</a>
             <a href="users.php" class="nav-link"><i class="fas fa-users"></i> Users</a>
             <a href="site-content.php" class="nav-link"><i class="fas fa-edit"></i> Site Content</a>
@@ -29,6 +30,7 @@
     <nav class="sidebar-nav">
         <a href="dashboard.php" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a>
         <a href="shop.php" class="sidebar-link"><i class="fas fa-store"></i> Shop</a>
+        <a href="explore.php" class="sidebar-link"><i class="fas fa-compass"></i> Explore</a>
         <a href="orders.php" class="sidebar-link"><i class="fas fa-shopping-cart"></i> Orders</a>
         <a href="users.php" class="sidebar-link"><i class="fas fa-users"></i> Users</a>
         <a href="site-content.php" class="sidebar-link"><i class="fas fa-edit"></i> Site Content</a>
