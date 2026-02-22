@@ -38,9 +38,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     
     if ($name && $email && $description) {
-        // Check if custom_designs table exists, otherwise use orders
+        // Check if custom_designs table exists, create it if it doesn't
         $table_check = $conn->query("SHOW TABLES LIKE 'custom_designs'");
-        $table_name = ($table_check && $table_check->num_rows > 0) ? 'custom_designs' : 'orders';
+        if (!$table_check || $table_check->num_rows == 0) {
+            // Create custom_designs table
+            $create_table_sql = "CREATE TABLE IF NOT EXISTS custom_designs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                customer_name VARCHAR(100) NOT NULL,
+                customer_email VARCHAR(100) NOT NULL,
+                customer_phone VARCHAR(20),
+                product_type VARCHAR(255),
+                description TEXT NOT NULL,
+                quantity INT NOT NULL DEFAULT 1,
+                timeline VARCHAR(255),
+                budget VARCHAR(255),
+                images TEXT,
+                user_id INT NULL,
+                status ENUM('pending', 'processing', 'completed', 'cancelled') DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci";
+            $conn->query($create_table_sql);
+        }
         
         $images_json = json_encode($uploaded_images);
         $message = "Custom Design Request\n\n";
@@ -51,23 +71,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $message .= "Budget: " . $budget . "\n";
         $message .= "Images: " . count($uploaded_images) . " uploaded";
         
-        // Save to database
-        if ($table_name == 'custom_designs') {
-            $stmt = $conn->prepare("INSERT INTO custom_designs (customer_name, customer_email, customer_phone, product_type, description, quantity, timeline, budget, images, user_id) 
-                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
-            $stmt->bind_param("sssssisssi", $name, $email, $phone, $product_type, $description, $quantity, $timeline, $budget, $images_json, $user_id);
-        } else {
-            // Use orders table with product_id = 0 for custom designs
-            $stmt = $conn->prepare("INSERT INTO orders (product_id, customer_name, customer_email, customer_phone, message, quantity, user_id) 
-                                    VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $product_id = 0;
-            $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
-            $stmt->bind_param("issssii", $product_id, $name, $email, $phone, $message, $quantity, $user_id);
-        }
+        // Save to database - always use custom_designs table now
+        $stmt = $conn->prepare("INSERT INTO custom_designs (customer_name, customer_email, customer_phone, product_type, description, quantity, timeline, budget, images, user_id) 
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
+        $stmt->bind_param("sssssisssi", $name, $email, $phone, $product_type, $description, $quantity, $timeline, $budget, $images_json, $user_id);
         
         if ($stmt->execute()) {
-            // Send email to admin
+            // Send email to admin (suppress errors if mail server is not configured)
             $to = ADMIN_EMAIL;
             $subject = "New Custom Design Request";
             $email_message = "New custom design request received:\n\n";
@@ -84,7 +95,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $headers = "From: " . $email . "\r\n";
             $headers .= "Reply-To: " . $email . "\r\n";
             
-            mail($to, $subject, $email_message, $headers);
+            // Attempt to send email, but don't fail if mail server is not configured
+            @mail($to, $subject, $email_message, $headers);
             
             $success = true;
         } else {

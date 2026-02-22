@@ -11,6 +11,7 @@
             <a href="shop.php" class="nav-link"><i class="fas fa-store"></i> Shop</a>
             <a href="explore.php" class="nav-link"><i class="fas fa-compass"></i> Explore</a>
             <a href="orders.php" class="nav-link"><i class="fas fa-shopping-cart"></i> Orders</a>
+            <a href="form-submissions.php" class="nav-link"><i class="fas fa-file-alt"></i> Form Submissions</a>
             <a href="users.php" class="nav-link"><i class="fas fa-users"></i> Users</a>
             <a href="site-content.php" class="nav-link"><i class="fas fa-edit"></i> Site Content</a>
             <a href="../index.php" class="nav-link" target="_blank"><i class="fas fa-external-link-alt"></i> View Site</a>
@@ -32,6 +33,7 @@
         <a href="shop.php" class="sidebar-link"><i class="fas fa-store"></i> Shop</a>
         <a href="explore.php" class="sidebar-link"><i class="fas fa-compass"></i> Explore</a>
         <a href="orders.php" class="sidebar-link"><i class="fas fa-shopping-cart"></i> Orders</a>
+        <a href="form-submissions.php" class="sidebar-link"><i class="fas fa-file-alt"></i> Form Submissions</a>
         <a href="users.php" class="sidebar-link"><i class="fas fa-users"></i> Users</a>
         <a href="site-content.php" class="sidebar-link"><i class="fas fa-edit"></i> Site Content</a>
         <a href="../index.php" class="sidebar-link" target="_blank"><i class="fas fa-external-link-alt"></i> View Site</a>

@@ -27,12 +27,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $quantity = intval($_POST['quantity'] ?? 1);
 
     if ($name && $email && $product_id) {
-        // Check if quote_requests table exists, otherwise use orders
+        // Check if quote_requests table exists, create it if it doesn't
         $table_check = $conn->query("SHOW TABLES LIKE 'quote_requests'");
-        $table_name = ($table_check->num_rows > 0) ? 'quote_requests' : 'orders';
+        if (!$table_check || $table_check->num_rows == 0) {
+            // Create quote_requests table
+            $create_table_sql = "CREATE TABLE IF NOT EXISTS quote_requests (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                product_id INT NOT NULL,
+                customer_name VARCHAR(100) NOT NULL,
+                customer_email VARCHAR(100) NOT NULL,
+                customer_phone VARCHAR(20),
+                message TEXT,
+                quantity INT NOT NULL DEFAULT 1,
+                user_id INT NULL,
+                status ENUM('pending', 'quoted', 'accepted', 'rejected', 'cancelled') DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci";
+            $conn->query($create_table_sql);
+        }
         
-        // Save to database
-        $stmt = $conn->prepare("INSERT INTO $table_name (product_id, customer_name, customer_email, customer_phone, message, quantity, user_id) 
+        // Save to database - always use quote_requests table now
+        $stmt = $conn->prepare("INSERT INTO quote_requests (product_id, customer_name, customer_email, customer_phone, message, quantity, user_id) 
                                 VALUES (?, ?, ?, ?, ?, ?, ?)");
         $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
         $stmt->bind_param("issssii", $product_id, $name, $email, $phone, $message, $quantity, $user_id);
@@ -54,7 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $headers = "From: " . $email . "\r\n";
             $headers .= "Reply-To: " . $email . "\r\n";
             
-            mail($to, $subject, $email_message, $headers);
+            // Attempt to send email, but don't fail if mail server is not configured
+            @mail($to, $subject, $email_message, $headers);
             
             $success = true;
         } else {

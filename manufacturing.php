@@ -46,28 +46,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $quantity = intval($_POST['quantity'] ?? 1);
 
     if ($name && $email) {
-        // Check if quote_requests table exists, otherwise use orders
-        $table_check = $conn->query("SHOW TABLES LIKE 'quote_requests'");
-        $table_name = ($table_check->num_rows > 0) ? 'quote_requests' : 'orders';
-        
-        // Check if product_id column exists, if not, we'll use NULL
-        $column_check = $conn->query("SHOW COLUMNS FROM $table_name LIKE 'product_id'");
-        $has_product_id = ($column_check && $column_check->num_rows > 0);
-        
-        if ($has_product_id) {
-            // Save to database with product_id = 0 for manufacturing inquiries
-            $product_id = 0;
-            $stmt = $conn->prepare("INSERT INTO $table_name (product_id, customer_name, customer_email, customer_phone, message, quantity, user_id) 
-                                    VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
-            $stmt->bind_param("issssii", $product_id, $name, $email, $phone, $message, $quantity, $user_id);
-        } else {
-            // Table doesn't have product_id column, use alternative approach
-            $stmt = $conn->prepare("INSERT INTO $table_name (customer_name, customer_email, customer_phone, message, quantity, user_id) 
-                                    VALUES (?, ?, ?, ?, ?, ?)");
-            $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
-            $stmt->bind_param("ssssii", $name, $email, $phone, $message, $quantity, $user_id);
+        // Check if manufacturing_inquiries table exists, create it if it doesn't
+        $table_check = $conn->query("SHOW TABLES LIKE 'manufacturing_inquiries'");
+        if (!$table_check || $table_check->num_rows == 0) {
+            // Create manufacturing_inquiries table
+            $create_table_sql = "CREATE TABLE IF NOT EXISTS manufacturing_inquiries (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                customer_name VARCHAR(100) NOT NULL,
+                customer_email VARCHAR(100) NOT NULL,
+                customer_phone VARCHAR(20),
+                product_type VARCHAR(255),
+                message TEXT,
+                quantity INT NOT NULL DEFAULT 1,
+                user_id INT NULL,
+                status ENUM('pending', 'reviewing', 'approved', 'rejected', 'cancelled') DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci";
+            $conn->query($create_table_sql);
         }
+        
+        // Save to database - always use manufacturing_inquiries table now
+        $stmt = $conn->prepare("INSERT INTO manufacturing_inquiries (customer_name, customer_email, customer_phone, product_type, message, quantity, user_id) 
+                                VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
+        $stmt->bind_param("sssssii", $name, $email, $phone, $product_type, $message, $quantity, $user_id);
         
         if ($stmt->execute()) {
             // Send email to admin
@@ -86,7 +90,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $headers = "From: " . $email . "\r\n";
             $headers .= "Reply-To: " . $email . "\r\n";
             
-            mail($to, $subject, $email_message, $headers);
+            // Attempt to send email, but don't fail if mail server is not configured
+            @mail($to, $subject, $email_message, $headers);
             
             $success = true;
         } else {
@@ -104,7 +109,7 @@ $conn->close();
         <div class="container">
             <!-- Explore Button at Top -->
             <div class="manufacturing-header">
-                <a href="categories.php" class="btn-explore btn-press reveal" data-delay="0">
+                <a href="explore.php" class="btn-explore btn-press reveal" data-delay="0">
                     <?php echo t('explore'); ?> <i class="fas fa-arrow-right"></i>
                 </a>
             </div>
@@ -202,24 +207,44 @@ $conn->close();
 
         .manufacturing-header .btn-explore {
             display: inline-block;
-            padding: 16px 40px;
-            background: transparent;
-            color: var(--primary-color);
+            padding: 18px 45px;
+            background: var(--accent-color);
+            color: #fff;
             text-decoration: none;
             border-radius: 0;
-            font-weight: 300;
-            font-size: 13px;
+            font-weight: 600;
+            font-size: 14px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             letter-spacing: 1.5px;
             text-transform: uppercase;
-            border: 1px solid var(--primary-color);
+            border: 2px solid var(--accent-color);
             font-family: 'Inter', sans-serif;
+            box-shadow: 0 4px 15px rgba(229, 90, 15, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .manufacturing-header .btn-explore::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .manufacturing-header .btn-explore:hover::before {
+            left: 100%;
         }
 
         .manufacturing-header .btn-explore:hover {
-            background: var(--primary-color);
+            background: #e55a0f;
+            border-color: #e55a0f;
             color: #fff;
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(229, 90, 15, 0.6);
         }
 
         .content-section {

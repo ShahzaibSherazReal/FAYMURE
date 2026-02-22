@@ -69,6 +69,31 @@ if ($columns_check && $columns_check->num_rows > 0) {
     }
 }
 
+// Get explore page content
+$option1_title = 'Design Your Own Product';
+$option1_description = 'Create a unique product from scratch. Share your vision, upload inspiration images, and let us bring your design to life.';
+$option2_title = 'Browse & Customize';
+$option2_description = 'Browse our product categories and request quotes for bulk orders. You can also request customizations to our existing products.';
+
+if ($columns_check && $columns_check->num_rows > 0) {
+    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='explore_option1_title'");
+    if ($result && $row = $result->fetch_assoc() && !empty($row['content_value'])) {
+        $option1_title = $row['content_value'];
+    }
+    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='explore_option1_description'");
+    if ($result && $row = $result->fetch_assoc() && !empty($row['content_value'])) {
+        $option1_description = $row['content_value'];
+    }
+    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='explore_option2_title'");
+    if ($result && $row = $result->fetch_assoc() && !empty($row['content_value'])) {
+        $option2_title = $row['content_value'];
+    }
+    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='explore_option2_description'");
+    if ($result && $row = $result->fetch_assoc() && !empty($row['content_value'])) {
+        $option2_description = $row['content_value'];
+    }
+}
+
 $conn->close();
 ?>
     <main>
@@ -96,6 +121,58 @@ $conn->close();
                 </div>
                 <p class="hero-tagline reveal" data-delay="120"><?php echo $hero_tagline; ?></p>
                 <a href="explore.php" class="btn-explore btn-press reveal" data-delay="240"><?php echo t('explore'); ?> <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </section>
+
+        <!-- Explore Options Section -->
+        <section class="explore-options-section">
+            <div class="container">
+                <div class="section-header reveal">
+                    <h2 class="section-title">Choose Your Path</h2>
+                    <p class="section-subtitle">Select how you'd like to work with us</p>
+                </div>
+                
+                <div class="explore-options-grid">
+                    <!-- Design Your Own Product -->
+                    <a href="explore-custom-design.php" class="explore-option-card reveal" data-delay="100">
+                        <div class="option-background">
+                            <div class="option-gradient"></div>
+                        </div>
+                        <div class="option-content">
+                            <div class="option-icon-wrapper">
+                                <div class="option-icon">
+                                    <i class="fas fa-palette"></i>
+                                </div>
+                            </div>
+                            <h3 class="option-title"><?php echo htmlspecialchars($option1_title); ?></h3>
+                            <p class="option-description"><?php echo htmlspecialchars($option1_description); ?></p>
+                            <div class="option-cta">
+                                <span>Get Started</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </div>
+                    </a>
+                    
+                    <!-- Browse & Customize -->
+                    <a href="explore-browse.php" class="explore-option-card reveal" data-delay="200">
+                        <div class="option-background">
+                            <div class="option-gradient"></div>
+                        </div>
+                        <div class="option-content">
+                            <div class="option-icon-wrapper">
+                                <div class="option-icon">
+                                    <i class="fas fa-shopping-bag"></i>
+                                </div>
+                            </div>
+                            <h3 class="option-title"><?php echo htmlspecialchars($option2_title); ?></h3>
+                            <p class="option-description"><?php echo htmlspecialchars($option2_description); ?></p>
+                            <div class="option-cta">
+                                <span>Browse Now</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </div>
+                    </a>
+                </div>
             </div>
         </section>
 
@@ -185,6 +262,226 @@ $conn->close();
             </div>
         </section>
     </main>
+
+    <style>
+        .explore-options-section {
+            padding: 120px 0;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .explore-options-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(0,31,63,0.03)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.5;
+            z-index: 0;
+        }
+        
+        .explore-options-section .container {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+        
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 48px;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        
+        .section-subtitle {
+            font-size: 18px;
+            color: var(--text-color);
+            font-weight: 300;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .explore-options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .explore-option-card {
+            position: relative;
+            background: #fff;
+            border-radius: 20px;
+            overflow: hidden;
+            text-decoration: none;
+            color: var(--text-color);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: block;
+            height: 100%;
+            min-height: 500px;
+        }
+        
+        .explore-option-card:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+        
+        .option-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        
+        .option-gradient {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            opacity: 0.05;
+            transition: opacity 0.4s ease;
+        }
+        
+        .explore-option-card:hover .option-gradient {
+            opacity: 0.1;
+        }
+        
+        .option-content {
+            position: relative;
+            z-index: 1;
+            padding: 60px 50px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .option-icon-wrapper {
+            margin-bottom: 40px;
+        }
+        
+        .option-icon {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 42px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(0, 31, 63, 0.2);
+        }
+        
+        .explore-option-card:hover .option-icon {
+            transform: scale(1.15) rotate(5deg);
+            box-shadow: 0 15px 40px rgba(0, 31, 63, 0.3);
+        }
+        
+        .option-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+            color: var(--primary-color);
+            margin-bottom: 25px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            line-height: 1.3;
+        }
+        
+        .option-description {
+            font-size: 16px;
+            color: var(--text-color);
+            line-height: 1.8;
+            margin-bottom: 40px;
+            font-weight: 300;
+            flex-grow: 1;
+        }
+        
+        .option-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 32px;
+            background: var(--primary-color);
+            color: #fff;
+            border-radius: 50px;
+            font-size: 15px;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 31, 63, 0.2);
+        }
+        
+        .explore-option-card:hover .option-cta {
+            background: var(--accent-color);
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(0, 31, 63, 0.3);
+        }
+        
+        .explore-option-card:hover .option-cta i {
+            transform: translateX(5px);
+        }
+        
+        .option-cta i {
+            transition: transform 0.3s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .explore-options-section {
+                padding: 80px 0;
+            }
+            
+            .section-title {
+                font-size: 36px;
+            }
+            
+            .section-subtitle {
+                font-size: 16px;
+            }
+            
+            .explore-options-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .explore-option-card {
+                min-height: 400px;
+            }
+            
+            .option-content {
+                padding: 40px 30px;
+            }
+            
+            .option-icon {
+                width: 80px;
+                height: 80px;
+                font-size: 36px;
+            }
+            
+            .option-title {
+                font-size: 26px;
+            }
+            
+            .option-description {
+                font-size: 15px;
+            }
+        }
+    </style>
 
 <?php require_once 'includes/footer.php'; ?>
 

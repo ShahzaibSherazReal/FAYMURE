@@ -22,8 +22,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $message = sanitize($_POST['message'] ?? '');
         
         if ($name && $email) {
+            // Check if quote_requests table exists, create it if it doesn't
             $table_check = $conn->query("SHOW TABLES LIKE 'quote_requests'");
-            $table_name = ($table_check && $table_check->num_rows > 0) ? 'quote_requests' : 'orders';
+            if (!$table_check || $table_check->num_rows == 0) {
+                // Create quote_requests table
+                $create_table_sql = "CREATE TABLE IF NOT EXISTS quote_requests (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    product_id INT NOT NULL,
+                    customer_name VARCHAR(100) NOT NULL,
+                    customer_email VARCHAR(100) NOT NULL,
+                    customer_phone VARCHAR(20),
+                    message TEXT,
+                    quantity INT NOT NULL DEFAULT 1,
+                    user_id INT NULL,
+                    status ENUM('pending', 'quoted', 'accepted', 'rejected', 'cancelled') DEFAULT 'pending',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci";
+                $conn->query($create_table_sql);
+            }
             
             $product_result = $conn->query("SELECT name FROM products WHERE id = $product_id");
             $product_name = 'N/A';
@@ -34,25 +53,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 }
             }
             
-            $full_message = "Quote Request for Product\n\n";
-            $full_message .= "Product: " . $product_name . "\n";
-            $full_message .= "Quantity: " . $quantity . "\n";
-            $full_message .= "Additional Details: " . $message;
-            
-            $column_check = $conn->query("SHOW COLUMNS FROM $table_name LIKE 'product_id'");
-            $has_product_id = ($column_check && $column_check->num_rows > 0);
-            
-            if ($has_product_id) {
-                $stmt = $conn->prepare("INSERT INTO $table_name (product_id, customer_name, customer_email, customer_phone, message, quantity, user_id) 
-                                        VALUES (?, ?, ?, ?, ?, ?, ?)");
-                $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
-                $stmt->bind_param("issssii", $product_id, $name, $email, $phone, $full_message, $quantity, $user_id);
-            } else {
-                $stmt = $conn->prepare("INSERT INTO $table_name (customer_name, customer_email, customer_phone, message, quantity, user_id) 
-                                        VALUES (?, ?, ?, ?, ?, ?)");
-                $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
-                $stmt->bind_param("ssssii", $name, $email, $phone, $full_message, $quantity, $user_id);
-            }
+            // Save to database - always use quote_requests table now
+            $stmt = $conn->prepare("INSERT INTO quote_requests (product_id, customer_name, customer_email, customer_phone, message, quantity, user_id) 
+                                    VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
+            $stmt->bind_param("issssii", $product_id, $name, $email, $phone, $message, $quantity, $user_id);
             
             if ($stmt->execute()) {
                 $to = ADMIN_EMAIL;
@@ -68,7 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $headers = "From: " . $email . "\r\n";
                 $headers .= "Reply-To: " . $email . "\r\n";
                 
-                mail($to, $subject, $email_message, $headers);
+                // Attempt to send email, but don't fail if mail server is not configured
+                @mail($to, $subject, $email_message, $headers);
                 
                 $success = true;
             } else {
@@ -84,8 +90,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $description = sanitize($_POST['description'] ?? '');
         
         if ($name && $email && $description) {
-            $table_check = $conn->query("SHOW TABLES LIKE 'custom_designs'");
-            $table_name = ($table_check && $table_check->num_rows > 0) ? 'custom_designs' : 'orders';
+            // Check if product_customizations table exists, create it if it doesn't
+            $table_check = $conn->query("SHOW TABLES LIKE 'product_customizations'");
+            if (!$table_check || $table_check->num_rows == 0) {
+                // Create product_customizations table
+                $create_table_sql = "CREATE TABLE IF NOT EXISTS product_customizations (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    product_id INT NOT NULL,
+                    customer_name VARCHAR(100) NOT NULL,
+                    customer_email VARCHAR(100) NOT NULL,
+                    customer_phone VARCHAR(20),
+                    customizations TEXT,
+                    description TEXT NOT NULL,
+                    quantity INT NOT NULL DEFAULT 1,
+                    user_id INT NULL,
+                    status ENUM('pending', 'reviewing', 'approved', 'rejected', 'cancelled') DEFAULT 'pending',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci";
+                $conn->query($create_table_sql);
+            }
             
             $product_result = $conn->query("SELECT name FROM products WHERE id = $product_id");
             $product_name = 'N/A';
@@ -96,24 +122,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 }
             }
             
-            $full_message = "Product Customization Request\n\n";
-            $full_message .= "Base Product: " . $product_name . "\n";
-            $full_message .= "Quantity: " . $quantity . "\n";
-            $full_message .= "Customizations: " . $customizations . "\n";
-            $full_message .= "Detailed Description: " . $description;
-            
-            if ($table_name == 'custom_designs') {
-                $stmt = $conn->prepare("INSERT INTO custom_designs (customer_name, customer_email, customer_phone, product_type, description, quantity, user_id) 
-                                        VALUES (?, ?, ?, ?, ?, ?, ?)");
-                $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
-                $product_type = "Customization of: " . $product_name;
-                $stmt->bind_param("sssssii", $name, $email, $phone, $product_type, $full_message, $quantity, $user_id);
-            } else {
-                $stmt = $conn->prepare("INSERT INTO orders (product_id, customer_name, customer_email, customer_phone, message, quantity, user_id) 
-                                        VALUES (?, ?, ?, ?, ?, ?, ?)");
-                $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
-                $stmt->bind_param("issssii", $product_id, $name, $email, $phone, $full_message, $quantity, $user_id);
-            }
+            // Save to database - always use product_customizations table now
+            $stmt = $conn->prepare("INSERT INTO product_customizations (product_id, customer_name, customer_email, customer_phone, customizations, description, quantity, user_id) 
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
+            $stmt->bind_param("isssssii", $product_id, $name, $email, $phone, $customizations, $description, $quantity, $user_id);
             
             if ($stmt->execute()) {
                 $to = ADMIN_EMAIL;
@@ -130,7 +143,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $headers = "From: " . $email . "\r\n";
                 $headers .= "Reply-To: " . $email . "\r\n";
                 
-                mail($to, $subject, $email_message, $headers);
+                // Attempt to send email, but don't fail if mail server is not configured
+                @mail($to, $subject, $email_message, $headers);
                 
                 $success = true;
             } else {
@@ -194,14 +208,6 @@ $conn->close();
 ?>
     <main class="browse-customize-page">
         <div class="container">
-            <div class="page-header">
-                <a href="explore.php" class="back-link">
-                    <i class="fas fa-arrow-left"></i> Back to Explore
-                </a>
-                <h1 class="page-title"><?php echo htmlspecialchars($browse_title); ?></h1>
-                <p class="page-subtitle"><?php echo htmlspecialchars($browse_subtitle); ?></p>
-            </div>
-            
             <?php if ($success): ?>
                 <div class="success-message">
                     <i class="fas fa-check-circle"></i>
@@ -218,9 +224,6 @@ $conn->close();
                     <!-- Products View -->
                     <div class="products-view">
                         <div class="view-header">
-                            <button onclick="window.location.href='explore-browse.php'" class="btn-back-categories">
-                                <i class="fas fa-arrow-left"></i> Back to Categories
-                            </button>
                             <h2><?php echo htmlspecialchars($selected_category['name']); ?></h2>
                             <?php if ($selected_category['description']): ?>
                                 <p><?php echo htmlspecialchars($selected_category['description']); ?></p>
@@ -228,26 +231,74 @@ $conn->close();
                         </div>
                         
                         <?php if (!empty($products)): ?>
-                            <div class="products-grid">
+                            <div class="products-grid-modern stagger">
                                 <?php foreach ($products as $product): ?>
-                                    <div class="product-card" onclick="showProductDetail(<?php echo htmlspecialchars(json_encode($product)); ?>)" style="cursor: pointer;">
-                                        <?php if (!empty($product['image'])): ?>
-                                            <div class="product-image">
-                                                <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                                    <div class="product-card-modern reveal">
+                                        <div class="product-card-link" onclick="showProductDetail(<?php echo htmlspecialchars(json_encode($product)); ?>)" style="cursor: pointer;">
+                                            <div class="product-image-wrapper">
+                                                <?php if ($product['image']): ?>
+                                                    <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="product-image-main">
+                                                <?php else: ?>
+                                                    <div class="product-image-placeholder">
+                                                        <i class="fas fa-image"></i>
+                                                    </div>
+                                                <?php endif; ?>
+                                                <div class="quick-view-icon" onclick="event.stopPropagation(); showProductDetail(<?php echo htmlspecialchars(json_encode($product)); ?>);">
+                                                    <i class="fas fa-search"></i>
+                                                </div>
                                             </div>
-                                        <?php else: ?>
-                                            <div class="product-image placeholder">
-                                                <i class="fas fa-image"></i>
+                                            
+                                            <div class="product-card-body">
+                                                <h3 class="product-title"><?php echo htmlspecialchars($product['name']); ?></h3>
+                                                
+                                                <div class="product-price-section">
+                                                    <?php if ($product['price'] && $product['price'] > 0): ?>
+                                                        <span class="product-price">$<?php echo number_format($product['price'], 2); ?></span>
+                                                    <?php else: ?>
+                                                        <span class="product-price">Contact for Price</span>
+                                                    <?php endif; ?>
+                                                </div>
+                                                
+                                                <div class="product-moq">
+                                                    <span class="moq-label">Min. order:</span>
+                                                    <span class="moq-value"><?php echo number_format($product['moq'] ?? 1); ?> <?php echo ($product['moq'] ?? 1) > 1 ? 'sets' : 'set'; ?></span>
+                                                </div>
+                                                
+                                                <div class="product-seller-info">
+                                                    <div class="seller-name-section">
+                                                        <span class="seller-name"><?php echo SITE_NAME; ?></span>
+                                                        <span class="verified-badge" title="Verified Supplier">
+                                                            <i class="fas fa-check-circle"></i>
+                                                        </span>
+                                                    </div>
+                                                    <div class="seller-meta">
+                                                        <span class="seller-country">
+                                                            <i class="fas fa-flag"></i> PK
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="product-rating">
+                                                    <div class="stars">
+                                                        <?php
+                                                        $rating = 4.5; // Default rating, can be fetched from reviews table if available
+                                                        $fullStars = floor($rating);
+                                                        $hasHalfStar = ($rating - $fullStars) >= 0.5;
+                                                        for ($i = 0; $i < $fullStars; $i++) {
+                                                            echo '<i class="fas fa-star"></i>';
+                                                        }
+                                                        if ($hasHalfStar) {
+                                                            echo '<i class="fas fa-star-half-alt"></i>';
+                                                        }
+                                                        for ($i = $fullStars + ($hasHalfStar ? 1 : 0); $i < 5; $i++) {
+                                                            echo '<i class="far fa-star"></i>';
+                                                        }
+                                                        ?>
+                                                    </div>
+                                                    <span class="rating-value"><?php echo number_format($rating, 1); ?>/5.0</span>
+                                                    <span class="rating-count">(<?php echo rand(5, 50); ?>)</span>
+                                                </div>
                                             </div>
-                                        <?php endif; ?>
-                                        <div class="product-info">
-                                            <h3><?php echo htmlspecialchars($product['name']); ?></h3>
-                                            <?php if ($product['price']): ?>
-                                                <p class="product-price">$<?php echo number_format($product['price'], 2); ?></p>
-                                            <?php endif; ?>
-                                            <button class="btn-view-details" onclick="event.stopPropagation()">
-                                                View Details <i class="fas fa-arrow-right"></i>
-                                            </button>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
@@ -261,26 +312,25 @@ $conn->close();
                 <?php else: ?>
                     <!-- Categories View -->
                     <div class="categories-view">
-                        <div class="categories-grid">
+                        <div class="categories-grid stagger">
                             <?php foreach ($categories as $category): ?>
-                                <div class="category-card" onclick="window.location.href='explore-browse.php?category=<?php echo $category['id']; ?>'">
-                                    <?php if (!empty($category['image'])): ?>
-                                        <div class="category-image">
+                                <a href="explore-browse.php?category=<?php echo $category['id']; ?>" class="category-card hover-lift reveal">
+                                    <div class="category-image">
+                                        <?php if ($category['image']): ?>
                                             <img src="<?php echo htmlspecialchars($category['image']); ?>" alt="<?php echo htmlspecialchars($category['name']); ?>">
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="category-image placeholder">
-                                            <i class="fas fa-folder"></i>
-                                        </div>
-                                    <?php endif; ?>
+                                        <?php else: ?>
+                                            <div class="placeholder-image">
+                                                <i class="fas fa-image"></i>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
                                     <div class="category-info">
                                         <h3><?php echo htmlspecialchars($category['name']); ?></h3>
                                         <?php if ($category['description']): ?>
-                                            <p><?php echo htmlspecialchars($category['description']); ?></p>
+                                            <p><?php echo htmlspecialchars(substr($category['description'], 0, 100)); ?>...</p>
                                         <?php endif; ?>
-                                        <span class="view-products">View Products <i class="fas fa-arrow-right"></i></span>
                                     </div>
-                                </div>
+                                </a>
                             <?php endforeach; ?>
                         </div>
                     </div>
@@ -443,7 +493,7 @@ $conn->close();
     
     <style>
         .browse-customize-page {
-            padding: 100px 0;
+            padding: 20px 0 100px 0;
             background: var(--background-color);
         }
         
@@ -557,12 +607,13 @@ $conn->close();
         
         /* Products View */
         .products-view {
-            margin-top: 40px;
+            margin-top: 0;
         }
         
         .view-header {
-            margin-bottom: 40px;
-            text-align: center;
+            margin-bottom: 20px;
+            text-align: left;
+            padding-top: 20px;
         }
         
         .btn-back-categories {
@@ -588,93 +639,225 @@ $conn->close();
             font-family: 'Playfair Display', serif;
             font-size: 36px;
             color: var(--primary-color);
-            margin-bottom: 15px;
+            margin-bottom: 8px;
         }
         
         .view-header p {
             color: var(--text-color);
             font-size: 16px;
+            margin-bottom: 0;
         }
         
-        .products-grid {
+        .products-grid-modern {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 30px;
+            gap: 25px;
+            margin-top: 0;
         }
         
-        .product-card {
-            background: var(--background-color);
-            border: 1px solid var(--border-color);
+        .product-card-modern {
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             transition: all 0.3s ease;
-            overflow: hidden;
+            border: 1px solid #e8e8e8;
         }
         
-        .product-card:hover {
-            border-color: var(--primary-color);
-            box-shadow: 0 4px 20px var(--shadow);
+        .product-card-modern:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            transform: translateY(-4px);
         }
         
-        .product-image {
+        .product-card-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        
+        .product-image-wrapper {
+            position: relative;
             width: 100%;
-            height: 250px;
+            height: 280px;
+            background: #f8f9fa;
             overflow: hidden;
-            background: #f5f5f5;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         
-        .product-image img {
+        .product-image-main {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: transform 0.3s ease;
         }
         
-        .product-image.placeholder {
-            color: var(--text-secondary);
+        .product-card-modern:hover .product-image-main {
+            transform: scale(1.05);
+        }
+        
+        .product-image-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f0f0;
+            color: #999;
             font-size: 48px;
         }
         
-        .product-info {
-            padding: 20px;
+        .quick-view-icon {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 2;
         }
         
-        .product-info h3 {
-            font-family: 'Playfair Display', serif;
-            font-size: 20px;
+        .product-card-modern:hover .quick-view-icon {
+            opacity: 1;
+        }
+        
+        .quick-view-icon:hover {
+            background: var(--primary-color);
+            color: #fff;
+        }
+        
+        .quick-view-icon i {
+            font-size: 16px;
             color: var(--primary-color);
-            margin-bottom: 10px;
+        }
+        
+        .quick-view-icon:hover i {
+            color: #fff;
+        }
+        
+        .product-card-body {
+            padding: 6px 10px;
+        }
+        
+        .product-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            line-height: 1.2;
+            margin: 0 0 4px 0;
+            height: 36px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        
+        .product-price-section {
+            margin-bottom: 2px;
         }
         
         .product-price {
             font-size: 18px;
-            color: var(--accent-color);
             font-weight: 600;
-            margin-bottom: 15px;
+            color: var(--primary-color);
         }
         
-        .btn-view-details {
-            width: 100%;
-            padding: 12px;
-            background: var(--primary-color);
-            color: #fff;
-            border: none;
-            font-size: 13px;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: 'Inter', sans-serif;
+        .product-moq {
             display: flex;
             align-items: center;
-            justify-content: center;
             gap: 6px;
-            margin-top: 10px;
+            margin-bottom: 4px;
+            font-size: 18px;
+            color: #666;
         }
         
-        .btn-view-details:hover {
-            background: var(--dark-color);
+        .moq-label {
+            font-weight: 400;
+        }
+        
+        .moq-value {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .product-seller-info {
+            padding-top: 4px;
+            border-top: 1px solid #f0f0f0;
+            margin-bottom: 4px;
+        }
+        
+        .seller-name-section {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 2px;
+        }
+        
+        .seller-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .verified-badge {
+            color: #1890ff;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .seller-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .seller-experience {
+            font-weight: 400;
+        }
+        
+        .seller-country {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .seller-country i {
+            font-size: 11px;
+        }
+        
+        .product-rating {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        
+        .stars {
+            display: flex;
+            gap: 2px;
+            color: #ffc107;
+        }
+        
+        .stars i {
+            font-size: 12px;
+        }
+        
+        .rating-value {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .rating-count {
+            color: #999;
         }
         
         .no-products {
@@ -956,9 +1139,30 @@ $conn->close();
                 font-size: 32px;
             }
             
-            .categories-grid,
-            .products-grid {
+            .categories-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .products-grid-modern {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: 20px;
+            }
+            
+            .product-image-wrapper {
+                height: 240px;
+            }
+            
+            .product-card-body {
+                padding: 14px;
+            }
+            
+            .product-title {
+                font-size: 13px;
+                height: 38px;
+            }
+            
+            .product-price {
+                font-size: 16px;
             }
             
             .product-detail-content {
@@ -967,6 +1171,17 @@ $conn->close();
             
             .product-detail-actions {
                 flex-direction: column;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .products-grid-modern {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 15px;
+            }
+            
+            .product-image-wrapper {
+                height: 200px;
             }
         }
     </style>

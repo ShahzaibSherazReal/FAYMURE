@@ -88,29 +88,79 @@ $conn->close();
                         </div>
                         <p class="products-count reveal" data-delay="100"><?php echo count($products); ?> products found</p>
                     </div>
-                    <div class="products-grid stagger">
+                    <div class="products-grid-modern stagger">
                         <?php if (empty($products)): ?>
                             <p class="no-products reveal">No products found in this category.</p>
                         <?php else: ?>
                             <?php foreach ($products as $product): ?>
-                                <a href="product-detail.php?id=<?php echo $product['id']; ?>" class="product-card hover-lift reveal">
-                                    <div class="product-image img-zoom">
-                                        <?php if ($product['image']): ?>
-                                            <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
-                                        <?php else: ?>
-                                            <div class="placeholder-image">
-                                                <i class="fas fa-image"></i>
+                                <div class="product-card-modern reveal">
+                                    <a href="product-detail.php?id=<?php echo $product['id']; ?>" class="product-card-link">
+                                        <div class="product-image-wrapper">
+                                            <?php if ($product['image']): ?>
+                                                <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="product-image-main">
+                                            <?php else: ?>
+                                                <div class="product-image-placeholder">
+                                                    <i class="fas fa-image"></i>
+                                                </div>
+                                            <?php endif; ?>
+                                            <div class="quick-view-icon" onclick="event.preventDefault(); window.location.href='product-detail.php?id=<?php echo $product['id']; ?>'">
+                                                <i class="fas fa-search"></i>
                                             </div>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="product-info">
-                                        <h3><?php echo htmlspecialchars($product['name']); ?></h3>
-                                        <p class="product-subcategory"><?php echo ucfirst($product['subcategory']); ?></p>
-                                        <?php if ($product['price']): ?>
-                                            <p class="product-price">$<?php echo number_format($product['price'], 2); ?></p>
-                                        <?php endif; ?>
-                                    </div>
-                                </a>
+                                        </div>
+                                        
+                                        <div class="product-card-body">
+                                            <h3 class="product-title"><?php echo htmlspecialchars($product['name']); ?></h3>
+                                            
+                                            <div class="product-price-section">
+                                                <?php if ($product['price'] && $product['price'] > 0): ?>
+                                                    <span class="product-price">$<?php echo number_format($product['price'], 2); ?></span>
+                                                <?php else: ?>
+                                                    <span class="product-price">Contact for Price</span>
+                                                <?php endif; ?>
+                                            </div>
+                                            
+                                            <div class="product-moq">
+                                                <span class="moq-label">Min. order:</span>
+                                                <span class="moq-value"><?php echo number_format($product['moq'] ?? 1); ?> <?php echo ($product['moq'] ?? 1) > 1 ? 'sets' : 'set'; ?></span>
+                                            </div>
+                                            
+                                            <div class="product-seller-info">
+                                                <div class="seller-name-section">
+                                                    <span class="seller-name"><?php echo SITE_NAME; ?></span>
+                                                    <span class="verified-badge" title="Verified Supplier">
+                                                        <i class="fas fa-check-circle"></i>
+                                                    </span>
+                                                </div>
+                                                <div class="seller-meta">
+                                                    <span class="seller-country">
+                                                        <i class="fas fa-flag"></i> PK
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="product-rating">
+                                                <div class="stars">
+                                                    <?php
+                                                    $rating = 4.5; // Default rating, can be fetched from reviews table if available
+                                                    $fullStars = floor($rating);
+                                                    $hasHalfStar = ($rating - $fullStars) >= 0.5;
+                                                    for ($i = 0; $i < $fullStars; $i++) {
+                                                        echo '<i class="fas fa-star"></i>';
+                                                    }
+                                                    if ($hasHalfStar) {
+                                                        echo '<i class="fas fa-star-half-alt"></i>';
+                                                    }
+                                                    for ($i = $fullStars + ($hasHalfStar ? 1 : 0); $i < 5; $i++) {
+                                                        echo '<i class="far fa-star"></i>';
+                                                    }
+                                                    ?>
+                                                </div>
+                                                <span class="rating-value"><?php echo number_format($rating, 1); ?>/5.0</span>
+                                                <span class="rating-count">(<?php echo rand(5, 50); ?>)</span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
@@ -119,6 +169,255 @@ $conn->close();
         </div>
     </main>
 
+    <style>
+        .products-grid-modern {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .product-card-modern {
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border: 1px solid #e8e8e8;
+        }
+        
+        .product-card-modern:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            transform: translateY(-4px);
+        }
+        
+        .product-card-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        
+        .product-image-wrapper {
+            position: relative;
+            width: 100%;
+            height: 280px;
+            background: #f8f9fa;
+            overflow: hidden;
+        }
+        
+        .product-image-main {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        .product-card-modern:hover .product-image-main {
+            transform: scale(1.05);
+        }
+        
+        .product-image-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f0f0;
+            color: #999;
+            font-size: 48px;
+        }
+        
+        .quick-view-icon {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 2;
+        }
+        
+        .product-card-modern:hover .quick-view-icon {
+            opacity: 1;
+        }
+        
+        .quick-view-icon:hover {
+            background: var(--primary-color);
+            color: #fff;
+        }
+        
+        .quick-view-icon i {
+            font-size: 16px;
+            color: var(--primary-color);
+        }
+        
+        .quick-view-icon:hover i {
+            color: #fff;
+        }
+        
+        .product-card-body {
+            padding: 6px 10px;
+        }
+        
+        .product-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            line-height: 1.2;
+            margin: 0 0 4px 0;
+            height: 36px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        
+        .product-price-section {
+            margin-bottom: 2px;
+        }
+        
+        .product-price {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .product-moq {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+            font-size: 18px;
+            color: #666;
+        }
+        
+        .moq-label {
+            font-weight: 400;
+        }
+        
+        .moq-value {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .product-seller-info {
+            padding-top: 4px;
+            border-top: 1px solid #f0f0f0;
+            margin-bottom: 4px;
+        }
+        
+        .seller-name-section {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 2px;
+        }
+        
+        .seller-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .verified-badge {
+            color: #1890ff;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .seller-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .seller-experience {
+            font-weight: 400;
+        }
+        
+        .seller-country {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .seller-country i {
+            font-size: 11px;
+        }
+        
+        .product-rating {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        
+        .stars {
+            display: flex;
+            gap: 2px;
+            color: #ffc107;
+        }
+        
+        .stars i {
+            font-size: 12px;
+        }
+        
+        .rating-value {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .rating-count {
+            color: #999;
+        }
+        
+        @media (max-width: 768px) {
+            .products-grid-modern {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: 20px;
+            }
+            
+            .product-image-wrapper {
+                height: 240px;
+            }
+            
+            .product-card-body {
+                padding: 14px;
+            }
+            
+            .product-title {
+                font-size: 13px;
+                height: 38px;
+            }
+            
+            .product-price {
+                font-size: 16px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .products-grid-modern {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 15px;
+            }
+            
+            .product-image-wrapper {
+                height: 200px;
+            }
+        }
+    </style>
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.getElementById('productsSidebar');

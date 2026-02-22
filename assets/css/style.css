@@ -404,24 +404,45 @@ body {
 
 .btn-explore {
     display: inline-block;
-    padding: 16px 40px;
-    background: transparent;
+    padding: 18px 45px;
+    background: rgba(255, 111, 32, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     color: #fff;
     text-decoration: none;
     border-radius: 0;
-    font-weight: 300;
-    font-size: 13px;
+    font-weight: 600;
+    font-size: 14px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    border: 1px solid rgba(255,255,255,0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
     font-family: 'Inter', sans-serif;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-explore::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-explore:hover::before {
+    left: 100%;
 }
 
 .btn-explore:hover {
-    background: rgba(255,255,255,0.1);
-    border-color: rgba(255,255,255,0.5);
-    transform: translateY(-2px);
+    background: #e55a0f;
+    border-color: #e55a0f;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(229, 90, 15, 0.6);
 }
 
 /* Carousel Section */

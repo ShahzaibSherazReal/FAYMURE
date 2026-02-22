@@ -17,45 +17,57 @@ function getContent($key, $default = '') {
     return $default;
 }
 
-$explore_title = getContent('explore_title', 'Explore Our Services');
-$explore_subtitle = getContent('explore_subtitle', 'Choose how you\'d like to work with us');
-$option1_title = getContent('explore_option1_title', 'Design Your Own Product');
-$option1_description = getContent('explore_option1_description', 'Create a unique product from scratch. Share your vision, upload inspiration images, and let us bring your design to life.');
-$option2_title = getContent('explore_option2_title', 'Browse & Customize');
-$option2_description = getContent('explore_option2_description', 'Browse our product categories and request quotes for bulk orders. You can also request customizations to our existing products.');
+$explore_title = getContent('explore_title', 'Catalog');
+$explore_subtitle = getContent('explore_subtitle', 'Browse our product categories');
+
+// Get all categories
+$categories = [];
+$categories_result = $conn->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY sort_order, name");
+if ($categories_result) {
+    $categories = $categories_result->fetch_all(MYSQLI_ASSOC);
+}
 
 $conn->close();
 ?>
     <main class="explore-page">
         <div class="container">
-            <h1 class="page-title reveal"><?php echo htmlspecialchars($explore_title); ?></h1>
-            <p class="page-subtitle reveal" data-delay="100"><?php echo htmlspecialchars($explore_subtitle); ?></p>
-            
-            <div class="explore-options">
-                <!-- Option 1: Design Your Own -->
-                <a href="explore-custom-design.php" class="explore-option-card hover-lift reveal" data-delay="200">
-                    <div class="option-icon">
-                        <i class="fas fa-palette"></i>
-                    </div>
-                    <h2 class="option-title"><?php echo htmlspecialchars($option1_title); ?></h2>
-                    <p class="option-description"><?php echo htmlspecialchars($option1_description); ?></p>
-                    <div class="option-arrow">
-                        <i class="fas fa-arrow-right"></i>
-                    </div>
-                </a>
-                
-                <!-- Option 2: Browse & Customize -->
-                <a href="explore-browse.php" class="explore-option-card hover-lift reveal" data-delay="300">
-                    <div class="option-icon">
-                        <i class="fas fa-shopping-bag"></i>
-                    </div>
-                    <h2 class="option-title"><?php echo htmlspecialchars($option2_title); ?></h2>
-                    <p class="option-description"><?php echo htmlspecialchars($option2_description); ?></p>
-                    <div class="option-arrow">
-                        <i class="fas fa-arrow-right"></i>
-                    </div>
-                </a>
+            <div class="page-header reveal">
+                <h1 class="page-title"><?php echo htmlspecialchars($explore_title); ?></h1>
+                <p class="page-subtitle"><?php echo htmlspecialchars($explore_subtitle); ?></p>
             </div>
+            
+            <?php if (empty($categories)): ?>
+                <div class="no-categories reveal" data-delay="100">
+                    <i class="fas fa-inbox"></i>
+                    <p>No categories available at the moment.</p>
+                </div>
+            <?php else: ?>
+                <div class="categories-grid stagger">
+                    <?php foreach ($categories as $index => $category): ?>
+                        <a href="products.php?category=<?php echo $category['slug']; ?>" class="category-card hover-lift reveal" data-delay="<?php echo ($index * 50) + 100; ?>">
+                            <div class="category-image">
+                                <?php if ($category['image']): ?>
+                                    <img src="<?php echo htmlspecialchars($category['image']); ?>" alt="<?php echo htmlspecialchars($category['name']); ?>">
+                                <?php else: ?>
+                                    <div class="placeholder-image">
+                                        <i class="fas fa-image"></i>
+                                    </div>
+                                <?php endif; ?>
+                                <div class="category-overlay"></div>
+                            </div>
+                            <div class="category-info">
+                                <h3><?php echo htmlspecialchars($category['name']); ?></h3>
+                                <?php if ($category['description']): ?>
+                                    <p><?php echo htmlspecialchars(substr($category['description'], 0, 100)); ?><?php echo strlen($category['description']) > 100 ? '...' : ''; ?></p>
+                                <?php endif; ?>
+                                <div class="category-arrow">
+                                    <i class="fas fa-arrow-right"></i>
+                                </div>
+                            </div>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
     </main>
     
@@ -64,100 +76,140 @@ $conn->close();
             padding: 120px 0;
             background: var(--background-color);
             min-height: 70vh;
-            display: flex;
-            align-items: center;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 80px;
         }
         
         .page-title {
             font-family: 'Playfair Display', serif;
             font-size: 48px;
             color: var(--primary-color);
-            text-align: center;
             margin-bottom: 20px;
             font-weight: 500;
             letter-spacing: 0.5px;
         }
         
         .page-subtitle {
-            text-align: center;
             font-size: 18px;
             color: var(--text-color);
-            margin-bottom: 80px;
             font-weight: 300;
         }
         
-        .explore-options {
+        .categories-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 40px;
-            max-width: 1000px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1400px;
             margin: 0 auto;
         }
         
-        .explore-option-card {
-            background: var(--background-color);
-            border: 1px solid var(--border-color);
-            padding: 60px 40px;
+        .category-card {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
             text-decoration: none;
             color: var(--text-color);
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            display: block;
+        }
+        
+        .category-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .category-image {
             position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
+            width: 100%;
+            height: 250px;
+            overflow: hidden;
+            background: var(--background-color);
         }
         
-        .explore-option-card:hover {
-            border-color: var(--primary-color);
-            box-shadow: 0 8px 30px var(--shadow);
-            transform: translateY(-8px);
+        .category-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
         }
         
-        .option-icon {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: var(--primary-color);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 36px;
-            margin-bottom: 30px;
-            transition: all 0.3s ease;
-        }
-        
-        .explore-option-card:hover .option-icon {
-            background: var(--accent-color);
+        .category-card:hover .category-image img {
             transform: scale(1.1);
         }
         
-        .option-title {
+        .category-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent 0%, rgba(0, 31, 63, 0.3) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .category-card:hover .category-overlay {
+            opacity: 1;
+        }
+        
+        .placeholder-image {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            color: #fff;
+            font-size: 48px;
+            opacity: 0.1;
+        }
+        
+        .category-info {
+            padding: 30px;
+        }
+        
+        .category-info h3 {
             font-family: 'Playfair Display', serif;
-            font-size: 28px;
+            font-size: 24px;
             color: var(--primary-color);
-            margin-bottom: 20px;
+            margin-bottom: 12px;
             font-weight: 500;
             letter-spacing: 0.5px;
         }
         
-        .option-description {
-            font-size: 16px;
+        .category-info p {
+            font-size: 15px;
             color: var(--text-color);
-            line-height: 1.8;
-            margin-bottom: 30px;
+            line-height: 1.6;
+            margin-bottom: 15px;
             font-weight: 300;
         }
         
-        .option-arrow {
+        .category-arrow {
             color: var(--primary-color);
-            font-size: 24px;
+            font-size: 20px;
             transition: transform 0.3s ease;
+            display: inline-block;
         }
         
-        .explore-option-card:hover .option-arrow {
-            transform: translateX(10px);
+        .category-card:hover .category-arrow {
+            transform: translateX(8px);
+        }
+        
+        .no-categories {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .no-categories i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
         }
         
         @media (max-width: 768px) {
@@ -166,25 +218,32 @@ $conn->close();
             }
             
             .page-title {
-                font-size: 32px;
+                font-size: 36px;
             }
             
             .page-subtitle {
                 font-size: 16px;
+            }
+            
+            .page-header {
                 margin-bottom: 50px;
             }
             
-            .explore-options {
-                grid-template-columns: 1fr;
-                gap: 30px;
+            .categories-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 20px;
             }
             
-            .explore-option-card {
-                padding: 40px 30px;
+            .category-image {
+                height: 200px;
             }
             
-            .option-title {
-                font-size: 24px;
+            .category-info {
+                padding: 20px;
+            }
+            
+            .category-info h3 {
+                font-size: 20px;
             }
         }
     </style>

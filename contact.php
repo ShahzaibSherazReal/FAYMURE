@@ -120,10 +120,10 @@ $conn->close();
                         
                         <div class="contact-card reveal" data-delay="300">
                             <div class="contact-icon">
-                                <i class="fas fa-phone"></i>
+                                <i class="fab fa-whatsapp"></i>
                             </div>
-                            <h3>Call Us</h3>
-                            <p><a href="tel:<?php echo htmlspecialchars($phone); ?>"><?php echo htmlspecialchars($phone); ?></a></p>
+                            <h3>Chat Us</h3>
+                            <p><a href="https://wa.me/923252100730" target="_blank" rel="noopener noreferrer">+92 325 2100730</a></p>
                             <span class="contact-label">Mon-Fri, 9AM-6PM EST</span>
                         </div>
                         
@@ -177,6 +177,11 @@ $conn->close();
                                 <span>YouTube</span>
                             </a>
                             <?php endif; ?>
+                            
+                            <a href="https://wa.me/923252100730" target="_blank" rel="noopener noreferrer" class="social-link whatsapp">
+                                <i class="fab fa-whatsapp"></i>
+                                <span>WhatsApp</span>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -397,6 +402,11 @@ $conn->close();
         .social-link.youtube:hover {
             border-color: #FF0000;
             color: #FF0000;
+        }
+        
+        .social-link.whatsapp:hover {
+            border-color: #25D366;
+            color: #25D366;
         }
         
         @media (max-width: 768px) {
