@@ -147,7 +147,7 @@ $conn->close();
                     <?php endif; ?>
                     
                     <div class="receipt-actions">
-                        <a href="shop.php" class="btn-primary">
+                        <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/shop" class="btn-primary">
                             <i class="fas fa-store"></i> Continue Shopping
                         </a>
                         <button onclick="window.print()" class="btn-secondary">

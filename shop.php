@@ -29,7 +29,7 @@ if ($shop_coming_soon) {
             <p style="font-size: 18px; color: var(--text-color); line-height: 1.8; margin-bottom: 40px;">
                 We're working hard to bring you an amazing shopping experience. Our shop will be available soon!
             </p>
-            <a href="index.php" class="btn-primary" style="display: inline-block;">
+            <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/" class="btn-primary" style="display: inline-block;">
                 <i class="fas fa-arrow-left"></i> Back to Home
             </a>
         </div>
@@ -97,7 +97,7 @@ $conn->close();
                     <ul class="sidebar-categories">
                         <?php foreach ($categories as $category): ?>
                             <li>
-                                <a href="products.php?category=<?php echo htmlspecialchars($category['slug']); ?>" class="sidebar-link">
+                                <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/products?category=<?php echo htmlspecialchars($category['slug']); ?>" class="sidebar-link">
                                     <?php echo htmlspecialchars($category['name']); ?>
                                 </a>
                             </li>
@@ -149,7 +149,7 @@ $conn->close();
                     <h2 class="section-title reveal">Browse by Category</h2>
                     <div class="categories-grid stagger">
                         <?php foreach ($categories as $category): ?>
-                            <a href="products.php?category=<?php echo htmlspecialchars($category['slug']); ?>" class="category-card hover-lift reveal">
+                            <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/products?category=<?php echo htmlspecialchars($category['slug']); ?>" class="category-card hover-lift reveal">
                                 <div class="category-image">
                                     <?php if ($category['image']): ?>
                                         <img src="<?php echo htmlspecialchars($category['image']); ?>" alt="<?php echo htmlspecialchars($category['name']); ?>">
@@ -173,7 +173,7 @@ $conn->close();
         </div>
         
         <!-- Cart Icon -->
-        <a href="cart.php" class="cart-icon-link" title="View Cart">
+        <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/cart" class="cart-icon-link" title="View Cart">
             <i class="fas fa-shopping-cart"></i>
             <span class="cart-count"><?php echo getCartCount(); ?></span>
         </a>

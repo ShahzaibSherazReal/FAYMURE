@@ -135,31 +135,80 @@ if ($result) {
     }
 }
 
+$base = defined('BASE_PATH') ? BASE_PATH : '';
+$base_assets = $base ? $base . '/' : '';
+$hero_carousel_images = [
+    $base_assets . 'assets/images/design-hero-carousel-1.png',
+    $base_assets . 'assets/images/design-hero-carousel-2.png',
+    $base_assets . 'assets/images/design-hero-carousel-3.png',
+    $base_assets . 'assets/images/design-hero-carousel-4.png',
+];
 $conn->close();
 ?>
     <main class="custom-design-page">
-        <div class="container">
-            <div class="page-header">
-                <a href="explore.php" class="back-link">
-                    <i class="fas fa-arrow-left"></i> Back to Explore
-                </a>
-                <h1 class="page-title"><?php echo htmlspecialchars($custom_design_title); ?></h1>
-                <p class="page-subtitle"><?php echo htmlspecialchars($custom_design_subtitle); ?></p>
+        <!-- Hero Section: Carousel -->
+        <section class="custom-design-hero hero-carousel">
+            <div class="hero-carousel-track">
+                <?php foreach ($hero_carousel_images as $idx => $src): ?>
+                <div class="hero-carousel-slide<?php echo $idx === 0 ? ' active' : ''; ?>" style="background-image: url('<?php echo htmlspecialchars($src); ?>');" role="img" aria-label="Leather manufacturing"></div>
+                <?php endforeach; ?>
             </div>
-            
+            <div class="hero-overlay"></div>
+            <div class="container hero-content">
+                <h1 class="hero-title">Masterful Leather Manufacturing</h1>
+            </div>
+            <div class="hero-carousel-dots" aria-label="Carousel navigation">
+                <?php foreach ($hero_carousel_images as $idx => $src): ?>
+                <button type="button" class="hero-carousel-dot<?php echo $idx === 0 ? ' active' : ''; ?>" data-index="<?php echo $idx; ?>" aria-label="Go to slide <?php echo $idx + 1; ?>"></button>
+                <?php endforeach; ?>
+            </div>
+        </section>
+
+        <!-- Workflow Section -->
+        <section class="custom-design-workflow">
+            <div class="container">
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <div class="workflow-icon"><i class="fas fa-leaf"></i></div>
+                        <span class="workflow-label">Ethical Sourcing</span>
+                    </div>
+                    <div class="workflow-arrow" aria-hidden="true"><i class="fas fa-chevron-right"></i></div>
+                    <div class="workflow-step">
+                        <div class="workflow-icon"><i class="fas fa-cogs"></i></div>
+                        <span class="workflow-label">Tanning</span>
+                    </div>
+                    <div class="workflow-arrow" aria-hidden="true"><i class="fas fa-chevron-right"></i></div>
+                    <div class="workflow-step">
+                        <div class="workflow-icon"><i class="fas fa-cut"></i></div>
+                        <span class="workflow-label">Precision Cutting</span>
+                    </div>
+                    <div class="workflow-arrow" aria-hidden="true"><i class="fas fa-chevron-right"></i></div>
+                    <div class="workflow-step">
+                        <div class="workflow-icon"><i class="fas fa-sync-alt"></i></div>
+                        <span class="workflow-label">Expert Stitching</span>
+                    </div>
+                    <div class="workflow-arrow" aria-hidden="true"><i class="fas fa-chevron-right"></i></div>
+                    <div class="workflow-step">
+                        <div class="workflow-icon"><i class="fas fa-certificate"></i></div>
+                        <span class="workflow-label">Final Quality Check</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="container">
             <?php if ($success): ?>
                 <div class="success-message">
                     <i class="fas fa-check-circle"></i>
                     <h2>Thank You!</h2>
                     <p>Your design request has been submitted successfully. We'll get back to you soon.</p>
-                    <a href="explore-custom-design.php" class="btn-primary">Submit Another Request</a>
+                    <a href="<?php echo $base; ?>/explore-custom-design" class="btn-primary">Submit Another Request</a>
                 </div>
             <?php else: ?>
                 <?php if ($error): ?>
                     <div class="error-message"><?php echo $error; ?></div>
                 <?php endif; ?>
-                
-                <!-- Custom Design Form -->
+
                 <section class="form-section">
                     <h2 class="section-title">Submit Your Design Request</h2>
                     <form method="POST" enctype="multipart/form-data" class="custom-design-form">
@@ -168,65 +217,48 @@ $conn->close();
                                 <label for="name">Full Name *</label>
                                 <input type="text" id="name" name="name" required>
                             </div>
-                            
                             <div class="form-group">
-                                <label for="email">Email Address *</label>
+                                <label for="email">Email *</label>
                                 <input type="email" id="email" name="email" required>
                             </div>
-                            
                             <div class="form-group">
-                                <label for="phone">Phone Number</label>
-                                <input type="tel" id="phone" name="phone">
+                                <label for="phone">Phone Number *</label>
+                                <input type="tel" id="phone" name="phone" required>
                             </div>
                         </div>
-                        
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="product_type">Product Type *</label>
-                                <select id="product_type" name="product_type" required>
-                                    <option value="">Select a category...</option>
-                                    <?php foreach ($categories as $category): ?>
-                                        <option value="<?php echo htmlspecialchars($category['name']); ?>">
-                                            <?php echo htmlspecialchars($category['name']); ?>
-                                        </option>
+                                <label for="category_type">Category Type *</label>
+                                <select id="category_type" name="category_type" required>
+                                    <option value="">Select category...</option>
+                                    <?php foreach ($categories as $cat): ?>
+                                        <option value="<?php echo htmlspecialchars($cat['name']); ?>"><?php echo htmlspecialchars($cat['name']); ?></option>
                                     <?php endforeach; ?>
-                                    <option value="Other">Other</option>
                                 </select>
                             </div>
-                            
                             <div class="form-group">
-                                <label for="quantity">Estimated Quantity *</label>
-                                <input type="number" id="quantity" name="quantity" min="1" value="1" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="timeline">Timeline</label>
-                                <input type="text" id="timeline" name="timeline" placeholder="e.g., 4-6 weeks">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="budget">Budget Range</label>
-                                <input type="text" id="budget" name="budget" placeholder="e.g., $500-$1000">
+                                <label for="quantity">Quantity *</label>
+                                <select id="quantity" name="quantity" required>
+                                    <?php for ($q = 100; $q <= 5000; $q += 50): ?>
+                                        <option value="<?php echo $q; ?>"><?php echo number_format($q); ?></option>
+                                    <?php endfor; ?>
+                                </select>
                             </div>
                         </div>
-                        
                         <div class="form-group">
-                            <label for="description">Product Description & Requirements *</label>
-                            <textarea id="description" name="description" rows="6" required placeholder="Describe your product idea in detail. Include specifications, materials, colors, dimensions, and any other requirements..."></textarea>
+                            <label for="additional_details">Additional Details *</label>
+                            <textarea id="additional_details" name="additional_details" rows="6" required placeholder="Describe your product idea, specifications, materials, colors, dimensions, and any other requirements..."></textarea>
                         </div>
-                        
                         <div class="form-group">
-                            <label for="design_images">Upload Inspiration Images / Sketches</label>
+                            <label for="design_images">Choose multiple files from device (optional)</label>
                             <input type="file" id="design_images" name="design_images[]" accept="image/*" multiple>
-                            <small>You can upload multiple images (sketches, reference photos, inspiration, etc.)</small>
+                            <small>You can upload multiple images (sketches, reference photos, etc.)</small>
                             <div id="imagePreviewContainer" class="image-preview-container"></div>
                         </div>
-                        
                         <div class="form-actions">
-                            <button type="submit" class="btn-submit btn-press">
-                                <i class="fas fa-paper-plane"></i> Submit Design Request
+                            <button type="submit" class="btn-submit">
+                                <i class="fas fa-paper-plane"></i> Submit
                             </button>
-                            <a href="explore.php" class="btn-secondary">Cancel</a>
                         </div>
                     </form>
                 </section>
@@ -236,54 +268,148 @@ $conn->close();
     
     <style>
         .custom-design-page {
-            padding: 100px 0;
+            padding: 0 0 100px;
             background: var(--background-color);
         }
-        
-        .page-header {
+
+        .custom-design-hero {
+            background: #2c1810;
+            padding: 80px 0 100px;
             text-align: center;
-            margin-bottom: 60px;
-        }
-        
-        .back-link {
-            display: inline-flex;
+            position: relative;
+            min-height: 380px;
+            display: flex;
             align-items: center;
-            gap: 8px;
-            color: var(--primary-color);
-            text-decoration: none;
-            font-size: 14px;
-            margin-bottom: 30px;
-            transition: color 0.3s ease;
+            overflow: hidden;
         }
-        
-        .back-link:hover {
-            color: var(--accent-color);
+        .hero-carousel .hero-carousel-track {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 0;
         }
-        
-        .page-title {
+        .hero-carousel .hero-carousel-slide {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+        }
+        .hero-carousel .hero-carousel-slide.active {
+            opacity: 1;
+            z-index: 1;
+        }
+        .hero-carousel .hero-overlay {
+            z-index: 2;
+        }
+        .hero-carousel .hero-carousel-dots {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 3;
+        }
+        .hero-carousel .hero-carousel-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid #c9a962;
+            background: transparent;
+            cursor: pointer;
+            padding: 0;
+            transition: background 0.3s ease;
+        }
+        .hero-carousel .hero-carousel-dot:hover,
+        .hero-carousel .hero-carousel-dot.active {
+            background: #c9a962;
+        }
+        .custom-design-hero .hero-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(44,24,16,0.75) 0%, rgba(61,35,24,0.7) 50%, rgba(44,24,16,0.75) 100%);
+            z-index: 0;
+        }
+        .custom-design-hero .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+        .custom-design-hero .hero-title {
             font-family: 'Playfair Display', serif;
-            font-size: 48px;
-            color: var(--primary-color);
-            margin-bottom: 20px;
+            font-size: 42px;
             font-weight: 500;
             letter-spacing: 0.5px;
+            color: #c9a962;
+            margin: 0;
         }
-        
-        .page-subtitle {
-            font-size: 18px;
-            color: var(--text-color);
-            max-width: 700px;
+
+        .custom-design-workflow {
+            background: #2c1810;
+            padding: 60px 0 80px;
+            border-top: 1px solid rgba(201, 169, 98, 0.2);
+        }
+        .workflow-steps {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1000px;
             margin: 0 auto;
-            line-height: 1.8;
-            font-weight: 300;
+            gap: 8px;
         }
-        
+        .workflow-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            flex: 0 0 auto;
+        }
+        .workflow-icon {
+            width: 70px;
+            height: 70px;
+            border: 2px solid #c9a962;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #c9a962;
+            font-size: 28px;
+            background: transparent;
+        }
+        .workflow-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #c9a962;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .workflow-arrow {
+            color: #c9a962;
+            font-size: 18px;
+            opacity: 0.8;
+        }
+
+        .form-section .back-link { color: var(--primary-color); }
+        .form-section .back-link:hover { color: var(--accent-color); }
+
         .form-section {
             max-width: 900px;
             margin: 0 auto;
-            padding: 50px;
-            background: var(--background-color);
+            padding: 60px 50px;
+            background: #fff;
             border: 1px solid var(--border-color);
+            margin-top: -40px;
+            position: relative;
+            z-index: 2;
+        }
+        .form-section .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            color: var(--primary-color);
+            margin-bottom: 35px;
+            text-align: center;
         }
         
         .custom-design-form {
@@ -446,18 +572,35 @@ $conn->close();
         }
         
         @media (max-width: 768px) {
+            .custom-design-hero {
+                padding: 50px 0 70px;
+                min-height: 320px;
+            }
+            .custom-design-hero .hero-title {
+                font-size: 28px;
+            }
+            .custom-design-workflow {
+                padding: 40px 20px 60px;
+            }
+            .workflow-steps {
+                flex-wrap: wrap;
+                flex-direction: column;
+                justify-content: center;
+                gap: 30px;
+            }
+            .workflow-arrow {
+                transform: rotate(90deg);
+            }
             .custom-design-page {
-                padding: 50px 0;
+                padding: 0 0 50px;
             }
-            
-            .page-title {
-                font-size: 32px;
-            }
-            
             .form-section {
-                padding: 30px 20px;
+                padding: 40px 20px;
+                margin-top: -30px;
             }
-            
+            .form-section .section-title {
+                font-size: 22px;
+            }
             .form-row {
                 grid-template-columns: 1fr;
             }
@@ -465,6 +608,24 @@ $conn->close();
     </style>
     
     <script>
+        // Hero carousel: auto-advance and dot navigation
+        (function() {
+            var slides = document.querySelectorAll('.hero-carousel-slide');
+            var dots = document.querySelectorAll('.hero-carousel-dot');
+            if (slides.length === 0) return;
+            var current = 0;
+            var total = slides.length;
+            function goTo(index) {
+                current = (index + total) % total;
+                slides.forEach(function(s, i) { s.classList.toggle('active', i === current); });
+                dots.forEach(function(d, i) { d.classList.toggle('active', i === current); });
+            }
+            dots.forEach(function(dot, i) {
+                dot.addEventListener('click', function() { goTo(i); });
+            });
+            setInterval(function() { goTo(current + 1); }, 5000);
+        })();
+
         // Image preview for custom design form
         document.getElementById('design_images')?.addEventListener('change', function(e) {
             const container = document.getElementById('imagePreviewContainer');

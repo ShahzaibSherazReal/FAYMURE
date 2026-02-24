@@ -11,7 +11,7 @@ $conn->close();
             <h1 class="page-title reveal">Browse Our Categories</h1>
             <div class="categories-grid stagger">
                 <?php foreach ($categories as $category): ?>
-                    <a href="products.php?category=<?php echo $category['slug']; ?>" class="category-card hover-lift reveal">
+                    <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/products?category=<?php echo $category['slug']; ?>" class="category-card hover-lift reveal">
                         <div class="category-image">
                             <?php if ($category['image']): ?>
                                 <img src="<?php echo htmlspecialchars($category['image']); ?>" alt="<?php echo htmlspecialchars($category['name']); ?>">

@@ -38,7 +38,7 @@ $conn->close();
                     <i class="fas fa-shopping-cart" style="font-size: 80px; color: var(--border-color); margin-bottom: 30px;"></i>
                     <h2>Your cart is empty</h2>
                     <p>Start shopping to add items to your cart.</p>
-                    <a href="shop.php" class="btn-primary">
+                    <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/shop" class="btn-primary">
                         <i class="fas fa-store"></i> Continue Shopping
                     </a>
                 </div>
@@ -93,10 +93,10 @@ $conn->close();
                             <span>Total:</span>
                             <span>$<?php echo number_format($cart_total + ($cart_total >= 100 ? 0 : 10), 2); ?></span>
                         </div>
-                        <a href="checkout.php" class="btn-primary btn-checkout">
+                        <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/checkout" class="btn-primary btn-checkout">
                             <i class="fas fa-lock"></i> Proceed to Checkout
                         </a>
-                        <a href="shop.php" class="btn-secondary">
+                        <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/shop" class="btn-secondary">
                             <i class="fas fa-arrow-left"></i> Continue Shopping
                         </a>
                     </div>

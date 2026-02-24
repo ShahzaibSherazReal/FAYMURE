@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <h1>Sign Up</h1>
             <?php if ($success): ?>
                 <div class="success-message">
-                    Account created successfully! <a href="login.php">Login here</a>
+                    Account created successfully! <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/login">Login here</a>
                 </div>
             <?php elseif ($error): ?>
                 <div class="error-message"><?php echo $error; ?></div>
@@ -97,8 +97,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <button type="submit" class="btn-primary">Sign Up</button>
                 </form>
             <?php endif; ?>
-            <p class="auth-link">Already have an account? <a href="login.php">Login</a></p>
-            <p class="auth-link"><a href="index.php">Back to Home</a></p>
+            <p class="auth-link">Already have an account? <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/login">Login</a></p>
+            <p class="auth-link"><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/">Back to Home</a></p>
         </div>
     </div>
 </body>

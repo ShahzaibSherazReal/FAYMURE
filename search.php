@@ -28,7 +28,7 @@ if ($query) {
                     <p class="no-products">No products found matching your search.</p>
                 <?php else: ?>
                     <?php foreach ($products as $product): ?>
-                        <a href="product-detail.php?id=<?php echo $product['id']; ?>" class="product-card">
+                        <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/product-detail/<?php echo rawurlencode(!empty($product['slug']) ? $product['slug'] : slugify($product['name'] ?? 'product')); ?>" class="product-card">
                             <div class="product-image">
                                 <?php if ($product['image']): ?>
                                     <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">

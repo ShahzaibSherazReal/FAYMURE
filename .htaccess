@@ -1,19 +1,47 @@
-# FAYMURE Website .htaccess
+# FAYMURE Website .htaccess - Clean URLs
 
-# Enable Rewrite Engine
 RewriteEngine On
-
-# Redirect to index.php if file doesn't exist
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+RewriteBase /FAYMURE/
 
 # Prevent directory listing
 Options -Indexes
-
-# Set default charset
 AddDefaultCharset UTF-8
 
 # PHP Settings
 php_value upload_max_filesize 10M
 php_value post_max_size 10M
 
+# ----- Redirect .php URLs to clean URLs (301) -----
+RewriteCond %{THE_REQUEST} \s/FAYMURE/([^.]+)\.php(\?[^\s]*)? [NC]
+RewriteRule ^ /FAYMURE/%1%2 [R=301,L]
+
+# ----- Serve real files and directories as-is -----
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# ----- Clean URL -> PHP (with optional query string) -----
+RewriteRule ^$ index.php [L,QSA]
+RewriteRule ^index/?$ index.php [L,QSA]
+RewriteRule ^about/?$ about.php [L,QSA]
+RewriteRule ^contact/?$ contact.php [L,QSA]
+RewriteRule ^manufacturing/?$ manufacturing.php [L,QSA]
+RewriteRule ^shop/?$ shop.php [L,QSA]
+RewriteRule ^explore/?$ explore.php [L,QSA]
+RewriteRule ^explore-custom-design/?$ explore-custom-design.php [L,QSA]
+RewriteRule ^explore-browse/?$ explore-browse.php [L,QSA]
+RewriteRule ^products/?$ products.php [L,QSA]
+RewriteRule ^product-detail/([a-z0-9\-]+)/?$ product-detail.php?slug=$1 [L,QSA]
+RewriteRule ^product-detail/?$ product-detail.php [L,QSA]
+RewriteRule ^cart/?$ cart.php [L,QSA]
+RewriteRule ^checkout/?$ checkout.php [L,QSA]
+RewriteRule ^receipt/?$ receipt.php [L,QSA]
+RewriteRule ^search/?$ search.php [L,QSA]
+RewriteRule ^categories/?$ categories.php [L,QSA]
+RewriteRule ^faq/?$ faq.php [L,QSA]
+RewriteRule ^privacy/?$ privacy.php [L,QSA]
+RewriteRule ^terms/?$ terms.php [L,QSA]
+RewriteRule ^login/?$ login.php [L,QSA]
+RewriteRule ^logout/?$ logout.php [L,QSA]
+RewriteRule ^signup/?$ signup.php [L,QSA]
+RewriteRule ^add-review/?$ add-review.php [L,QSA]

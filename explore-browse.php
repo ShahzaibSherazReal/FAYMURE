@@ -213,7 +213,7 @@ $conn->close();
                     <i class="fas fa-check-circle"></i>
                     <h2>Thank You!</h2>
                     <p>Your request has been submitted successfully. We'll get back to you soon.</p>
-                    <a href="explore-browse.php" class="btn-primary">Browse More</a>
+                    <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/explore-browse" class="btn-primary">Browse More</a>
                 </div>
             <?php else: ?>
                 <?php if ($error): ?>
@@ -261,7 +261,7 @@ $conn->close();
                                                 
                                                 <div class="product-moq">
                                                     <span class="moq-label">Min. order:</span>
-                                                    <span class="moq-value"><?php echo number_format($product['moq'] ?? 1); ?> <?php echo ($product['moq'] ?? 1) > 1 ? 'sets' : 'set'; ?></span>
+                                                    <span class="moq-value"><?php echo number_format($product['moq'] ?? 1); ?> <?php echo ($product['moq'] ?? 1) > 1 ? 'pieces' : 'piece'; ?></span>
                                                 </div>
                                                 
                                                 <div class="product-seller-info">
@@ -314,7 +314,7 @@ $conn->close();
                     <div class="categories-view">
                         <div class="categories-grid stagger">
                             <?php foreach ($categories as $category): ?>
-                                <a href="explore-browse.php?category=<?php echo $category['id']; ?>" class="category-card hover-lift reveal">
+                                <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/explore-browse?category=<?php echo $category['id']; ?>" class="category-card hover-lift reveal">
                                     <div class="category-image">
                                         <?php if ($category['image']): ?>
                                             <img src="<?php echo htmlspecialchars($category['image']); ?>" alt="<?php echo htmlspecialchars($category['name']); ?>">

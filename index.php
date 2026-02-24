@@ -120,7 +120,7 @@ $conn->close();
                     <h1><?php echo SITE_NAME; ?></h1>
                 </div>
                 <p class="hero-tagline reveal" data-delay="120"><?php echo $hero_tagline; ?></p>
-                <a href="explore.php" class="btn-explore btn-press reveal" data-delay="240"><?php echo t('explore'); ?> <i class="fas fa-arrow-right"></i></a>
+                <a href="<?php echo $base; ?>/explore" class="btn-explore btn-press reveal" data-delay="240"><?php echo t('explore'); ?> <i class="fas fa-arrow-right"></i></a>
             </div>
         </section>
 
@@ -134,7 +134,7 @@ $conn->close();
                 
                 <div class="explore-options-grid">
                     <!-- Design Your Own Product -->
-                    <a href="explore-custom-design.php" class="explore-option-card reveal" data-delay="100">
+                    <a href="<?php echo $base; ?>/explore-custom-design" class="explore-option-card reveal" data-delay="100">
                         <div class="option-background">
                             <div class="option-gradient"></div>
                         </div>
@@ -154,7 +154,7 @@ $conn->close();
                     </a>
                     
                     <!-- Browse & Customize -->
-                    <a href="explore-browse.php" class="explore-option-card reveal" data-delay="200">
+                    <a href="<?php echo $base; ?>/explore" class="explore-option-card reveal" data-delay="200">
                         <div class="option-background">
                             <div class="option-gradient"></div>
                         </div>
@@ -184,7 +184,7 @@ $conn->close();
                         <div class="carousel-slide active reveal" data-delay="0">
                             <div class="slide-content">
                                 <div class="slide-image img-zoom">
-                                    <img src="<?php echo $vision_data['image'] ?? 'assets/images/vision.jpg'; ?>" alt="Vision">
+                                    <img src="<?php echo $base . '/' . ($vision_data['image'] ?? 'assets/images/vision.jpg'); ?>" alt="Vision">
                                 </div>
                                 <div class="slide-text">
                                     <h2><?php echo $vision_data['title'] ?? 'Our Vision'; ?></h2>
@@ -195,7 +195,7 @@ $conn->close();
                         <div class="carousel-slide reveal" data-delay="100">
                             <div class="slide-content">
                                 <div class="slide-image img-zoom">
-                                    <img src="<?php echo $mission_data['image'] ?? 'assets/images/mission.jpg'; ?>" alt="Mission">
+                                    <img src="<?php echo $base . '/' . ($mission_data['image'] ?? 'assets/images/mission.jpg'); ?>" alt="Mission">
                                 </div>
                                 <div class="slide-text">
                                     <h2><?php echo $mission_data['title'] ?? 'Our Mission'; ?></h2>
@@ -206,7 +206,7 @@ $conn->close();
                         <div class="carousel-slide reveal" data-delay="200">
                             <div class="slide-content">
                                 <div class="slide-image img-zoom">
-                                    <img src="<?php echo $services_data['image'] ?? 'assets/images/services.jpg'; ?>" alt="Services">
+                                    <img src="<?php echo $base . '/' . ($services_data['image'] ?? 'assets/images/services.jpg'); ?>" alt="Services">
                                 </div>
                                 <div class="slide-text">
                                     <h2><?php echo $services_data['title'] ?? 'Our Services'; ?></h2>

@@ -42,6 +42,23 @@ if (count($params) > 1) {
 $stmt->execute();
 $products = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
+// Ensure every product has a slug for SEO URLs (auto-fill if missing)
+$slug_col = $conn->query("SHOW COLUMNS FROM products LIKE 'slug'");
+if ($slug_col && $slug_col->num_rows > 0) {
+    foreach ($products as $i => $p) {
+        if (empty($p['slug']) && !empty($p['name'])) {
+            $gen = slugify($p['name']);
+            $uniq = $gen;
+            $n = 0;
+            while ($conn->query("SELECT id FROM products WHERE slug = '" . $conn->real_escape_string($uniq) . "' AND id != " . (int)$p['id'])->num_rows > 0) {
+                $n++;
+                $uniq = $gen . '-' . $n;
+            }
+            $conn->query("UPDATE products SET slug = '" . $conn->real_escape_string($uniq) . "' WHERE id = " . (int)$p['id']);
+            $products[$i]['slug'] = $uniq;
+        }
+    }
+}
 $conn->close();
 ?>
     <main class="products-page">
@@ -94,7 +111,7 @@ $conn->close();
                         <?php else: ?>
                             <?php foreach ($products as $product): ?>
                                 <div class="product-card-modern reveal">
-                                    <a href="product-detail.php?id=<?php echo $product['id']; ?>" class="product-card-link">
+                                    <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/product-detail/<?php echo rawurlencode(!empty($product['slug']) ? $product['slug'] : slugify($product['name'] ?? 'product')); ?>" class="product-card-link">
                                         <div class="product-image-wrapper">
                                             <?php if ($product['image']): ?>
                                                 <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="product-image-main">
@@ -103,7 +120,7 @@ $conn->close();
                                                     <i class="fas fa-image"></i>
                                                 </div>
                                             <?php endif; ?>
-                                            <div class="quick-view-icon" onclick="event.preventDefault(); window.location.href='product-detail.php?id=<?php echo $product['id']; ?>'">
+                                            <div class="quick-view-icon" onclick="event.preventDefault(); window.location.href='<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/product-detail/<?php echo rawurlencode(!empty($product['slug']) ? $product['slug'] : slugify($product['name'] ?? 'product')); ?>'">
                                                 <i class="fas fa-search"></i>
                                             </div>
                                         </div>
@@ -121,7 +138,7 @@ $conn->close();
                                             
                                             <div class="product-moq">
                                                 <span class="moq-label">Min. order:</span>
-                                                <span class="moq-value"><?php echo number_format($product['moq'] ?? 1); ?> <?php echo ($product['moq'] ?? 1) > 1 ? 'sets' : 'set'; ?></span>
+                                                <span class="moq-value"><?php echo number_format($product['moq'] ?? 1); ?> <?php echo ($product['moq'] ?? 1) > 1 ? 'pieces' : 'piece'; ?></span>
                                             </div>
                                             
                                             <div class="product-seller-info">

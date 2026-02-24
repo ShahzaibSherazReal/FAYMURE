@@ -24,82 +24,27 @@ if ($columns_check && $columns_check->num_rows > 0) {
     }
 }
 
-// Get all categories for the dropdown
-$categories = [];
-$categories_check = $conn->query("SHOW TABLES LIKE 'categories'");
-if ($categories_check && $categories_check->num_rows > 0) {
-    $categories_result = $conn->query("SELECT id, name FROM categories WHERE deleted_at IS NULL ORDER BY sort_order, name");
-    if ($categories_result) {
-        $categories = $categories_result->fetch_all(MYSQLI_ASSOC);
+// Explore options (same as home page)
+$option1_title = 'Design Your Own Product';
+$option1_description = 'Create a unique product from scratch. Share your vision, upload inspiration images, and let us bring your design to life.';
+$option2_title = 'Browse & Customize';
+$option2_description = 'Browse our product categories and request quotes for bulk orders. You can also request customizations to our existing products.';
+if ($columns_check && $columns_check->num_rows > 0) {
+    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='explore_option1_title'");
+    if ($result && $row = $result->fetch_assoc() && !empty($row['content_value'])) {
+        $option1_title = $row['content_value'];
     }
-}
-
-$success = false;
-$error = '';
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $name = sanitize($_POST['name'] ?? '');
-    $email = sanitize($_POST['email'] ?? '');
-    $phone = sanitize($_POST['phone'] ?? '');
-    $message = sanitize($_POST['message'] ?? '');
-    $product_type = sanitize($_POST['product_type'] ?? '');
-    $quantity = intval($_POST['quantity'] ?? 1);
-
-    if ($name && $email) {
-        // Check if manufacturing_inquiries table exists, create it if it doesn't
-        $table_check = $conn->query("SHOW TABLES LIKE 'manufacturing_inquiries'");
-        if (!$table_check || $table_check->num_rows == 0) {
-            // Create manufacturing_inquiries table
-            $create_table_sql = "CREATE TABLE IF NOT EXISTS manufacturing_inquiries (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                customer_name VARCHAR(100) NOT NULL,
-                customer_email VARCHAR(100) NOT NULL,
-                customer_phone VARCHAR(20),
-                product_type VARCHAR(255),
-                message TEXT,
-                quantity INT NOT NULL DEFAULT 1,
-                user_id INT NULL,
-                status ENUM('pending', 'reviewing', 'approved', 'rejected', 'cancelled') DEFAULT 'pending',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci";
-            $conn->query($create_table_sql);
-        }
-        
-        // Save to database - always use manufacturing_inquiries table now
-        $stmt = $conn->prepare("INSERT INTO manufacturing_inquiries (customer_name, customer_email, customer_phone, product_type, message, quantity, user_id) 
-                                VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
-        $stmt->bind_param("sssssii", $name, $email, $phone, $product_type, $message, $quantity, $user_id);
-        
-        if ($stmt->execute()) {
-            // Send email to admin
-            $to = ADMIN_EMAIL;
-            $subject = "New Manufacturing Inquiry";
-            $email_message = "New manufacturing inquiry received:\n\n";
-            $email_message .= "Customer Name: " . $name . "\n";
-            $email_message .= "Email: " . $email . "\n";
-            $email_message .= "Phone: " . $phone . "\n";
-            if ($product_type) {
-                $email_message .= "Product Type: " . $product_type . "\n";
-            }
-            $email_message .= "Quantity: " . $quantity . "\n";
-            $email_message .= "Message: " . $message . "\n";
-            
-            $headers = "From: " . $email . "\r\n";
-            $headers .= "Reply-To: " . $email . "\r\n";
-            
-            // Attempt to send email, but don't fail if mail server is not configured
-            @mail($to, $subject, $email_message, $headers);
-            
-            $success = true;
-        } else {
-            $error = "Failed to submit form. Please try again.";
-        }
-        $stmt->close();
-    } else {
-        $error = "Please fill in all required fields.";
+    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='explore_option1_description'");
+    if ($result && $row = $result->fetch_assoc() && !empty($row['content_value'])) {
+        $option1_description = $row['content_value'];
+    }
+    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='explore_option2_title'");
+    if ($result && $row = $result->fetch_assoc() && !empty($row['content_value'])) {
+        $option2_title = $row['content_value'];
+    }
+    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='explore_option2_description'");
+    if ($result && $row = $result->fetch_assoc() && !empty($row['content_value'])) {
+        $option2_description = $row['content_value'];
     }
 }
 
@@ -107,13 +52,6 @@ $conn->close();
 ?>
     <main class="page-content manufacturing-page">
         <div class="container">
-            <!-- Explore Button at Top -->
-            <div class="manufacturing-header">
-                <a href="explore.php" class="btn-explore btn-press reveal" data-delay="0">
-                    <?php echo t('explore'); ?> <i class="fas fa-arrow-right"></i>
-                </a>
-            </div>
-
             <h1 class="page-title"><?php echo htmlspecialchars($manufacturing_title); ?></h1>
             
             <!-- Content Paragraph -->
@@ -131,120 +69,57 @@ $conn->close();
                 <?php endif; ?>
             </div>
 
-            <!-- Form Section -->
-            <div class="form-section">
-                <?php if ($success): ?>
-                    <div class="success-message">
-                        <i class="fas fa-check-circle"></i>
-                        <h2>Thank You!</h2>
-                        <p>Your manufacturing inquiry has been submitted successfully. We'll get back to you soon.</p>
-                        <a href="index.php" class="btn-primary">Back to Home</a>
-                    </div>
-                <?php else: ?>
-                    <h2 class="section-heading">Submit Manufacturing Inquiry</h2>
-                    
-                    <?php if ($error): ?>
-                        <div class="error-message"><?php echo $error; ?></div>
-                    <?php endif; ?>
-
-                    <form method="POST" class="contact-form manufacturing-form">
-                        <div class="form-group">
-                            <label for="name">Full Name *</label>
-                            <input type="text" id="name" name="name" required>
+            <!-- Explore Options Section (same as home) -->
+            <section class="explore-options-section manufacturing-explore">
+                <div class="section-header">
+                    <h2 class="section-title">Choose Your Path</h2>
+                    <p class="section-subtitle">Select how you'd like to work with us</p>
+                </div>
+                <div class="explore-options-grid">
+                    <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/explore-custom-design" class="explore-option-card">
+                        <div class="option-background">
+                            <div class="option-gradient"></div>
                         </div>
-
-                        <div class="form-group">
-                            <label for="email">Email Address *</label>
-                            <input type="email" id="email" name="email" required>
+                        <div class="option-content">
+                            <div class="option-icon-wrapper">
+                                <div class="option-icon">
+                                    <i class="fas fa-palette"></i>
+                                </div>
+                            </div>
+                            <h3 class="option-title"><?php echo htmlspecialchars($option1_title); ?></h3>
+                            <p class="option-description"><?php echo htmlspecialchars($option1_description); ?></p>
+                            <div class="option-cta">
+                                <span>Get Started</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
                         </div>
-
-                        <div class="form-group">
-                            <label for="phone">Phone Number</label>
-                            <input type="tel" id="phone" name="phone">
+                    </a>
+                    <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/explore" class="explore-option-card">
+                        <div class="option-background">
+                            <div class="option-gradient"></div>
                         </div>
-
-                        <div class="form-group">
-                            <label for="product_type">Product Type</label>
-                            <select id="product_type" name="product_type">
-                                <option value="">Select a category...</option>
-                                <?php foreach ($categories as $category): ?>
-                                    <option value="<?php echo htmlspecialchars($category['name']); ?>">
-                                        <?php echo htmlspecialchars($category['name']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                                <option value="Other">Other (Please specify in message)</option>
-                            </select>
+                        <div class="option-content">
+                            <div class="option-icon-wrapper">
+                                <div class="option-icon">
+                                    <i class="fas fa-shopping-bag"></i>
+                                </div>
+                            </div>
+                            <h3 class="option-title"><?php echo htmlspecialchars($option2_title); ?></h3>
+                            <p class="option-description"><?php echo htmlspecialchars($option2_description); ?></p>
+                            <div class="option-cta">
+                                <span>Browse Now</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
                         </div>
-
-                        <div class="form-group">
-                            <label for="quantity">Estimated Quantity</label>
-                            <input type="number" id="quantity" name="quantity" min="1" value="1">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="message">Project Details / Additional Information *</label>
-                            <textarea id="message" name="message" rows="6" required placeholder="Please provide details about your manufacturing requirements, specifications, timeline, and any other relevant information."></textarea>
-                        </div>
-
-                        <button type="submit" class="btn-submit btn-press">
-                            <i class="fas fa-paper-plane"></i> Submit Inquiry
-                        </button>
-                    </form>
-                <?php endif; ?>
-            </div>
+                    </a>
+                </div>
+            </section>
         </div>
     </main>
 
     <style>
         .manufacturing-page {
             padding: 100px 0;
-        }
-
-        .manufacturing-header {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .manufacturing-header .btn-explore {
-            display: inline-block;
-            padding: 18px 45px;
-            background: var(--accent-color);
-            color: #fff;
-            text-decoration: none;
-            border-radius: 0;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            border: 2px solid var(--accent-color);
-            font-family: 'Inter', sans-serif;
-            box-shadow: 0 4px 15px rgba(229, 90, 15, 0.4);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .manufacturing-header .btn-explore::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .manufacturing-header .btn-explore:hover::before {
-            left: 100%;
-        }
-
-        .manufacturing-header .btn-explore:hover {
-            background: #e55a0f;
-            border-color: #e55a0f;
-            color: #fff;
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(229, 90, 15, 0.6);
         }
 
         .content-section {
@@ -269,129 +144,200 @@ $conn->close();
             margin-bottom: 0;
         }
 
-        .form-section {
-            max-width: 700px;
-            margin: 0 auto;
-            padding: 40px;
-            background: var(--background-color);
-            border: 1px solid var(--border-color);
+        .manufacturing-design-hero {
+            background: linear-gradient(135deg, #2c1810 0%, #3d2318 50%, #2c1810 100%);
+            padding: 50px 0 60px;
+            text-align: center;
+            margin-top: 40px;
         }
-
-        .section-heading {
+        .manufacturing-design-hero-title {
             font-family: 'Playfair Display', serif;
-            font-size: 32px;
-            color: var(--primary-color);
-            margin-bottom: 30px;
+            font-size: 38px;
             font-weight: 500;
             letter-spacing: 0.5px;
-            text-align: center;
+            color: #c9a962;
+            margin: 0;
         }
 
-        .manufacturing-form {
-            margin-top: 30px;
+        .manufacturing-design-workflow {
+            background: #2c1810;
+            padding: 50px 0 60px;
+            border-top: 1px solid rgba(201, 169, 98, 0.2);
         }
-
-        .form-group {
-            margin-bottom: 25px;
+        .manufacturing-design-workflow .workflow-steps {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 10px 20px;
+            max-width: 1100px;
+            margin: 0 auto;
         }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: var(--text-color);
-            font-weight: 400;
+        .manufacturing-design-workflow .workflow-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+        .manufacturing-design-workflow .workflow-icon {
+            width: 70px;
+            height: 70px;
+            border: 2px solid #c9a962;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #c9a962;
+            font-size: 28px;
+            background: transparent;
+        }
+        .manufacturing-design-workflow .workflow-label {
             font-size: 14px;
-            letter-spacing: 0.3px;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid var(--border-color);
-            background: #fff;
-            color: var(--text-color);
-            font-size: 15px;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.3s ease;
-            box-sizing: border-box;
-        }
-
-        .form-group select {
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23001F3F' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            padding-right: 40px;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(0, 31, 63, 0.1);
-        }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 120px;
-        }
-
-        .btn-submit {
-            width: 100%;
-            padding: 16px;
-            background: var(--primary-color);
-            color: #fff;
-            border: none;
-            font-size: 15px;
-            font-weight: 400;
-            letter-spacing: 1px;
+            font-weight: 500;
+            color: #c9a962;
             text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.5px;
+        }
+        .manufacturing-design-workflow .workflow-arrow {
+            color: #c9a962;
+            font-size: 18px;
+            opacity: 0.8;
         }
 
-        .btn-submit:hover {
-            background: var(--dark-color);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        .manufacturing-explore {
+            padding: 80px 0 100px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            position: relative;
+            overflow: hidden;
+            margin-top: 40px;
         }
-
-        .success-message {
+        .manufacturing-explore::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(0,31,63,0.03)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.5;
+            z-index: 0;
+        }
+        .manufacturing-explore .section-header,
+        .manufacturing-explore .explore-options-grid {
+            position: relative;
+            z-index: 1;
+        }
+        .manufacturing-explore .section-header {
             text-align: center;
-            padding: 60px 20px;
+            margin-bottom: 50px;
         }
-
-        .success-message i {
-            font-size: 64px;
-            color: #28a745;
-            margin-bottom: 20px;
-        }
-
-        .success-message h2 {
+        .manufacturing-explore .section-title {
             font-family: 'Playfair Display', serif;
-            font-size: 32px;
+            font-size: 42px;
+            color: var(--primary-color);
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+        .manufacturing-explore .section-subtitle {
+            font-size: 18px;
+            color: var(--text-color);
+            font-weight: 300;
+        }
+        .manufacturing-explore .explore-options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .manufacturing-explore .explore-option-card {
+            position: relative;
+            background: #fff;
+            border-radius: 20px;
+            overflow: hidden;
+            text-decoration: none;
+            color: var(--text-color);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: block;
+            min-height: 380px;
+        }
+        .manufacturing-explore .explore-option-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+        .manufacturing-explore .option-background {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0;
+        }
+        .manufacturing-explore .option-gradient {
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            opacity: 0.05;
+        }
+        .manufacturing-explore .explore-option-card:hover .option-gradient {
+            opacity: 0.1;
+        }
+        .manufacturing-explore .option-content {
+            position: relative;
+            z-index: 1;
+            padding: 45px 35px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .manufacturing-explore .option-icon-wrapper {
+            margin-bottom: 24px;
+        }
+        .manufacturing-explore .option-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            transition: all 0.4s ease;
+            box-shadow: 0 10px 30px rgba(0, 31, 63, 0.2);
+        }
+        .manufacturing-explore .explore-option-card:hover .option-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+        .manufacturing-explore .option-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 26px;
             color: var(--primary-color);
             margin-bottom: 16px;
+            font-weight: 500;
+            line-height: 1.3;
         }
-
-        .success-message p {
-            font-size: 16px;
+        .manufacturing-explore .option-description {
+            font-size: 15px;
             color: var(--text-color);
-            margin-bottom: 30px;
+            line-height: 1.7;
+            margin-bottom: 28px;
+            flex-grow: 1;
         }
-
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 12px 16px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            border: 1px solid #f5c6cb;
+        .manufacturing-explore .option-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 28px;
+            background: var(--primary-color);
+            color: #fff;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 31, 63, 0.2);
+        }
+        .manufacturing-explore .explore-option-card:hover .option-cta {
+            background: var(--accent-color);
+            transform: translateX(5px);
         }
 
         @media (max-width: 768px) {
@@ -399,25 +345,49 @@ $conn->close();
                 padding: 50px 0;
             }
 
-            .manufacturing-header {
-                margin-bottom: 40px;
-            }
-
             .content-section {
                 margin-bottom: 40px;
             }
 
-            .form-section {
-                padding: 30px 20px;
-            }
-
-            .section-heading {
-                font-size: 24px;
-                margin-bottom: 20px;
-            }
-
             .intro-text {
                 font-size: 16px;
+            }
+            .manufacturing-design-hero {
+                padding: 40px 20px 50px;
+                margin-top: 30px;
+            }
+            .manufacturing-design-hero-title {
+                font-size: 26px;
+            }
+            .manufacturing-design-workflow {
+                padding: 35px 20px 45px;
+            }
+            .manufacturing-design-workflow .workflow-steps {
+                flex-direction: column;
+                gap: 30px;
+            }
+            .manufacturing-design-workflow .workflow-arrow {
+                transform: rotate(90deg);
+            }
+            .manufacturing-explore {
+                padding: 50px 0 70px;
+                margin-top: 30px;
+            }
+            .manufacturing-explore .section-title {
+                font-size: 28px;
+            }
+            .manufacturing-explore .explore-options-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            .manufacturing-explore .explore-option-card {
+                min-height: 340px;
+            }
+            .manufacturing-explore .option-content {
+                padding: 35px 25px;
+            }
+            .manufacturing-explore .option-title {
+                font-size: 22px;
             }
         }
     </style>

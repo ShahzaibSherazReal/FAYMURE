@@ -50,6 +50,8 @@ function t($key) {
     global $translations, $current_lang;
     return $translations[$current_lang][$key] ?? $translations['en'][$key] ?? $key;
 }
+
+$base = defined('BASE_PATH') ? BASE_PATH : '';
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $current_lang; ?>">
@@ -57,11 +59,11 @@ function t($key) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo SITE_NAME; ?> - Premium Leather Goods</title>
-    <link rel="stylesheet" href="assets/css/style.css?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="assets/css/animations.css?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="assets/css/character.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/style.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/animations.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/character.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script defer src="assets/js/faymure-font.js"></script>
+    <script defer src="<?php echo $base; ?>/assets/js/faymure-font.js"></script>
 </head>
 <body>
     <?php
@@ -90,7 +92,7 @@ function t($key) {
                         </span>
                     </div>
                 <?php else: ?>
-                    <a href="shop.php" class="shop-btn">
+                    <a href="<?php echo $base; ?>/shop" class="shop-btn">
                         <i class="fas fa-shopping-bag"></i> <?php echo t('shop'); ?>
                     </a>
                 <?php endif; ?>
@@ -99,26 +101,26 @@ function t($key) {
         <nav class="header-nav">
             <div class="container">
                 <div class="nav-left">
-                    <a href="index.php" class="logo"><?php echo SITE_NAME; ?></a>
+                    <a href="<?php echo $base; ?>/" class="logo"><?php echo SITE_NAME; ?></a>
                 </div>
                 <div class="nav-center">
-                    <a href="index.php" class="nav-underline"><?php echo t('home'); ?></a>
-                    <a href="about.php" class="nav-underline"><?php echo t('about'); ?></a>
-                    <a href="manufacturing.php" class="nav-underline"><?php echo t('manufacturing'); ?></a>
-                    <a href="contact.php" class="nav-underline"><?php echo t('contact'); ?></a>
+                    <a href="<?php echo $base; ?>/" class="nav-underline"><?php echo t('home'); ?></a>
+                    <a href="<?php echo $base; ?>/about" class="nav-underline"><?php echo t('about'); ?></a>
+                    <a href="<?php echo $base; ?>/manufacturing" class="nav-underline"><?php echo t('manufacturing'); ?></a>
+                    <a href="<?php echo $base; ?>/contact" class="nav-underline"><?php echo t('contact'); ?></a>
                 </div>
                 <div class="nav-right">
                     <?php if (isLoggedIn()): ?>
                         <?php if (isAdmin()): ?>
-                            <a href="admin/dashboard.php" class="nav-icon" title="<?php echo t('admin'); ?>">
-                                <i class="fas fa-user-shield"></i>
-                            </a>
+<a href="<?php echo $base; ?>/admin/dashboard.php" class="nav-icon" title="<?php echo t('admin'); ?>">
+                            <i class="fas fa-user-shield"></i>
+                        </a>
                         <?php endif; ?>
-                        <a href="logout.php" class="nav-icon" title="<?php echo t('logout'); ?>">
+                        <a href="<?php echo $base; ?>/logout" class="nav-icon" title="<?php echo t('logout'); ?>">
                             <i class="fas fa-sign-out-alt"></i>
                         </a>
                     <?php else: ?>
-                        <a href="login.php" class="nav-icon" title="<?php echo t('login'); ?>">
+                        <a href="<?php echo $base; ?>/login" class="nav-icon" title="<?php echo t('login'); ?>">
                             <i class="fas fa-user"></i>
                         </a>
                     <?php endif; ?>
@@ -156,7 +158,7 @@ function t($key) {
     <div class="search-modal" id="searchModal">
         <div class="search-content">
             <span class="close-search">&times;</span>
-            <form action="search.php" method="GET">
+            <form action="<?php echo $base; ?>/search" method="GET">
                 <input type="text" name="q" placeholder="<?php echo t('search'); ?>..." autofocus>
                 <button type="submit"><i class="fas fa-search"></i></button>
             </form>

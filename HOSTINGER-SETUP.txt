@@ -1,0 +1,130 @@
+================================================================================
+  HOW TO SET UP CONFIG FOR HOSTINGER (DOMAIN + HOSTING)
+================================================================================
+
+When you move your FAYMURE site from localhost to Hostinger, your site will
+usually run at the root of your domain (e.g. https://yourdomain.com), not in
+a subfolder like /FAYMURE. Follow these steps so links, clean URLs, and
+emails work correctly.
+
+--------------------------------------------------------------------------------
+STEP 1: EDIT config/config.php
+--------------------------------------------------------------------------------
+
+Open the file:  config/config.php
+
+Change these lines:
+
+  (1) SITE_URL
+      - From:  define('SITE_URL', 'http://localhost/FAYMURE');
+      - To:    define('SITE_URL', 'https://yourdomain.com');
+      Replace "yourdomain.com" with your actual Hostinger domain (e.g. faymure.com).
+      Use https:// if you have SSL (Hostinger often provides free SSL).
+
+  (2) BASE_PATH
+      - From:  define('BASE_PATH', '/FAYMURE');
+      - To:    define('BASE_PATH', '');
+      Use empty string '' when the site is at the domain root (no subfolder).
+
+  (3) ADMIN_EMAIL (optional but recommended)
+      - Set to an email you use for the site, e.g.:
+        define('ADMIN_EMAIL', 'admin@yourdomain.com');
+      This is where contact forms and notifications are sent.
+
+  (4) SITE_NAME
+      - You can leave as 'FAYMURE' or change to your brand name.
+
+--------------------------------------------------------------------------------
+STEP 2: EDIT .htaccess (FOR DOMAIN ROOT)
+--------------------------------------------------------------------------------
+
+Open the file:  .htaccess  (in the same folder as index.php)
+
+  (1) RewriteBase
+      - From:  RewriteBase /FAYMURE/
+      - To:    RewriteBase /
+
+  (2) Redirect rule (the line that redirects .php URLs to clean URLs)
+      - From:  RewriteRule ^ /FAYMURE/%1%2 [R=301,L]
+      - To:    RewriteRule ^ /%1%2 [R=301,L]
+
+  (3) Leave all other rules as they are (RewriteRule ^$ index.php, etc.).
+
+--------------------------------------------------------------------------------
+STEP 3: HOSTINGER FOLDER STRUCTURE
+--------------------------------------------------------------------------------
+
+  - Upload your entire FAYMURE project into the folder Hostinger uses for
+    your domain. This is usually:
+      public_html
+    So your index.php, config folder, .htaccess, assets, etc. should be
+    directly inside public_html (or inside the subdomain folder if you use one).
+
+  - Do not put the site inside a subfolder like public_html/FAYMURE/ unless
+    you want URLs like yourdomain.com/FAYMURE/ — in that case keep
+    BASE_PATH as '/FAYMURE' and the .htaccess as for localhost (RewriteBase
+    /FAYMURE/ and redirect to /FAYMURE/%1%2).
+
+--------------------------------------------------------------------------------
+STEP 4: DATABASE ON HOSTINGER
+--------------------------------------------------------------------------------
+
+  - Create a MySQL database and user in Hostinger (hPanel → Databases).
+  - Edit  config/database.php  (or wherever your DB credentials are) and set:
+      - Host (often "localhost" or the host name Hostinger gives you)
+      - Database name
+      - Username
+      - Password
+  - Import your local database (e.g. export from phpMyAdmin locally, import
+    in Hostinger’s phpMyAdmin or database tool).
+
+--------------------------------------------------------------------------------
+STEP 5: PHP ON HOSTINGER
+--------------------------------------------------------------------------------
+
+  - In hPanel, set the PHP version to 8.0 or 8.1+ (your project uses PHP 8.2
+    locally; use the closest available).
+  - If you need higher upload limits, you can set them in .htaccess (you
+    already have upload_max_filesize and post_max_size); Hostinger may allow
+    these or override them via their panel.
+
+--------------------------------------------------------------------------------
+STEP 6: SSL (HTTPS)
+--------------------------------------------------------------------------------
+
+  - In Hostinger, enable SSL for your domain (e.g. free Let’s Encrypt).
+  - Use  https://  in SITE_URL so that links and redirects use HTTPS.
+
+--------------------------------------------------------------------------------
+QUICK REFERENCE (SITE AT DOMAIN ROOT)
+--------------------------------------------------------------------------------
+
+  config/config.php:
+    SITE_URL   = 'https://yourdomain.com'
+    BASE_PATH = ''
+
+  .htaccess:
+    RewriteBase /
+    Redirect rule:  RewriteRule ^ /%1%2 [R=301,L]
+
+--------------------------------------------------------------------------------
+TROUBLESHOOTING
+--------------------------------------------------------------------------------
+
+  - 404 on clean URLs (e.g. /about): Make sure mod_rewrite is enabled and
+    .htaccess is in the same directory as index.php. Hostinger usually
+    allows .htaccess by default.
+
+  - Wrong links or redirects: Double-check SITE_URL and BASE_PATH. After
+    changing config, clear browser cache or test in a private window.
+
+  - Images or assets not loading: Your code already prefixes asset paths with
+    BASE_PATH. With BASE_PATH = '', links become root-relative (e.g. /assets/...)
+    and should work if files are in public_html/assets/ etc.
+
+  - Emails not received: Configure Hostinger’s mail (or SMTP) and use an
+    ADMIN_EMAIL that uses your domain so it’s less likely to be blocked.
+
+================================================================================
+  END OF HOSTINGER SETUP GUIDE
+================================================================================

@@ -8,7 +8,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_to_cart'])) {
     $product_id = intval($_POST['product_id']);
     $quantity = intval($_POST['quantity'] ?? 1);
     addToCart($product_id, $quantity);
-    header('Location: product-detail.php?id=' . $product_id . '&added=1');
+    $cart_conn = getDBConnection();
+    $cart_row = $cart_conn->query("SELECT slug, name FROM products WHERE id = " . (int)$product_id)->fetch_assoc();
+    $cart_conn->close();
+    $cart_slug = (!empty($cart_row['slug']) ? $cart_row['slug'] : slugify($cart_row['name'] ?? 'product'));
+    header('Location: ' . (defined('BASE_PATH') ? BASE_PATH : '') . '/product-detail/' . rawurlencode($cart_slug) . '?added=1');
     exit;
 }
 
@@ -24,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['form_type']) && $_POST
     $message = sanitize($_POST['message'] ?? '');
     $product_id = intval($_POST['product_id'] ?? 0);
     
-    if ($name && $email && $product_id) {
+    if ($name && $email && $product_id && $quantity >= 100) {
         $conn = getDBConnection();
         
         // Check if quote_requests table exists, create it if it doesn't
@@ -70,7 +74,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['form_type']) && $_POST
         $stmt->close();
         $conn->close();
     } else {
-        $quote_error = "Please fill in all required fields.";
+        $quote_error = $name && $email && $product_id && $quantity > 0 && $quantity < 100
+            ? "Minimum quantity for wholesale is 100."
+            : "Please fill in all required fields.";
     }
 }
 
@@ -110,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['form_type']) && $_POST
         }
     }
     
-    if ($name && $email && $description && $product_id) {
+    if ($name && $email && $description && $product_id && $quantity >= 100) {
         $conn = getDBConnection();
         
         // Check if product_customizations table exists, create it if it doesn't
@@ -172,20 +178,69 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['form_type']) && $_POST
         $stmt->close();
         $conn->close();
     } else {
-        $customize_error = "Please fill in all required fields.";
+        $customize_error = ($name && $email && $description && $product_id && $quantity > 0 && $quantity < 100)
+            ? "Minimum quantity for customization is 100."
+            : "Please fill in all required fields.";
     }
 }
 
-$product_id = $_GET['id'] ?? 0;
+$product_slug_param = isset($_GET['slug']) ? trim($_GET['slug']) : '';
+$product_id_param = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $conn = getDBConnection();
 
-$stmt = $conn->prepare("SELECT p.*, c.name as category_name FROM products p 
-                        JOIN categories c ON p.category_id = c.id 
-                        WHERE p.id = ? AND p.deleted_at IS NULL");
-$stmt->bind_param("i", $product_id);
-$stmt->execute();
-$product = $stmt->get_result()->fetch_assoc();
-$stmt->close();
+// Ensure products table has slug column
+$col = $conn->query("SHOW COLUMNS FROM products LIKE 'slug'");
+if (!$col || $col->num_rows == 0) {
+    $conn->query("ALTER TABLE products ADD COLUMN slug VARCHAR(255) DEFAULT NULL");
+}
+
+$product = null;
+$product_id = 0;
+
+if ($product_slug_param !== '') {
+    $stmt = $conn->prepare("SELECT p.*, c.name as category_name FROM products p 
+                            JOIN categories c ON p.category_id = c.id 
+                            WHERE p.slug = ? AND p.deleted_at IS NULL");
+    $stmt->bind_param("s", $product_slug_param);
+    $stmt->execute();
+    $product = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if ($product) {
+        $product_id = (int)$product['id'];
+    }
+}
+
+if (!$product && $product_id_param > 0) {
+    $stmt = $conn->prepare("SELECT p.*, c.name as category_name FROM products p 
+                            JOIN categories c ON p.category_id = c.id 
+                            WHERE p.id = ? AND p.deleted_at IS NULL");
+    $stmt->bind_param("i", $product_id_param);
+    $stmt->execute();
+    $product = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if ($product) {
+        $product_id = (int)$product['id'];
+        $slug = !empty($product['slug']) ? $product['slug'] : null;
+        if ($slug === null || $slug === '') {
+            $slug = slugify($product['name'] ?? 'product');
+            $check = $conn->prepare("SELECT id FROM products WHERE slug = ? AND id != ?");
+            $n = 0;
+            $base_slug = $slug;
+            do {
+                $check->bind_param("si", $slug, $product_id);
+                $check->execute();
+                $taken = $check->get_result()->num_rows > 0;
+                if ($taken) {
+                    $n++;
+                    $slug = $base_slug . '-' . $n;
+                }
+            } while ($taken);
+            $conn->query("UPDATE products SET slug = '" . $conn->real_escape_string($slug) . "' WHERE id = " . $product_id);
+        }
+        header('Location: ' . (defined('BASE_PATH') ? BASE_PATH : '') . '/product-detail/' . rawurlencode($slug), true, 301);
+        exit;
+    }
+}
 
 if (!$product) {
     redirect('shop.php');
@@ -197,6 +252,17 @@ if ($product['images']) {
 }
 if ($product['image']) {
     array_unshift($images, $product['image']);
+}
+// Ensure image URLs work from any URL depth (e.g. /product-detail/slug): use root-relative or base-prefixed paths
+$base_prefix = (defined('BASE_PATH') && BASE_PATH !== '') ? rtrim(BASE_PATH, '/') . '/' : '/';
+$image_urls = array_map(function($path) use ($base_prefix) {
+    if ($path === '' || $path === null) return $base_prefix . 'assets/images/placeholder.jpg';
+    if (strpos($path, 'http') === 0 || strpos($path, '//') === 0) return $path;
+    $path = ltrim($path, '/');
+    return $base_prefix . $path;
+}, $images);
+if (empty($image_urls)) {
+    $image_urls = [$base_prefix . 'assets/images/placeholder.jpg'];
 }
 
 // Check if product_reviews table exists, create if not
@@ -246,8 +312,8 @@ if ($rating_stmt) {
 
 // Generate SKU if not exists
 $product_sku = $product['sku'] ?? 'FAY-' . str_pad($product['id'], 6, '0', STR_PAD_LEFT);
-$stock_status = 'In Stock'; // Can be enhanced with actual stock management
-$delivery_estimate = '5-7 business days';
+$stock_status = 'Make to order'; // Can be enhanced with actual stock management
+$delivery_estimate = 'Based on order.';
 
 $conn->close();
 
@@ -268,7 +334,7 @@ $product_schema = [
         'price' => $product['price'] ?? 0,
         'priceCurrency' => 'USD',
         'availability' => 'https://schema.org/InStock',
-        'url' => SITE_URL . '/product-detail.php?id=' . $product['id']
+        'url' => rtrim(SITE_URL, '/') . '/product-detail/' . rawurlencode(!empty($product['slug']) ? $product['slug'] : slugify($product['name'] ?? 'product'))
     ]
 ];
 if ($avg_rating > 0) {
@@ -288,9 +354,9 @@ if ($avg_rating > 0) {
         <!-- Breadcrumb -->
         <nav class="breadcrumb-nav" aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li><a href="index.php">Home</a></li>
-                <li><a href="explore.php">Catalog</a></li>
-                <li><a href="products.php?category=<?php echo urlencode($product['category_name'] ?? ''); ?>"><?php echo htmlspecialchars($product['category_name'] ?? 'Products'); ?></a></li>
+                <li><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/">Home</a></li>
+                <li><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/explore">Catalog</a></li>
+                <li><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/products?category=<?php echo urlencode($product['category_name'] ?? ''); ?>"><?php echo htmlspecialchars($product['category_name'] ?? 'Products'); ?></a></li>
                 <li class="active"><?php echo htmlspecialchars($product['name']); ?></li>
             </ol>
         </nav>
@@ -322,9 +388,9 @@ if ($avg_rating > 0) {
                             <span class="badge badge-premium"><i class="fas fa-gem"></i> Premium Leather</span>
                         </div>
                         <div class="main-image-wrapper" id="mainImageWrapper">
-                            <img src="<?php echo htmlspecialchars($images[0] ?? 'assets/images/placeholder.jpg'); ?>" 
-                                 alt="<?php echo htmlspecialchars($product['name']); ?>" 
-                                 id="mainImage" 
+<img src="<?php echo htmlspecialchars($image_urls[0]); ?>"
+                                 alt="<?php echo htmlspecialchars($product['name']); ?>"
+                                 id="mainImage"
                                  class="main-product-image"
                                  loading="lazy">
                             <button class="zoom-btn" onclick="openFullscreen()" title="View Fullscreen">
@@ -332,11 +398,11 @@ if ($avg_rating > 0) {
                             </button>
                         </div>
                     </div>
-                    <?php if (count($images) > 1): ?>
+                    <?php if (count($image_urls) > 1): ?>
                         <div class="thumbnail-gallery">
-                            <?php foreach ($images as $index => $img): ?>
-                                <div class="thumbnail-item <?php echo $index === 0 ? 'active' : ''; ?>" onclick="changeImage('<?php echo htmlspecialchars($img); ?>', <?php echo $index; ?>)">
-                                    <img src="<?php echo htmlspecialchars($img); ?>" alt="Thumbnail <?php echo $index + 1; ?>" loading="lazy">
+                            <?php foreach ($image_urls as $index => $img_url): ?>
+                                <div class="thumbnail-item <?php echo $index === 0 ? 'active' : ''; ?>" onclick="changeImage('<?php echo htmlspecialchars($img_url, ENT_QUOTES, 'UTF-8'); ?>', <?php echo $index; ?>)">
+                                    <img src="<?php echo htmlspecialchars($img_url); ?>" alt="Thumbnail <?php echo $index + 1; ?>" loading="lazy">
                                 </div>
                             <?php endforeach; ?>
                         </div>
@@ -392,33 +458,16 @@ if ($avg_rating > 0) {
                         </div>
                         <div class="meta-item">
                             <span class="meta-label">MOQ:</span>
-                            <span class="meta-value"><?php echo number_format($product['moq'] ?? 1); ?> <?php echo ($product['moq'] ?? 1) > 1 ? 'sets' : 'set'; ?></span>
+                            <span class="meta-value"><?php echo number_format($product['moq'] ?? 1); ?> <?php echo ($product['moq'] ?? 1) > 1 ? 'pieces' : 'piece'; ?></span>
                         </div>
                     </div>
 
-                    <!-- Key Selling Points -->
-                    <div class="key-features">
-                        <h3 class="features-title">Key Features</h3>
-                        <ul class="features-list">
-                            <li><i class="fas fa-check-circle"></i> Premium Handcrafted Quality</li>
-                            <li><i class="fas fa-check-circle"></i> Genuine Leather Material</li>
-                            <li><i class="fas fa-check-circle"></i> Expert Artisan Craftsmanship</li>
-                            <li><i class="fas fa-check-circle"></i> Durable & Long-lasting</li>
-                            <li><i class="fas fa-check-circle"></i> 30-Day Satisfaction Guarantee</li>
-                        </ul>
-                    </div>
-
-                    <!-- Guarantee Badge -->
-                    <div class="guarantee-badge">
-                        <i class="fas fa-shield-alt"></i>
-                        <span>100% Satisfaction Guaranteed</span>
-                    </div>
-                    <!-- Product Actions Section -->
+                    <!-- Product Actions Section (above Key Features) -->
                     <div class="product-actions-section premium-actions">
                         <div class="action-buttons-three">
                             <button type="button" onclick="openQuoteModal()" class="btn-action btn-get-quote premium-btn">
-                                <i class="fas fa-calculator"></i>
-                                <span>Get Quote</span>
+                                <i class="fas fa-boxes"></i>
+                                <span>Wholesale</span>
                             </button>
                             <button type="button" onclick="openCustomizeModal()" class="btn-action btn-customization premium-btn">
                                 <i class="fas fa-palette"></i>
@@ -442,42 +491,22 @@ if ($avg_rating > 0) {
                         </div>
                     </div>
 
-                    <!-- Trust Signals -->
-                    <div class="trust-signals">
-                        <div class="trust-item">
-                            <i class="fas fa-lock"></i>
-                            <span>Secure Payment</span>
-                        </div>
-                        <div class="trust-item">
-                            <i class="fas fa-undo"></i>
-                            <span>30-Day Returns</span>
-                        </div>
-                        <div class="trust-item">
-                            <i class="fas fa-shipping-fast"></i>
-                            <span>Free Shipping*</span>
-                        </div>
-                        <div class="trust-item">
-                            <i class="fas fa-headset"></i>
-                            <span>24/7 Support</span>
-                        </div>
+                    <!-- Key Selling Points -->
+                    <div class="key-features">
+                        <h3 class="features-title">Key Features</h3>
+                        <ul class="features-list">
+                            <li><i class="fas fa-check-circle"></i> Premium Handcrafted Quality</li>
+                            <li><i class="fas fa-check-circle"></i> Genuine Leather Material</li>
+                            <li><i class="fas fa-check-circle"></i> Expert Artisan Craftsmanship</li>
+                            <li><i class="fas fa-check-circle"></i> Durable & Long-lasting</li>
+                            <li><i class="fas fa-check-circle"></i> 30-Day Satisfaction Guarantee</li>
+                        </ul>
                     </div>
 
-                    <!-- Shipping & Returns Summary -->
-                    <div class="shipping-returns-summary">
-                        <div class="summary-item">
-                            <i class="fas fa-truck"></i>
-                            <div>
-                                <strong>Free Shipping</strong>
-                                <p>On orders over $100. Standard delivery: 5-7 business days</p>
-                            </div>
-                        </div>
-                        <div class="summary-item">
-                            <i class="fas fa-undo-alt"></i>
-                            <div>
-                                <strong>Easy Returns</strong>
-                                <p>30-day return policy. No questions asked.</p>
-                            </div>
-                        </div>
+                    <!-- Guarantee Badge -->
+                    <div class="guarantee-badge">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>100% Satisfaction Guaranteed</span>
                     </div>
                 </div>
             </div>
@@ -574,35 +603,6 @@ if ($avg_rating > 0) {
                 </div>
             </section>
 
-            <!-- Shipping & Returns -->
-            <section class="detail-section" id="shipping-section">
-                <h2 class="section-title premium-section-title">
-                    <i class="fas fa-shipping-fast"></i>
-                    Shipping & Returns
-                </h2>
-                <div class="section-content premium-content">
-                    <div class="shipping-info-detailed">
-                        <h3>Shipping Information</h3>
-                        <ul>
-                            <li><strong>Free Shipping:</strong> Available on orders over $100</li>
-                            <li><strong>Standard Delivery:</strong> 5-7 business days</li>
-                            <li><strong>Express Delivery:</strong> 2-3 business days (additional charges apply)</li>
-                            <li><strong>International Shipping:</strong> Available worldwide with tracking</li>
-                            <li><strong>Packaging:</strong> Secure, protective packaging guaranteed</li>
-                        </ul>
-                        
-                        <h3>Returns Policy</h3>
-                        <ul>
-                            <li><strong>Return Period:</strong> 30 days from delivery date</li>
-                            <li><strong>Condition:</strong> Items must be unused and in original packaging</li>
-                            <li><strong>Process:</strong> Contact our support team to initiate a return</li>
-                            <li><strong>Refund:</strong> Full refund within 5-7 business days of receiving returned item</li>
-                            <li><strong>Exchanges:</strong> Available for size or color variations (subject to availability)</li>
-                        </ul>
-                    </div>
-                </div>
-            </section>
-
             <!-- Manufacturing Details -->
             <section class="detail-section" id="manufacturing-section">
                 <h2 class="section-title premium-section-title">
@@ -671,7 +671,7 @@ if ($avg_rating > 0) {
                                 <i class="fas fa-chevron-down"></i>
                             </h3>
                             <div class="faq-answer">
-                                <p>The minimum order quantity (MOQ) for this product is <?php echo number_format($product['moq'] ?? 1); ?> <?php echo ($product['moq'] ?? 1) > 1 ? 'sets' : 'set'; ?>. For bulk orders, please contact us for custom pricing.</p>
+                                <p>The minimum order quantity (MOQ) for this product is <?php echo number_format($product['moq'] ?? 1); ?> <?php echo ($product['moq'] ?? 1) > 1 ? 'pieces' : 'piece'; ?>. For bulk orders, please contact us for custom pricing.</p>
                             </div>
                         </div>
                         <div class="faq-item">
@@ -768,7 +768,7 @@ if ($avg_rating > 0) {
                     <!-- Add Review Form -->
                     <div class="add-review-section">
                         <h3 class="add-review-title">Write a Review</h3>
-                        <form method="POST" action="add-review.php" class="review-form-premium">
+                        <form method="POST" action="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/add-review" class="review-form-premium">
                             <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
                             <div class="form-row">
                                 <div class="form-group">
@@ -816,7 +816,7 @@ if ($avg_rating > 0) {
         <div class="modal-overlay" onclick="closeQuoteModal()"></div>
         <div class="modal-content-premium">
             <div class="modal-header">
-                <h2><i class="fas fa-calculator"></i> Request Quote</h2>
+                <h2><i class="fas fa-boxes"></i> Wholesale Request</h2>
                 <button class="modal-close" onclick="closeQuoteModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -824,7 +824,7 @@ if ($avg_rating > 0) {
                     <div class="modal-success">
                         <i class="fas fa-check-circle"></i>
                         <h3>Thank You!</h3>
-                        <p>Your quote request has been submitted successfully. We'll get back to you soon.</p>
+                        <p>Your wholesale request has been submitted successfully. We'll get back to you soon.</p>
                         <button onclick="closeQuoteModal()" class="btn-primary">Close</button>
                     </div>
                 <?php else: ?>
@@ -859,7 +859,7 @@ if ($avg_rating > 0) {
                         
                         <div class="form-group-modal">
                             <label>Quantity *</label>
-                            <input type="number" name="quantity" min="1" value="1" required class="form-input-modal" placeholder="Enter quantity">
+                            <input type="number" name="quantity" min="100" value="100" required class="form-input-modal" placeholder="Min. 100">
                         </div>
                         
                         <div class="form-group-modal">
@@ -869,7 +869,7 @@ if ($avg_rating > 0) {
                         
                         <div class="modal-actions">
                             <button type="submit" class="btn-primary btn-submit-modal">
-                                <i class="fas fa-paper-plane"></i> Submit Quote Request
+                                <i class="fas fa-paper-plane"></i> Submit Wholesale Request
                             </button>
                             <button type="button" onclick="closeQuoteModal()" class="btn-secondary btn-cancel-modal">Cancel</button>
                         </div>
@@ -927,7 +927,7 @@ if ($avg_rating > 0) {
                         
                         <div class="form-group-modal">
                             <label>Quantity *</label>
-                            <input type="number" name="quantity" min="1" value="1" required class="form-input-modal" placeholder="Enter quantity">
+                            <input type="number" name="quantity" min="100" value="100" required class="form-input-modal" placeholder="Min. 100">
                         </div>
                         
                         <div class="form-group-modal">
@@ -945,10 +945,6 @@ if ($avg_rating > 0) {
                                 <label class="checkbox-label">
                                     <input type="checkbox" name="customization_options[]" value="customized_packaging">
                                     <span>Customized packaging (Min. order: 500 pieces)</span>
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="customization_options[]" value="graphic_customization">
-                                    <span>Graphic customization (Min. order: 500 pieces)</span>
                                 </label>
                             </div>
                         </div>
@@ -2195,7 +2191,7 @@ if ($avg_rating > 0) {
     
     <script>
         let currentImageIndex = 0;
-        const images = <?php echo json_encode($images); ?>;
+        const images = <?php echo json_encode($image_urls); ?>;
 
         function changeImage(src, index) {
             document.getElementById('mainImage').src = src;

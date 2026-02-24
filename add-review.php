@@ -49,13 +49,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 if ($success) {
     $product_id = intval($_POST['product_id'] ?? 0);
-    header('Location: product-detail.php?id=' . $product_id . '&review_submitted=1');
+    $ar_conn = getDBConnection();
+    $ar_row = $ar_conn->query("SELECT slug, name FROM products WHERE id = " . (int)$product_id)->fetch_assoc();
+    $ar_conn->close();
+    $ar_slug = ($ar_row && !empty($ar_row['slug'])) ? $ar_row['slug'] : slugify($ar_row['name'] ?? 'product');
+    header('Location: ' . (defined('BASE_PATH') ? BASE_PATH : '') . '/product-detail/' . rawurlencode($ar_slug) . '?review_submitted=1');
     exit;
 }
 
 if ($error) {
     $product_id = intval($_POST['product_id'] ?? 0);
-    header('Location: product-detail.php?id=' . $product_id . '&error=' . urlencode($error));
+    $ar_conn = getDBConnection();
+    $ar_row = $ar_conn->query("SELECT slug, name FROM products WHERE id = " . (int)$product_id)->fetch_assoc();
+    $ar_conn->close();
+    $ar_slug = ($ar_row && !empty($ar_row['slug'])) ? $ar_row['slug'] : slugify($ar_row['name'] ?? 'product');
+    header('Location: ' . (defined('BASE_PATH') ? BASE_PATH : '') . '/product-detail/' . rawurlencode($ar_slug) . '?error=' . urlencode($error));
     exit;
 }
 ?>

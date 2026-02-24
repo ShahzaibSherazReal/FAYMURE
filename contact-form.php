@@ -94,7 +94,7 @@ $conn->close();
                     <i class="fas fa-check-circle"></i>
                     <h2>Thank You!</h2>
                     <p>Your inquiry has been submitted successfully. We'll get back to you soon.</p>
-                    <a href="index.php" class="btn-primary">Back to Home</a>
+                    <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/" class="btn-primary">Back to Home</a>
                 </div>
             <?php else: ?>
                 <h1>Get in Contact / Get Quote</h1>

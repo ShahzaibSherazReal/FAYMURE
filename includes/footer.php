@@ -52,21 +52,19 @@
                 <div class="footer-section">
                     <h3>Our Story</h3>
                     <p>FAYMURE is dedicated to crafting premium leather goods that combine traditional craftsmanship with modern design.</p>
-                    <a href="about.php">Learn More</a>
+                    <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/about">Learn More</a>
                 </div>
                 <div class="footer-section">
                     <h3>FAQ</h3>
                     <ul>
-                        <li><a href="faq.php">Frequently Asked Questions</a></li>
-                        <li><a href="shipping.php">Shipping Information</a></li>
-                        <li><a href="returns.php">Return Policy</a></li>
+                        <li><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/faq">Frequently Asked Questions</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
                     <h3>Legal</h3>
                     <ul>
-                        <li><a href="privacy.php">Privacy Policy</a></li>
-                        <li><a href="terms.php">Terms & Conditions</a></li>
+                        <li><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/privacy">Privacy Policy</a></li>
+                        <li><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/terms">Terms & Conditions</a></li>
                     </ul>
                 </div>
             </div>
@@ -76,8 +74,8 @@
         </div>
     </footer>
 
-    <script src="assets/js/main.js"></script>
-    <script defer src="assets/js/motion.js"></script>
+    <script src="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/assets/js/main.js"></script>
+    <script defer src="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/assets/js/motion.js"></script>
 </body>
 </html>
 

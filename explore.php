@@ -44,7 +44,7 @@ $conn->close();
             <?php else: ?>
                 <div class="categories-grid stagger">
                     <?php foreach ($categories as $index => $category): ?>
-                        <a href="products.php?category=<?php echo $category['slug']; ?>" class="category-card hover-lift reveal" data-delay="<?php echo ($index * 50) + 100; ?>">
+                        <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/products?category=<?php echo $category['slug']; ?>" class="category-card hover-lift reveal" data-delay="<?php echo ($index * 50) + 100; ?>">
                             <div class="category-image">
                                 <?php if ($category['image']): ?>
                                     <img src="<?php echo htmlspecialchars($category['image']); ?>" alt="<?php echo htmlspecialchars($category['name']); ?>">

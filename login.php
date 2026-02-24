@@ -69,8 +69,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </div>
                 <button type="submit" class="btn-primary">Login</button>
             </form>
-            <p class="auth-link">Don't have an account? <a href="signup.php">Sign up</a></p>
-            <p class="auth-link"><a href="index.php">Back to Home</a></p>
+            <p class="auth-link">Don't have an account? <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/signup">Sign up</a></p>
+            <p class="auth-link"><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/">Back to Home</a></p>
         </div>
     </div>
 </body>
