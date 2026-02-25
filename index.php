@@ -265,7 +265,7 @@ $conn->close();
 
     <style>
         .explore-options-section {
-            padding: 120px 0;
+            padding: 56px 0;
             background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
             position: relative;
             overflow: hidden;
@@ -290,20 +290,20 @@ $conn->close();
         
         .section-header {
             text-align: center;
-            margin-bottom: 80px;
+            margin-bottom: 40px;
         }
         
         .section-title {
             font-family: 'Playfair Display', serif;
-            font-size: 48px;
+            font-size: 38px;
             color: var(--primary-color);
-            margin-bottom: 20px;
+            margin-bottom: 12px;
             font-weight: 500;
             letter-spacing: 0.5px;
         }
         
         .section-subtitle {
-            font-size: 18px;
+            font-size: 16px;
             color: var(--text-color);
             font-weight: 300;
             max-width: 600px;
@@ -312,9 +312,9 @@ $conn->close();
         
         .explore-options-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-            gap: 40px;
-            max-width: 1200px;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 28px;
+            max-width: 1000px;
             margin: 0 auto;
         }
         
@@ -329,7 +329,7 @@ $conn->close();
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             display: block;
             height: 100%;
-            min-height: 500px;
+            min-height: 380px;
         }
         
         .explore-option-card:hover {
@@ -361,7 +361,7 @@ $conn->close();
         .option-content {
             position: relative;
             z-index: 1;
-            padding: 60px 50px;
+            padding: 44px 36px;
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -370,43 +370,43 @@ $conn->close();
         }
         
         .option-icon-wrapper {
-            margin-bottom: 40px;
+            margin-bottom: 24px;
         }
         
         .option-icon {
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
             color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 42px;
+            font-size: 34px;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 10px 30px rgba(0, 31, 63, 0.2);
         }
         
         .explore-option-card:hover .option-icon {
-            transform: scale(1.15) rotate(5deg);
+            transform: scale(1.1) rotate(5deg);
             box-shadow: 0 15px 40px rgba(0, 31, 63, 0.3);
         }
         
         .option-title {
             font-family: 'Playfair Display', serif;
-            font-size: 32px;
+            font-size: 26px;
             color: var(--primary-color);
-            margin-bottom: 25px;
+            margin-bottom: 14px;
             font-weight: 500;
             letter-spacing: 0.5px;
             line-height: 1.3;
         }
         
         .option-description {
-            font-size: 16px;
+            font-size: 15px;
             color: var(--text-color);
-            line-height: 1.8;
-            margin-bottom: 40px;
+            line-height: 1.7;
+            margin-bottom: 24px;
             font-weight: 300;
             flex-grow: 1;
         }
@@ -443,42 +443,42 @@ $conn->close();
         
         @media (max-width: 768px) {
             .explore-options-section {
-                padding: 80px 0;
+                padding: 44px 0;
             }
             
             .section-title {
-                font-size: 36px;
+                font-size: 28px;
             }
             
             .section-subtitle {
-                font-size: 16px;
+                font-size: 14px;
             }
             
             .explore-options-grid {
                 grid-template-columns: 1fr;
-                gap: 30px;
+                gap: 22px;
             }
             
             .explore-option-card {
-                min-height: 400px;
+                min-height: 320px;
             }
             
             .option-content {
-                padding: 40px 30px;
+                padding: 32px 24px;
             }
             
             .option-icon {
-                width: 80px;
-                height: 80px;
-                font-size: 36px;
+                width: 64px;
+                height: 64px;
+                font-size: 28px;
             }
             
             .option-title {
-                font-size: 26px;
+                font-size: 22px;
             }
             
             .option-description {
-                font-size: 15px;
+                font-size: 14px;
             }
         }
     </style>
