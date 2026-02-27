@@ -212,6 +212,16 @@ if ($faq_result && $row = $faq_result->fetch_assoc()) {
     $faqs = json_decode($row['content_value'], true) ?: [];
 }
 
+// Load reviews (for homepage carousel)
+$reviews_list = [];
+$reviews_table = $conn->query("SHOW TABLES LIKE 'reviews'");
+if ($reviews_table && $reviews_table->num_rows > 0) {
+    $reviews_result = $conn->query("SELECT id, customer_name, review_text, rating, status FROM reviews ORDER BY created_at DESC");
+    if ($reviews_result) {
+        $reviews_list = $reviews_result->fetch_all(MYSQLI_ASSOC);
+    }
+}
+
 $conn->close();
 ?>
 <!DOCTYPE html>
@@ -231,6 +241,12 @@ $conn->close();
         <div class="admin-container">
             <div class="page-header">
                 <h1>Site Content Management</h1>
+                <nav class="content-quick-nav">
+                    <a href="#home">Home</a>
+                    <a href="#about">About Us</a>
+                    <a href="#manufacturing">Manufacturing</a>
+                    <a href="#contact">Contact</a>
+                </nav>
             </div>
             
             <?php if (isset($success) || isset($upload_success)): ?>
@@ -238,6 +254,9 @@ $conn->close();
             <?php endif; ?>
             
             <form method="POST" enctype="multipart/form-data" class="admin-form">
+                <!-- ========== HOME ========== -->
+                <h2 class="content-group-title" id="home">Home</h2>
+                
                 <!-- Hero Section -->
                 <div class="content-section collapsible-section">
                     <h2 class="section-header" onclick="toggleSection(this)">
@@ -275,7 +294,7 @@ $conn->close();
                     </div>
                 </div>
                 
-                <!-- About Us Section -->
+                <!-- Carousel (Vision, Mission, Services) -->
                 <div class="content-section collapsible-section">
                     <h2 class="section-header" onclick="toggleSection(this)">
                         <span>About Us</span>
@@ -290,24 +309,29 @@ $conn->close();
                     </div>
                 </div>
                 
-                <!-- Contact Section -->
+                <!-- Contact Section (Contact page + used as fallback for footer) -->
                 <div class="content-section collapsible-section">
                     <h2 class="section-header" onclick="toggleSection(this)">
                         <span>Contact Information</span>
                         <i class="fas fa-chevron-down toggle-icon"></i>
                     </h2>
                     <div class="section-content">
+                    <p class="form-hint">These appear on the Contact page. Email and phone also show in the footer if set there.</p>
                     <div class="form-group">
                         <label for="contact_email">Contact Email</label>
-                        <input type="email" id="contact_email" name="contact_email" value="<?php echo htmlspecialchars($content_map['contact_email'] ?? $content_map['footer_email'] ?? ''); ?>">
+                        <input type="email" id="contact_email" name="contact_email" value="<?php echo htmlspecialchars($content_map['contact_email'] ?? $content_map['footer_email'] ?? ''); ?>" placeholder="e.g. contact@faymure.com">
                     </div>
                     <div class="form-group">
                         <label for="contact_phone">Contact Phone</label>
-                        <input type="text" id="contact_phone" name="contact_phone" value="<?php echo htmlspecialchars($content_map['contact_phone'] ?? $content_map['footer_phone'] ?? ''); ?>">
+                        <input type="text" id="contact_phone" name="contact_phone" value="<?php echo htmlspecialchars($content_map['contact_phone'] ?? $content_map['footer_phone'] ?? ''); ?>" placeholder="e.g. +1 (555) 123-4567">
                     </div>
                     <div class="form-group">
                         <label for="contact_address">Contact Address</label>
-                        <textarea id="contact_address" name="contact_address" rows="3"><?php echo htmlspecialchars($content_map['contact_address'] ?? ''); ?></textarea>
+                        <textarea id="contact_address" name="contact_address" rows="3" placeholder="Street, City, Country"><?php echo htmlspecialchars($content_map['contact_address'] ?? ''); ?></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact_whatsapp">WhatsApp Number</label>
+                        <input type="text" id="contact_whatsapp" name="contact_whatsapp" value="<?php echo htmlspecialchars($content_map['contact_whatsapp'] ?? '923252100730'); ?>" placeholder="Country code + number, no + or spaces (e.g. 923252100730)">
                     </div>
                     </div>
                 </div>
@@ -348,34 +372,6 @@ $conn->close();
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
-                    </div>
-                </div>
-                
-                <!-- Shipping Information -->
-                <div class="content-section collapsible-section">
-                    <h2 class="section-header" onclick="toggleSection(this)">
-                        <span>Shipping Information</span>
-                        <i class="fas fa-chevron-down toggle-icon"></i>
-                    </h2>
-                    <div class="section-content">
-                    <div class="form-group">
-                        <label for="shipping_content">Shipping Content (HTML allowed)</label>
-                        <textarea id="shipping_content" name="shipping_content" rows="10" style="font-family: monospace;"><?php echo htmlspecialchars($content_map['shipping_content'] ?? ''); ?></textarea>
-                    </div>
-                    </div>
-                </div>
-                
-                <!-- Return Policy -->
-                <div class="content-section collapsible-section">
-                    <h2 class="section-header" onclick="toggleSection(this)">
-                        <span>Return Policy</span>
-                        <i class="fas fa-chevron-down toggle-icon"></i>
-                    </h2>
-                    <div class="section-content">
-                    <div class="form-group">
-                        <label for="returns_content">Return Policy Content (HTML allowed)</label>
-                        <textarea id="returns_content" name="returns_content" rows="10" style="font-family: monospace;"><?php echo htmlspecialchars($content_map['returns_content'] ?? ''); ?></textarea>
-                    </div>
                     </div>
                 </div>
                 
@@ -501,7 +497,103 @@ $conn->close();
                     </div>
                 </div>
                 
-                <!-- Manufacturing Section -->
+                <!-- Reviews (Homepage) -->
+                <div class="content-section collapsible-section">
+                    <h2 class="section-header" onclick="toggleSection(this)">
+                        <span>Homepage Reviews</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </h2>
+                    <div class="section-content">
+                    <p>These reviews appear in the &quot;What Our Customers Say&quot; section on the homepage.</p>
+                    <div class="form-group" style="background: #f9f9f9; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+                        <h3 style="margin-bottom: 15px;">Add New Review</h3>
+                        <div class="form-group">
+                            <label for="review_customer_name">Customer Name</label>
+                            <input type="text" id="review_customer_name" name="review_customer_name" placeholder="e.g. John Doe">
+                        </div>
+                        <div class="form-group">
+                            <label for="review_text">Review Text</label>
+                            <textarea id="review_text" name="review_text" rows="3" placeholder="Review content"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="review_rating">Rating (1-5)</label>
+                            <input type="number" id="review_rating" name="review_rating" min="1" max="5" value="5">
+                        </div>
+                        <button type="submit" name="add_review" class="btn-primary">Add Review</button>
+                    </div>
+                    <h3 style="margin-bottom: 15px;">Existing Reviews</h3>
+                    <?php if (empty($reviews_list)): ?>
+                        <p>No reviews yet. Add one above.</p>
+                    <?php else: ?>
+                        <div class="reviews-admin-list">
+                        <?php foreach ($reviews_list as $rev): ?>
+                            <div class="review-admin-item" style="background: #fff; padding: 15px; margin-bottom: 15px; border: 1px solid var(--border-color);">
+                                <strong><?php echo htmlspecialchars($rev['customer_name']); ?></strong>
+                                <span class="status-badge status-<?php echo $rev['status'] ?? 'active'; ?>"><?php echo ucfirst($rev['status'] ?? 'active'); ?></span>
+                                <p style="margin: 8px 0;">&ldquo;<?php echo htmlspecialchars($rev['review_text']); ?>&rdquo;</p>
+                                <p style="margin: 4px 0; color: #666;">Rating: <?php echo (int)$rev['rating']; ?> / 5</p>
+                                <?php if (($rev['status'] ?? '') !== 'inactive'): ?>
+                                <form method="POST" style="display: inline;" class="inline-form">
+                                    <input type="hidden" name="review_id" value="<?php echo (int)$rev['id']; ?>">
+                                    <input type="hidden" name="review_customer_name" value="<?php echo htmlspecialchars($rev['customer_name']); ?>">
+                                    <input type="hidden" name="review_text" value="<?php echo htmlspecialchars($rev['review_text']); ?>">
+                                    <input type="hidden" name="review_rating" value="<?php echo (int)$rev['rating']; ?>">
+                                    <button type="submit" name="delete_review" class="btn-delete" onclick="return confirm('Remove this review from the homepage?');">Remove</button>
+                                </form>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                    </div>
+                </div>
+                
+                <!-- Footer (Home) -->
+                <div class="content-section collapsible-section">
+                    <h2 class="section-header" onclick="toggleSection(this)">
+                        <span>Footer</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </h2>
+                    <div class="section-content">
+                    <div class="form-group">
+                        <label for="footer_our_story">Our Story (footer section text)</label>
+                        <textarea id="footer_our_story" name="footer_our_story" rows="3"><?php echo htmlspecialchars($content_map['footer_our_story'] ?? 'FAYMURE is dedicated to crafting premium leather goods that combine traditional craftsmanship with modern design.'); ?></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="footer_email">Footer Email</label>
+                        <input type="email" id="footer_email" name="footer_email" value="<?php echo htmlspecialchars($content_map['footer_email'] ?? ''); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="footer_phone">Footer Phone</label>
+                        <input type="text" id="footer_phone" name="footer_phone" value="<?php echo htmlspecialchars($content_map['footer_phone'] ?? ''); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="footer_facebook">Facebook URL</label>
+                        <input type="url" id="footer_facebook" name="footer_facebook" value="<?php echo htmlspecialchars($content_map['footer_facebook'] ?? ''); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="footer_instagram">Instagram URL</label>
+                        <input type="url" id="footer_instagram" name="footer_instagram" value="<?php echo htmlspecialchars($content_map['footer_instagram'] ?? ''); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="footer_twitter">Twitter URL</label>
+                        <input type="url" id="footer_twitter" name="footer_twitter" value="<?php echo htmlspecialchars($content_map['footer_twitter'] ?? ''); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="footer_linkedin">LinkedIn URL</label>
+                        <input type="url" id="footer_linkedin" name="footer_linkedin" value="<?php echo htmlspecialchars($content_map['footer_linkedin'] ?? ''); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="footer_youtube">YouTube URL</label>
+                        <input type="url" id="footer_youtube" name="footer_youtube" value="<?php echo htmlspecialchars($content_map['footer_youtube'] ?? ''); ?>">
+                    </div>
+                    </div>
+                </div>
+                
+                <!-- ========== ABOUT US ========== -->
+                <h2 class="content-group-title" id="about">About Us</h2>
+                
+                <!-- About Us Section -->
                 <div class="content-section collapsible-section">
                     <h2 class="section-header" onclick="toggleSection(this)">
                         <span>Manufacturing</span>
@@ -525,32 +617,19 @@ $conn->close();
                     </div>
                 </div>
                 
-                <!-- Footer -->
+                <!-- ========== PRODUCT DEFAULTS ========== -->
+                <h2 class="content-group-title" id="product-defaults">Product defaults</h2>
                 <div class="content-section collapsible-section">
                     <h2 class="section-header" onclick="toggleSection(this)">
-                        <span>Footer</span>
+                        <span>Default key features</span>
                         <i class="fas fa-chevron-down toggle-icon"></i>
                     </h2>
                     <div class="section-content">
                     <div class="form-group">
-                        <label for="footer_email">Footer Email</label>
-                        <input type="email" id="footer_email" name="footer_email" value="<?php echo htmlspecialchars($content_map['footer_email'] ?? ''); ?>">
+                        <label for="default_product_key_features">Default key features (one per line)</label>
+                        <textarea id="default_product_key_features" name="default_product_key_features" rows="6" placeholder="Premium genuine leather&#10;Handcrafted&#10;Quality stitching"><?php echo htmlspecialchars($content_map['default_product_key_features'] ?? ''); ?></textarea>
+                        <small>Shown on the product page when a product has no key features set. Leave empty to hide the Key Features section for those products.</small>
                     </div>
-                    <div class="form-group">
-                        <label for="footer_phone">Footer Phone</label>
-                        <input type="text" id="footer_phone" name="footer_phone" value="<?php echo htmlspecialchars($content_map['footer_phone'] ?? ''); ?>">
-                    </div>
-                    <div class="form-group">
-                        <label for="footer_facebook">Facebook URL</label>
-                        <input type="url" id="footer_facebook" name="footer_facebook" value="<?php echo htmlspecialchars($content_map['footer_facebook'] ?? ''); ?>">
-                    </div>
-                    <div class="form-group">
-                        <label for="footer_instagram">Instagram URL</label>
-                        <input type="url" id="footer_instagram" name="footer_instagram" value="<?php echo htmlspecialchars($content_map['footer_instagram'] ?? ''); ?>">
-                    </div>
-                    <div class="form-group">
-                        <label for="footer_twitter">Twitter URL</label>
-                        <input type="url" id="footer_twitter" name="footer_twitter" value="<?php echo htmlspecialchars($content_map['footer_twitter'] ?? ''); ?>">
                     </div>
                 </div>
                 

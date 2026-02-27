@@ -12,7 +12,10 @@ php_value upload_max_filesize 10M
 php_value post_max_size 10M
 
 # ----- Redirect .php URLs to clean URLs (301) -----
+# Exception: hash-password.php, add-product-columns.php (temp scripts) must stay as .php
 RewriteCond %{THE_REQUEST} \s/FAYMURE/([^.]+)\.php(\?[^\s]*)? [NC]
+RewriteCond %{THE_REQUEST} !hash-password\.php [NC]
+RewriteCond %{THE_REQUEST} !add-product-columns\.php [NC]
 RewriteRule ^ /FAYMURE/%1%2 [R=301,L]
 
 # ----- Serve real files and directories as-is -----
@@ -22,7 +25,8 @@ RewriteRule ^ - [L]
 
 # ----- Clean URL -> PHP (with optional query string) -----
 RewriteRule ^$ index.php [L,QSA]
-RewriteRule ^index/?$ index.php [L,QSA]
+# /index or /index/ -> redirect to site root so homepage loads (avoids 404 if rewrite fails)
+RewriteRule ^index/?$ /FAYMURE/ [R=302,L]
 RewriteRule ^about/?$ about.php [L,QSA]
 RewriteRule ^contact/?$ contact.php [L,QSA]
 RewriteRule ^manufacturing/?$ manufacturing.php [L,QSA]
@@ -45,3 +49,30 @@ RewriteRule ^login/?$ login.php [L,QSA]
 RewriteRule ^logout/?$ logout.php [L,QSA]
 RewriteRule ^signup/?$ signup.php [L,QSA]
 RewriteRule ^add-review/?$ add-review.php [L,QSA]
+
+# ----- Blog: clean URLs -----
+RewriteRule ^blog/?$ blog/index.php [L,QSA]
+RewriteRule ^blog/post/([a-z0-9\-]+)/?$ blog/post.php?slug=$1 [L,QSA]
+RewriteRule ^blog/category/([a-z0-9\-]+)/?$ blog/category.php?slug=$1 [L,QSA]
+RewriteRule ^blog/tag/([a-z0-9\-]+)/?$ blog/tag.php?slug=$1 [L,QSA]
+RewriteRule ^blog/search/?$ blog/search.php [L,QSA]
+RewriteRule ^blog/sitemap\.xml$ blog/sitemap.php [L,QSA]
+
+# ----- Blog Admin (separate panel) -----
+RewriteRule ^blog-admin/?$ blog-admin/index.php [L,QSA]
+RewriteRule ^blog-admin/(.*)$ blog-admin/index.php?p=$1 [L,QSA]
+
+# ----- Admin: clean URLs -----
+RewriteRule ^admin/dashboard/?$ admin/dashboard.php [L,QSA]
+RewriteRule ^admin/site-content/?$ admin/site-content.php [L,QSA]
+RewriteRule ^admin/catalog/?$ admin/catalog.php [L,QSA]
+RewriteRule ^admin/shop/?$ admin/shop.php [L,QSA]
+RewriteRule ^admin/explore/?$ admin/explore.php [L,QSA]
+RewriteRule ^admin/orders/?$ admin/orders.php [L,QSA]
+RewriteRule ^admin/form-submissions/?$ admin/form-submissions.php [L,QSA]
+RewriteRule ^admin/form-submissions-pdf/?$ admin/form-submissions-pdf.php [L,QSA]
+RewriteRule ^admin/users/?$ admin/users.php [L,QSA]
+RewriteRule ^admin/products/?$ admin/products.php [L,QSA]
+RewriteRule ^admin/product-add/?$ admin/product-add.php [L,QSA]
+RewriteRule ^admin/product-edit/?$ admin/product-edit.php [L,QSA]
+RewriteRule ^admin/categories/?$ admin/categories.php [L,QSA]

@@ -1,0 +1,29 @@
+a:8:{s:10:"page_title";s:14:"Blog | FAYMURE";s:21:"page_meta_description";s:87:"Tips, guides, and stories about leather care, craftsmanship, and premium leather goods.";s:14:"page_canonical";s:37:"http://localhost/FAYMURE/FAYMURE/blog";s:13:"page_og_title";s:14:"Blog | FAYMURE";s:19:"page_og_description";s:87:"Tips, guides, and stories about leather care, craftsmanship, and premium leather goods.";s:15:"page_extra_head";s:308:"<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"http://localhost/FAYMURE/FAYMURE/"},{"@type":"ListItem","position":2,"name":"Blog","item":"http://localhost/FAYMURE/FAYMURE/blog"}]}</script>";s:14:"page_extra_css";s:19:"assets/css/blog.css";s:4:"html";s:1265:"    <main class="blog-main page-content">
+        <div class="container">
+            <nav class="blog-breadcrumb" aria-label="Breadcrumb">
+                <a href="/FAYMURE/">FAYMURE</a>
+                <span class="sep">/</span>
+                <span>Blog</span>
+            </nav>
+            <h1 class="blog-page-title">Blog</h1>
+            <p class="blog-intro">Tips, guides, and stories about leather care and premium leather goods.</p>
+
+            
+            <section class="blog-latest">
+                <h2 class="blog-section-title">Latest posts</h2>
+                <div class="blog-grid">
+                                        <p class="blog-empty">No posts yet. Check back soon.</p>
+                                    </div>
+
+                            </section>
+
+            <aside class="blog-side-actions">
+                <form action="/FAYMURE/blog/search" method="get" class="blog-search-form" role="search">
+                    <label for="blog-search-q">Search blog</label>
+                    <input type="search" id="blog-search-q" name="q" placeholder="Search..." value="">
+                    <button type="submit">Search</button>
+                </form>
+            </aside>
+        </div>
+    </main>
+";}

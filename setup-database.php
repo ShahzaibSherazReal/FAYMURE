@@ -82,7 +82,10 @@ if ($result->num_rows > 0) {
         'moq' => "ALTER TABLE products ADD COLUMN moq INT DEFAULT 1",
         'images' => "ALTER TABLE products ADD COLUMN images TEXT",
         'status' => "ALTER TABLE products ADD COLUMN status ENUM('active', 'inactive') DEFAULT 'active'",
-        'deleted_at' => "ALTER TABLE products ADD COLUMN deleted_at TIMESTAMP NULL"
+        'deleted_at' => "ALTER TABLE products ADD COLUMN deleted_at TIMESTAMP NULL",
+        'sku' => "ALTER TABLE products ADD COLUMN sku VARCHAR(100) DEFAULT NULL",
+        'key_features' => "ALTER TABLE products ADD COLUMN key_features TEXT",
+        'specifications' => "ALTER TABLE products ADD COLUMN specifications TEXT"
     ];
     
     foreach ($columns_to_add as $col => $sql) {
@@ -106,6 +109,9 @@ if ($result->num_rows > 0) {
         image VARCHAR(255),
         images TEXT,
         status ENUM('active', 'inactive') DEFAULT 'active',
+        sku VARCHAR(100) DEFAULT NULL,
+        key_features TEXT,
+        specifications TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         deleted_at TIMESTAMP NULL,
@@ -247,6 +253,149 @@ if ($result->num_rows == 0) {
         ('Mike Johnson', 'The travel bag exceeded my expectations. Durable and stylish.', 5),
         ('Sarah Williams', 'Amazing customer service and premium products.', 5)");
     echo "<p>✓ Inserted sample reviews</p>";
+}
+
+// Catalog tables (Explore, Manufacturing, Home - title, tagline, image per item)
+foreach (['catalog_explore', 'catalog_manufacturing', 'catalog_home'] as $tbl) {
+    $result = $conn->query("SHOW TABLES LIKE '$tbl'");
+    if ($result->num_rows == 0) {
+        $conn->query("CREATE TABLE $tbl (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            tagline VARCHAR(500) DEFAULT NULL,
+            image VARCHAR(255) DEFAULT NULL,
+            link_url VARCHAR(500) DEFAULT NULL,
+            sort_order INT DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            deleted_at TIMESTAMP NULL
+        )");
+        echo "<p>✓ Created '$tbl' table</p>";
+    }
+}
+
+// ----- Blog module tables -----
+$result = $conn->query("SHOW TABLES LIKE 'blog_authors'");
+if ($result->num_rows == 0) {
+    $conn->query("CREATE TABLE blog_authors (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        slug VARCHAR(100) UNIQUE NOT NULL,
+        bio TEXT,
+        avatar_url VARCHAR(500) DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    echo "<p>✓ Created 'blog_authors' table</p>";
+}
+
+$result = $conn->query("SHOW TABLES LIKE 'blog_categories'");
+if ($result->num_rows == 0) {
+    $conn->query("CREATE TABLE blog_categories (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        slug VARCHAR(100) UNIQUE NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    echo "<p>✓ Created 'blog_categories' table</p>";
+}
+
+$result = $conn->query("SHOW TABLES LIKE 'blog_tags'");
+if ($result->num_rows == 0) {
+    $conn->query("CREATE TABLE blog_tags (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        slug VARCHAR(100) UNIQUE NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    echo "<p>✓ Created 'blog_tags' table</p>";
+}
+
+$result = $conn->query("SHOW TABLES LIKE 'blog_posts'");
+if ($result->num_rows == 0) {
+    $conn->query("CREATE TABLE blog_posts (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        slug VARCHAR(200) UNIQUE NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        excerpt TEXT,
+        featured_image VARCHAR(500) DEFAULT NULL,
+        author_id INT DEFAULT NULL,
+        reading_time_minutes INT DEFAULT NULL,
+        is_featured TINYINT(1) DEFAULT 0,
+        status ENUM('draft','published') DEFAULT 'published',
+        meta_title VARCHAR(255) DEFAULT NULL,
+        meta_description VARCHAR(500) DEFAULT NULL,
+        content_blocks JSON DEFAULT NULL,
+        published_at TIMESTAMP NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (author_id) REFERENCES blog_authors(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    echo "<p>✓ Created 'blog_posts' table</p>";
+}
+
+$result = $conn->query("SHOW TABLES LIKE 'blog_post_categories'");
+if ($result->num_rows == 0) {
+    $conn->query("CREATE TABLE blog_post_categories (
+        post_id INT NOT NULL,
+        category_id INT NOT NULL,
+        PRIMARY KEY (post_id, category_id),
+        FOREIGN KEY (post_id) REFERENCES blog_posts(id) ON DELETE CASCADE,
+        FOREIGN KEY (category_id) REFERENCES blog_categories(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    echo "<p>✓ Created 'blog_post_categories' table</p>";
+}
+
+$result = $conn->query("SHOW TABLES LIKE 'blog_post_tags'");
+if ($result->num_rows == 0) {
+    $conn->query("CREATE TABLE blog_post_tags (
+        post_id INT NOT NULL,
+        tag_id INT NOT NULL,
+        PRIMARY KEY (post_id, tag_id),
+        FOREIGN KEY (post_id) REFERENCES blog_posts(id) ON DELETE CASCADE,
+        FOREIGN KEY (tag_id) REFERENCES blog_tags(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    echo "<p>✓ Created 'blog_post_tags' table</p>";
+}
+
+$result = $conn->query("SHOW TABLES LIKE 'blog_post_images'");
+if ($result->num_rows == 0) {
+    $conn->query("CREATE TABLE blog_post_images (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        post_id INT NOT NULL,
+        image_url VARCHAR(500) NOT NULL,
+        caption VARCHAR(500) DEFAULT NULL,
+        sort_order INT DEFAULT 0,
+        FOREIGN KEY (post_id) REFERENCES blog_posts(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    echo "<p>✓ Created 'blog_post_images' table</p>";
+}
+
+// Optional: insert one sample blog author/category/tag/post if blog is empty
+$check = $conn->query("SELECT 1 FROM blog_posts LIMIT 1");
+if ($check && $check->num_rows == 0) {
+    $conn->query("INSERT INTO blog_authors (name, slug, bio) VALUES ('FAYMURE Team', 'faymure-team', 'The FAYMURE editorial team.')");
+    $aid = $conn->insert_id;
+    $conn->query("INSERT INTO blog_categories (slug, name, description) VALUES ('leather-care', 'Leather Care', 'Tips and guides for caring for leather goods.')");
+    $cid = $conn->insert_id;
+    $conn->query("INSERT INTO blog_tags (slug, name) VALUES ('aniline', 'Aniline')");
+    $tid = $conn->insert_id;
+    $blocks = '[{"type":"paragraph","content":"Leather is a durable material that lasts for years when cared for properly. Here are essential tips to keep your leather goods looking their best."},{"type":"heading","level":2,"content":"Conditioning"},{"type":"paragraph","content":"Use a quality leather conditioner every few months. Apply in a circular motion and wipe off excess."},{"type":"quote","content":"A well-maintained leather piece ages beautifully."},{"type":"list","items":["Avoid direct sunlight","Keep away from moisture","Store in a cool, dry place"]}]';
+    $blocks_esc = $conn->real_escape_string($blocks);
+    $conn->query("INSERT INTO blog_posts (slug, title, excerpt, author_id, reading_time_minutes, is_featured, status, meta_title, meta_description, content_blocks, published_at) VALUES (
+        'how-to-care-for-leather',
+        'How to Care for Leather',
+        'Essential tips to maintain and protect your leather goods.',
+        $aid, 3, 1, 'published',
+        'How to Care for Leather | FAYMURE Blog',
+        'Essential tips to maintain and protect your leather goods. Conditioning, storage, and daily care.',
+        '" . $blocks_esc . "',
+        NOW()
+    )");
+    $pid = $conn->insert_id;
+    $conn->query("INSERT INTO blog_post_categories (post_id, category_id) VALUES ($pid, $cid)");
+    $conn->query("INSERT INTO blog_post_tags (post_id, tag_id) VALUES ($pid, $tid)");
+    echo "<p>✓ Inserted sample blog author, category, tag, and one post</p>";
 }
 
 $conn->close();

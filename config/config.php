@@ -1,5 +1,8 @@
 <?php
-session_start();
+// Blog admin loads this for BASE_PATH only; it uses its own session.
+if (!defined('BLOG_ADMIN_LOADING')) {
+    session_start();
+}
 
 // Site configuration
 define('SITE_NAME', 'FAYMURE');
@@ -38,6 +41,18 @@ function redirect($url) {
 
 function sanitize($data) {
     return htmlspecialchars(strip_tags(trim($data)));
+}
+
+/**
+ * Whether the blog section is hidden from the site (controlled by dashboard toggle).
+ * When true, blog nav link is hidden and /blog/* returns 404.
+ */
+function is_blog_hidden() {
+    $conn = getDBConnection();
+    $r = $conn->query("SELECT content_value FROM site_content WHERE content_key = 'blog_hidden'");
+    $row = ($r && $r->num_rows > 0) ? $r->fetch_assoc() : null;
+    $conn->close();
+    return $row && isset($row['content_value']) && $row['content_value'] === '1';
 }
 
 /**

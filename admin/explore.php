@@ -2,180 +2,174 @@
 require_once 'check-auth.php';
 
 $conn = getDBConnection();
-$active_tab = $_GET['tab'] ?? 'explore-page';
 $success = false;
 $error = '';
 
-// Setup upload directories
-$upload_dir_images = '../assets/images/';
-if (!file_exists($upload_dir_images)) {
-    mkdir($upload_dir_images, 0777, true);
+$upload_dir = '../assets/images/categories/';
+if (!file_exists($upload_dir)) {
+    mkdir($upload_dir, 0777, true);
 }
 
-// Handle explore page content save
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_explore_page'])) {
-    $title = sanitize($_POST['explore_title'] ?? '');
-    $subtitle = sanitize($_POST['explore_subtitle'] ?? '');
-    $option1_title = sanitize($_POST['option1_title'] ?? '');
-    $option1_description = sanitize($_POST['option1_description'] ?? '');
-    $option2_title = sanitize($_POST['option2_title'] ?? '');
-    $option2_description = sanitize($_POST['option2_description'] ?? '');
-    
-    $fields = [
-        'explore_title' => $title,
-        'explore_subtitle' => $subtitle,
-        'explore_option1_title' => $option1_title,
-        'explore_option1_description' => $option1_description,
-        'explore_option2_title' => $option2_title,
-        'explore_option2_description' => $option2_description
-    ];
-    
-    foreach ($fields as $key => $value) {
-        $check = $conn->query("SELECT id FROM site_content WHERE content_key='$key'");
-        if ($check && $check->num_rows > 0) {
-            $stmt = $conn->prepare("UPDATE site_content SET content_value = ? WHERE content_key = ?");
-            $stmt->bind_param("ss", $value, $key);
-        } else {
-            $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES (?, ?)");
-            $stmt->bind_param("ss", $key, $value);
-        }
-        $stmt->execute();
-        if ($stmt->error) {
-            error_log("Explore page save error for $key: " . $stmt->error);
-        }
-        $stmt->close();
+function ensureSiteContent($conn, $key, $default) {
+    $esc = $conn->real_escape_string($key);
+    $r = $conn->query("SELECT id FROM site_content WHERE content_key='$esc'");
+    if ($r && $r->num_rows > 0) {
+        return;
     }
-    
+    $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES (?, ?)");
+    $stmt->bind_param("ss", $key, $default);
+    $stmt->execute();
+    $stmt->close();
+}
+
+// 1. Save Catalog title & tagline (explore_title, explore_subtitle)
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_catalog_heading'])) {
+    $title = sanitize($_POST['catalog_title'] ?? '');
+    $tagline = sanitize($_POST['catalog_tagline'] ?? '');
+    ensureSiteContent($conn, 'explore_title', 'Catalog');
+    ensureSiteContent($conn, 'explore_subtitle', 'Browse our product categories');
+    $stmt = $conn->prepare("UPDATE site_content SET content_value = ? WHERE content_key = 'explore_title'");
+    $stmt->bind_param("s", $title);
+    $stmt->execute();
+    $stmt->close();
+    $stmt = $conn->prepare("UPDATE site_content SET content_value = ? WHERE content_key = 'explore_subtitle'");
+    $stmt->bind_param("s", $tagline);
+    $stmt->execute();
+    $stmt->close();
     $success = true;
-    header('Location: explore.php?tab=explore-page&saved=1');
+    header('Location: explore.php?saved=1');
     exit;
 }
 
-// Handle browse page content save
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_browse_page'])) {
-    $title = sanitize($_POST['browse_title'] ?? '');
-    $subtitle = sanitize($_POST['browse_subtitle'] ?? '');
-    
-    $fields = [
-        'browse_title' => $title,
-        'browse_subtitle' => $subtitle
-    ];
-    
-    foreach ($fields as $key => $value) {
-        $check = $conn->query("SELECT id FROM site_content WHERE content_key='$key'");
-        if ($check && $check->num_rows > 0) {
-            $stmt = $conn->prepare("UPDATE site_content SET content_value = ? WHERE content_key = ?");
-            $stmt->bind_param("ss", $value, $key);
-        } else {
-            $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES (?, ?)");
-            $stmt->bind_param("ss", $key, $value);
+// 2. Add category
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['category_action']) && $_POST['category_action'] === 'add') {
+    $name = sanitize($_POST['name'] ?? '');
+    $tagline = sanitize($_POST['tagline'] ?? '');
+    $slug = sanitize($_POST['slug'] ?? '');
+    if (empty($slug) && $name !== '') {
+        $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($name)));
+        $slug = trim($slug, '-');
+    }
+    $image = '';
+    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+        $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+        $fname = uniqid() . '.' . $ext;
+        if (move_uploaded_file($_FILES['image']['tmp_name'], $upload_dir . $fname)) {
+            $image = 'assets/images/categories/' . $fname;
         }
-        $stmt->execute();
-        if ($stmt->error) {
-            error_log("Browse page save error for $key: " . $stmt->error);
+    }
+    if ($name !== '' && $slug !== '') {
+        $stmt = $conn->prepare("INSERT INTO categories (name, slug, description, image) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssss", $name, $slug, $tagline, $image);
+        if ($stmt->execute()) {
+            $success = true;
+        } else {
+            $error = 'Failed to add category. Slug may already exist.';
         }
         $stmt->close();
+    } else {
+        $error = 'Title and slug are required.';
     }
-    
-    $success = true;
-    header('Location: explore.php?tab=browse-page&saved=1');
+    if (!$error) {
+        header('Location: explore.php?saved=1');
+        exit;
+    }
+}
+
+// 3. Edit category
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['category_action']) && $_POST['category_action'] === 'edit') {
+    $id = (int)($_POST['id'] ?? 0);
+    $name = sanitize($_POST['name'] ?? '');
+    $tagline = sanitize($_POST['tagline'] ?? '');
+    $slug = sanitize($_POST['slug'] ?? '');
+    if ($id > 0 && $name !== '' && $slug !== '') {
+        $current = $conn->query("SELECT image FROM categories WHERE id = $id");
+        $current = $current ? $current->fetch_assoc() : null;
+        $image = $current['image'] ?? '';
+        if (isset($_POST['remove_image']) && $_POST['remove_image'] === '1') {
+            if ($image !== '' && file_exists('../' . $image)) {
+                @unlink('../' . $image);
+            }
+            $image = '';
+        }
+        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            if ($image !== '' && file_exists('../' . $image)) {
+                @unlink('../' . $image);
+            }
+            $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+            $fname = uniqid() . '.' . $ext;
+            if (move_uploaded_file($_FILES['image']['tmp_name'], $upload_dir . $fname)) {
+                $image = 'assets/images/categories/' . $fname;
+            }
+        }
+        $stmt = $conn->prepare("UPDATE categories SET name = ?, slug = ?, description = ?, image = ? WHERE id = ?");
+        $stmt->bind_param("ssssi", $name, $slug, $tagline, $image, $id);
+        if ($stmt->execute()) {
+            $success = true;
+        } else {
+            $error = 'Failed to update category.';
+        }
+        $stmt->close();
+    } else {
+        $error = 'Invalid data.';
+    }
+    if (!$error) {
+        header('Location: explore.php?saved=1');
+        exit;
+    }
+}
+
+// 4. Delete one category
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_one']) && isset($_POST['id'])) {
+    $id = (int)$_POST['id'];
+    if ($id > 0) {
+        $conn->query("UPDATE categories SET deleted_at = NOW() WHERE id = $id");
+        $success = true;
+    }
+    header('Location: explore.php?saved=1');
     exit;
 }
 
-// Handle custom design page content save
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_custom_design_page'])) {
-    $title = sanitize($_POST['custom_design_title'] ?? '');
-    $subtitle = sanitize($_POST['custom_design_subtitle'] ?? '');
-    
-    $fields = [
-        'custom_design_title' => $title,
-        'custom_design_subtitle' => $subtitle
-    ];
-    
-    foreach ($fields as $key => $value) {
-        $check = $conn->query("SELECT id FROM site_content WHERE content_key='$key'");
-        if ($check && $check->num_rows > 0) {
-            $stmt = $conn->prepare("UPDATE site_content SET content_value = ? WHERE content_key = ?");
-            $stmt->bind_param("ss", $value, $key);
-        } else {
-            $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES (?, ?)");
-            $stmt->bind_param("ss", $key, $value);
-        }
+// 5. Delete selected categories
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_selected']) && !empty($_POST['ids']) && is_array($_POST['ids'])) {
+    $ids = array_map('intval', $_POST['ids']);
+    $ids = array_filter($ids, function ($i) { return $i > 0; });
+    if (!empty($ids)) {
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $conn->prepare("UPDATE categories SET deleted_at = NOW() WHERE id IN ($placeholders)");
+        $stmt->bind_param(str_repeat('i', count($ids)), ...$ids);
         $stmt->execute();
-        if ($stmt->error) {
-            error_log("Custom design page save error for $key: " . $stmt->error);
-        }
         $stmt->close();
+        $success = true;
     }
-    
-    $success = true;
-    header('Location: explore.php?tab=custom-design-page&saved=1');
+    header('Location: explore.php?saved=1');
     exit;
 }
 
-// Get current content
-function getContent($key, $default = '') {
-    global $conn;
-    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='$key'");
-    if ($result) {
-        $row = $result->fetch_assoc();
-        if ($row && is_array($row) && !empty($row['content_value'])) {
-            return $row['content_value'];
-        }
-    }
-    return $default;
+// 6. Delete all categories
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_all'])) {
+    $conn->query("UPDATE categories SET deleted_at = NOW() WHERE deleted_at IS NULL");
+    $success = true;
+    header('Location: explore.php?saved=1');
+    exit;
 }
 
-$explore_title = getContent('explore_title', 'Explore Our Services');
-$explore_subtitle = getContent('explore_subtitle', 'Choose how you\'d like to work with us');
-$option1_title = getContent('explore_option1_title', 'Design Your Own Product');
-$option1_description = getContent('explore_option1_description', 'Create a unique product from scratch. Share your vision, upload inspiration images, and let us bring your design to life.');
-$option2_title = getContent('explore_option2_title', 'Browse & Customize');
-$option2_description = getContent('explore_option2_description', 'Browse our product categories and request quotes for bulk orders. You can also request customizations to our existing products.');
+// Load catalog heading
+$catalog_title = 'Catalog';
+$catalog_tagline = 'Browse our product categories';
+$r = $conn->query("SELECT content_key, content_value FROM site_content WHERE content_key IN ('explore_title','explore_subtitle')");
+if ($r) {
+    while ($row = $r->fetch_assoc()) {
+        if ($row['content_key'] === 'explore_title') $catalog_title = $row['content_value'] ?: $catalog_title;
+        if ($row['content_key'] === 'explore_subtitle') $catalog_tagline = $row['content_value'] ?: $catalog_tagline;
+    }
+}
 
-$browse_title = getContent('browse_title', 'Browse & Customize');
-$browse_subtitle = getContent('browse_subtitle', 'Browse our product categories and request quotes for bulk orders. You can also request customizations to our existing products.');
-
-$custom_design_title = getContent('custom_design_title', 'Design Your Own Product');
-$custom_design_subtitle = getContent('custom_design_subtitle', 'Create a unique product from scratch. Share your vision, upload inspiration images, and let us bring your design to life.');
-
-// Get products and categories for management
-$products = [];
+// Load categories
 $categories = [];
-
-$products_result = $conn->query("SELECT p.*, c.name as category_name FROM products p 
-                                LEFT JOIN categories c ON p.category_id = c.id 
-                                WHERE p.deleted_at IS NULL 
-                                ORDER BY p.created_at DESC");
-if ($products_result) {
-    $products = $products_result->fetch_all(MYSQLI_ASSOC);
-}
-
-$categories_result = $conn->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY sort_order, name");
-if ($categories_result) {
-    $categories = $categories_result->fetch_all(MYSQLI_ASSOC);
-}
-
-// Handle product deletion
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_product'])) {
-    $product_id = intval($_POST['product_id']);
-    $stmt = $conn->prepare("UPDATE products SET deleted_at = NOW() WHERE id = ?");
-    $stmt->bind_param("i", $product_id);
-    $stmt->execute();
-    $stmt->close();
-    header('Location: explore.php?tab=products&saved=1');
-    exit;
-}
-
-// Handle category deletion
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_category'])) {
-    $category_id = intval($_POST['category_id']);
-    $stmt = $conn->prepare("UPDATE categories SET deleted_at = NOW() WHERE id = ?");
-    $stmt->bind_param("i", $category_id);
-    $stmt->execute();
-    $stmt->close();
-    header('Location: explore.php?tab=categories&saved=1');
-    exit;
+$res = $conn->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY sort_order, name");
+if ($res) {
+    $categories = $res->fetch_all(MYSQLI_ASSOC);
 }
 
 if (isset($_GET['saved'])) {
@@ -189,278 +183,228 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Explore & Browse Management - <?php echo SITE_NAME; ?> Admin</title>
+    <title>Explore - Catalog & Categories - <?php echo SITE_NAME; ?> Admin</title>
     <link rel="stylesheet" href="../assets/css/style.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="../assets/css/admin.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .form-section { margin-bottom: 30px; }
+        .form-section .section-title { margin-bottom: 15px; font-size: 18px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .form-group input[type="text"], .form-group textarea { width: 100%; max-width: 500px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .bulk-actions { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .bulk-actions form { display: inline; }
+        .admin-table th:first-child, .admin-table td:first-child { width: 40px; text-align: center; }
+        .admin-table img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #eee; }
+        .btn-icon { background: none; border: none; cursor: pointer; padding: 6px 10px; color: #333; }
+        .btn-icon:hover { color: var(--primary-color, #c9a962); }
+        .btn-icon.btn-danger:hover { color: #c00; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); overflow: auto; }
+        .modal-content { background: #fff; margin: 5% auto; padding: 24px; max-width: 520px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+        .modal .close { float: right; font-size: 28px; cursor: pointer; line-height: 1; color: #666; }
+        .modal .close:hover { color: #000; }
+        .modal h2 { margin-top: 0; margin-bottom: 20px; }
+        .modal .form-group input[type="text"], .modal .form-group textarea { max-width: 100%; }
+        .modal .form-actions { margin-top: 20px; display: flex; gap: 10px; }
+    </style>
 </head>
 <body>
     <?php include 'includes/admin-header.php'; ?>
-    
+
     <main class="admin-main">
         <div class="admin-container">
             <div class="page-header">
-                <h1>Explore & Browse Management</h1>
+                <h1>Explore – Catalog & Categories</h1>
             </div>
-            
+
             <?php if ($success): ?>
                 <div class="success-notification">
                     <i class="fas fa-check-circle"></i> Changes saved successfully!
                 </div>
             <?php endif; ?>
-            
-            <!-- Tabs -->
-            <div class="admin-tabs">
-                <a href="?tab=explore-page" class="tab-link <?php echo $active_tab == 'explore-page' ? 'active' : ''; ?>">
-                    <i class="fas fa-compass"></i> Explore Page
-                </a>
-                <a href="?tab=browse-page" class="tab-link <?php echo $active_tab == 'browse-page' ? 'active' : ''; ?>">
-                    <i class="fas fa-shopping-bag"></i> Browse Page
-                </a>
-                <a href="?tab=custom-design-page" class="tab-link <?php echo $active_tab == 'custom-design-page' ? 'active' : ''; ?>">
-                    <i class="fas fa-palette"></i> Custom Design Page
-                </a>
-                <a href="?tab=products" class="tab-link <?php echo $active_tab == 'products' ? 'active' : ''; ?>">
-                    <i class="fas fa-box"></i> Products
-                </a>
-                <a href="?tab=categories" class="tab-link <?php echo $active_tab == 'categories' ? 'active' : ''; ?>">
-                    <i class="fas fa-tags"></i> Categories
-                </a>
-            </div>
-            
-            <!-- Explore Page Tab -->
-            <?php if ($active_tab == 'explore-page'): ?>
-                <form method="POST" class="admin-form">
-                    <div class="form-section">
-                        <h2 class="section-title">Explore Page Content</h2>
-                        
-                        <div class="form-group">
-                            <label for="explore_title">Page Title *</label>
-                            <input type="text" id="explore_title" name="explore_title" value="<?php echo htmlspecialchars($explore_title); ?>" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="explore_subtitle">Page Subtitle *</label>
-                            <input type="text" id="explore_subtitle" name="explore_subtitle" value="<?php echo htmlspecialchars($explore_subtitle); ?>" required>
-                        </div>
-                        
-                        <h3 class="subsection-title">Option 1: Design Your Own</h3>
-                        <div class="form-group">
-                            <label for="option1_title">Title *</label>
-                            <input type="text" id="option1_title" name="option1_title" value="<?php echo htmlspecialchars($option1_title); ?>" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="option1_description">Description *</label>
-                            <textarea id="option1_description" name="option1_description" rows="3" required><?php echo htmlspecialchars($option1_description); ?></textarea>
-                        </div>
-                        
-                        <h3 class="subsection-title">Option 2: Browse & Customize</h3>
-                        <div class="form-group">
-                            <label for="option2_title">Title *</label>
-                            <input type="text" id="option2_title" name="option2_title" value="<?php echo htmlspecialchars($option2_title); ?>" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="option2_description">Description *</label>
-                            <textarea id="option2_description" name="option2_description" rows="3" required><?php echo htmlspecialchars($option2_description); ?></textarea>
-                        </div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" name="save_explore_page" class="btn-primary">
-                            <i class="fas fa-save"></i> Save Changes
-                        </button>
-                        <a href="../explore.php" target="_blank" class="btn-secondary">
-                            <i class="fas fa-external-link-alt"></i> View Page
-                        </a>
-                    </div>
-                </form>
-            <?php endif; ?>
-            
-            <!-- Browse Page Tab -->
-            <?php if ($active_tab == 'browse-page'): ?>
-                <form method="POST" class="admin-form">
-                    <div class="form-section">
-                        <h2 class="section-title">Browse Page Content</h2>
-                        
-                        <div class="form-group">
-                            <label for="browse_title">Page Title *</label>
-                            <input type="text" id="browse_title" name="browse_title" value="<?php echo htmlspecialchars($browse_title); ?>" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="browse_subtitle">Page Subtitle *</label>
-                            <textarea id="browse_subtitle" name="browse_subtitle" rows="3" required><?php echo htmlspecialchars($browse_subtitle); ?></textarea>
-                        </div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" name="save_browse_page" class="btn-primary">
-                            <i class="fas fa-save"></i> Save Changes
-                        </button>
-                        <a href="../explore-browse.php" target="_blank" class="btn-secondary">
-                            <i class="fas fa-external-link-alt"></i> View Page
-                        </a>
-                    </div>
-                </form>
-            <?php endif; ?>
-            
-            <!-- Custom Design Page Tab -->
-            <?php if ($active_tab == 'custom-design-page'): ?>
-                <form method="POST" class="admin-form">
-                    <div class="form-section">
-                        <h2 class="section-title">Custom Design Page Content</h2>
-                        
-                        <div class="form-group">
-                            <label for="custom_design_title">Page Title *</label>
-                            <input type="text" id="custom_design_title" name="custom_design_title" value="<?php echo htmlspecialchars($custom_design_title); ?>" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="custom_design_subtitle">Page Subtitle *</label>
-                            <textarea id="custom_design_subtitle" name="custom_design_subtitle" rows="3" required><?php echo htmlspecialchars($custom_design_subtitle); ?></textarea>
-                        </div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" name="save_custom_design_page" class="btn-primary">
-                            <i class="fas fa-save"></i> Save Changes
-                        </button>
-                        <a href="../explore-custom-design.php" target="_blank" class="btn-secondary">
-                            <i class="fas fa-external-link-alt"></i> View Page
-                        </a>
-                    </div>
-                </form>
-            <?php endif; ?>
-            
-            <!-- Products Tab -->
-            <?php if ($active_tab == 'products'): ?>
-                <div class="admin-table-section">
-                    <div class="table-header">
-                        <h2>Products</h2>
-                        <a href="product-add.php" class="btn-primary">
-                            <i class="fas fa-plus"></i> Add New Product
-                        </a>
-                    </div>
-                    
-                    <div class="table-container">
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Image</th>
-                                    <th>Name</th>
-                                    <th>Category</th>
-                                    <th>Price</th>
-                                    <th>MOQ</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if (empty($products)): ?>
-                                    <tr>
-                                        <td colspan="8" class="text-center">No products found</td>
-                                    </tr>
-                                <?php else: ?>
-                                    <?php foreach ($products as $product): ?>
-                                        <tr>
-                                            <td><?php echo $product['id']; ?></td>
-                                            <td>
-                                                <?php if (!empty($product['image'])): ?>
-                                                    <img src="../<?php echo htmlspecialchars($product['image']); ?>" alt="" style="width: 50px; height: 50px; object-fit: cover;">
-                                                <?php else: ?>
-                                                    <i class="fas fa-image" style="font-size: 24px; color: #ccc;"></i>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td><?php echo htmlspecialchars($product['name']); ?></td>
-                                            <td><?php echo htmlspecialchars($product['category_name'] ?? 'N/A'); ?></td>
-                                            <td><?php echo $product['price'] ? '$' . number_format($product['price'], 2) : 'N/A'; ?></td>
-                                            <td><?php echo $product['moq'] ?? 1; ?></td>
-                                            <td>
-                                                <span class="status-badge status-<?php echo $product['status']; ?>">
-                                                    <?php echo ucfirst($product['status']); ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <a href="product-edit.php?id=<?php echo $product['id']; ?>" class="btn-icon" title="Edit">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this product?');">
-                                                    <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                                                    <button type="submit" name="delete_product" class="btn-icon btn-danger" title="Delete">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
+            <?php if ($error): ?>
+                <div class="error-notification">
+                    <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
                 </div>
             <?php endif; ?>
-            
-            <!-- Categories Tab -->
-            <?php if ($active_tab == 'categories'): ?>
-                <div class="admin-table-section">
-                    <div class="table-header">
-                        <h2>Categories</h2>
-                        <a href="shop.php?tab=categories" class="btn-primary">
-                            <i class="fas fa-plus"></i> Manage Categories
-                        </a>
+
+            <!-- Catalog title & tagline -->
+            <section class="form-section">
+                <h2 class="section-title">Catalog section heading</h2>
+                <form method="POST">
+                    <input type="hidden" name="save_catalog_heading" value="1">
+                    <div class="form-group">
+                        <label for="catalog_title">Title</label>
+                        <input type="text" id="catalog_title" name="catalog_title" value="<?php echo htmlspecialchars($catalog_title); ?>" required>
                     </div>
-                    
-                    <div class="table-container">
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Image</th>
-                                    <th>Name</th>
-                                    <th>Description</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if (empty($categories)): ?>
-                                    <tr>
-                                        <td colspan="5" class="text-center">No categories found</td>
-                                    </tr>
-                                <?php else: ?>
-                                    <?php foreach ($categories as $category): ?>
-                                        <tr>
-                                            <td><?php echo $category['id']; ?></td>
-                                            <td>
-                                                <?php if (!empty($category['image'])): ?>
-                                                    <img src="../<?php echo htmlspecialchars($category['image']); ?>" alt="" style="width: 50px; height: 50px; object-fit: cover;">
-                                                <?php else: ?>
-                                                    <i class="fas fa-image" style="font-size: 24px; color: #ccc;"></i>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td><?php echo htmlspecialchars($category['name']); ?></td>
-                                            <td><?php echo htmlspecialchars(substr($category['description'] ?? '', 0, 50)) . (strlen($category['description'] ?? '') > 50 ? '...' : ''); ?></td>
-                                            <td>
-                                                <a href="shop.php?tab=categories&edit=<?php echo $category['id']; ?>" class="btn-icon" title="Edit">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this category?');">
-                                                    <input type="hidden" name="category_id" value="<?php echo $category['id']; ?>">
-                                                    <button type="submit" name="delete_category" class="btn-icon btn-danger" title="Delete">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
+                    <div class="form-group">
+                        <label for="catalog_tagline">Tagline</label>
+                        <textarea id="catalog_tagline" name="catalog_tagline" rows="2"><?php echo htmlspecialchars($catalog_tagline); ?></textarea>
                     </div>
+                    <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save heading</button>
+                </form>
+            </section>
+
+            <!-- Categories -->
+            <section class="form-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+                    <h2 class="section-title" style="margin: 0;">Categories</h2>
+                    <button type="button" onclick="openAddModal()" class="btn-primary"><i class="fas fa-plus"></i> Add category</button>
                 </div>
-            <?php endif; ?>
+
+                <div class="bulk-actions">
+                    <form method="POST" id="bulkDeleteForm" onsubmit="return confirm('Delete selected categories?');" style="display: inline;">
+                        <input type="hidden" name="delete_selected" value="1">
+                        <div id="bulkIdsContainer"></div>
+                        <button type="submit" class="btn-secondary" id="btnDeleteSelected" style="display: none;"><i class="fas fa-trash"></i> Delete selected</button>
+                    </form>
+                    <form method="POST" onsubmit="return confirm('Delete ALL categories? This cannot be undone.');" style="display: inline;">
+                        <input type="hidden" name="delete_all" value="1">
+                        <button type="submit" class="btn-secondary" style="color: #c00;"><i class="fas fa-trash-alt"></i> Delete all</button>
+                    </form>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAllCat" title="Select all"></th>
+                                <th>ID</th>
+                                <th>Image</th>
+                                <th>Title</th>
+                                <th>Tagline</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($categories)): ?>
+                                <tr>
+                                    <td colspan="6">No categories yet. Add one above.</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($categories as $cat): ?>
+                                    <tr>
+                                        <td><input type="checkbox" class="cat-check" name="ids[]" value="<?php echo (int)$cat['id']; ?>" form="bulkDeleteForm"></td>
+                                        <td><?php echo (int)$cat['id']; ?></td>
+                                        <td>
+                                            <?php if (!empty($cat['image'])): ?>
+                                                <img src="../<?php echo htmlspecialchars($cat['image']); ?>" alt="">
+                                            <?php else: ?>
+                                                <span style="color: #999;">—</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($cat['name']); ?></td>
+                                        <td><?php echo htmlspecialchars(substr($cat['description'] ?? '', 0, 60)); ?><?php echo strlen($cat['description'] ?? '') > 60 ? '…' : ''; ?></td>
+                                        <td>
+                                            <button type="button" class="btn-icon" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($cat)); ?>)" title="Edit"><i class="fas fa-edit"></i></button>
+                                            <form method="POST" style="display: inline;" onsubmit="return confirm('Delete this category?');">
+                                                <input type="hidden" name="delete_one" value="1">
+                                                <input type="hidden" name="id" value="<?php echo (int)$cat['id']; ?>">
+                                                <button type="submit" class="btn-icon btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </div>
     </main>
+
+    <!-- Add/Edit Category Modal -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCategoryModal()">&times;</span>
+            <h2 id="categoryModalTitle">Add category</h2>
+            <form method="POST" id="categoryForm" enctype="multipart/form-data">
+                <input type="hidden" name="category_action" id="categoryAction" value="add">
+                <input type="hidden" name="id" id="categoryId" value="">
+                <div class="form-group">
+                    <label for="cat_name">Title *</label>
+                    <input type="text" id="cat_name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="cat_slug">Slug *</label>
+                    <input type="text" id="cat_slug" name="slug" required>
+                </div>
+                <div class="form-group">
+                    <label for="cat_tagline">Tagline</label>
+                    <textarea id="cat_tagline" name="tagline" rows="2"></textarea>
+                </div>
+                <div class="form-group" id="catImageGroup">
+                    <label for="cat_image">Image</label>
+                    <div id="currentCatImageWrap" style="margin-bottom: 10px; display: none;">
+                        <img id="currentCatImage" src="" alt="" style="max-width: 200px; max-height: 150px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px;">
+                        <label style="display: block; margin-top: 8px;"><input type="checkbox" name="remove_image" value="1"> Remove image</label>
+                    </div>
+                    <input type="file" id="cat_image" name="image" accept="image/*">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Save</button>
+                    <button type="button" onclick="closeCategoryModal()" class="btn-secondary">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openAddModal() {
+            document.getElementById('categoryModalTitle').textContent = 'Add category';
+            document.getElementById('categoryAction').value = 'add';
+            document.getElementById('categoryId').value = '';
+            document.getElementById('categoryForm').reset();
+            document.getElementById('currentCatImageWrap').style.display = 'none';
+            document.getElementById('categoryModal').style.display = 'block';
+        }
+        function openEditModal(cat) {
+            document.getElementById('categoryModalTitle').textContent = 'Edit category';
+            document.getElementById('categoryAction').value = 'edit';
+            document.getElementById('categoryId').value = cat.id;
+            document.getElementById('cat_name').value = cat.name || '';
+            document.getElementById('cat_slug').value = cat.slug || '';
+            document.getElementById('cat_tagline').value = cat.description || '';
+            var wrap = document.getElementById('currentCatImageWrap');
+            var img = document.getElementById('currentCatImage');
+            if (cat.image) {
+                img.src = '../' + cat.image;
+                wrap.style.display = 'block';
+            } else {
+                wrap.style.display = 'none';
+            }
+            document.getElementById('categoryModal').style.display = 'block';
+        }
+        function closeCategoryModal() {
+            document.getElementById('categoryModal').style.display = 'none';
+        }
+        document.getElementById('cat_name').addEventListener('input', function() {
+            var slug = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            if (document.getElementById('categoryAction').value === 'add') {
+                document.getElementById('cat_slug').value = slug;
+            }
+        });
+        var selectAll = document.getElementById('selectAllCat');
+        var checks = document.querySelectorAll('.cat-check');
+        var btnDel = document.getElementById('btnDeleteSelected');
+        if (selectAll) {
+            selectAll.onclick = function() {
+                var table = selectAll.closest('table');
+                var cbs = table ? table.querySelectorAll('.cat-check') : [];
+                cbs.forEach(function(cb) { cb.checked = selectAll.checked; });
+                btnDel.style.display = document.querySelectorAll('.cat-check:checked').length ? 'inline-block' : 'none';
+            };
+        }
+        checks.forEach(function(cb) {
+            cb.addEventListener('change', function() {
+                btnDel.style.display = document.querySelectorAll('.cat-check:checked').length ? 'inline-block' : 'none';
+            });
+        });
+        window.onclick = function(e) {
+            if (e.target.id === 'categoryModal') closeCategoryModal();
+        };
+    </script>
 </body>
 </html>
-

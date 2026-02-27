@@ -34,6 +34,10 @@ Change these lines:
   (4) SITE_NAME
       - You can leave as 'FAYMURE' or change to your brand name.
 
+  Important: Blog admin (blog-admin) uses this same config for BASE_PATH and
+  SITE_URL. Once you set BASE_PATH = '' and SITE_URL correctly here, blog-admin
+  login and dashboard URLs will be correct (no /FAYMURE/ in the path).
+
 --------------------------------------------------------------------------------
 STEP 2: EDIT .htaccess (FOR DOMAIN ROOT)
 --------------------------------------------------------------------------------
@@ -44,11 +48,20 @@ Open the file:  .htaccess  (in the same folder as index.php)
       - From:  RewriteBase /FAYMURE/
       - To:    RewriteBase /
 
-  (2) Redirect rule (the line that redirects .php URLs to clean URLs)
-      - From:  RewriteRule ^ /FAYMURE/%1%2 [R=301,L]
-      - To:    RewriteRule ^ /%1%2 [R=301,L]
+  (2) Redirect .php to clean URLs (update BOTH the condition and the rule)
+      - RewriteCond:  From  RewriteCond %{THE_REQUEST} \s/FAYMURE/([^.]+)\.php(\?[^\s]*)? [NC]
+                      To:   RewriteCond %{THE_REQUEST} \s/([^.]+)\.php(\?[^\s]*)? [NC]
+      - RewriteRule:  From  RewriteRule ^ /FAYMURE/%1%2 [R=301,L]
+                      To:   RewriteRule ^ /%1%2 [R=301,L]
 
-  (3) Leave all other rules as they are (RewriteRule ^$ index.php, etc.).
+  (3) Index redirect (so /index and /index/ go to homepage)
+      - From:  RewriteRule ^index/?$ /FAYMURE/ [R=302,L]
+      - To:    RewriteRule ^index/?$ / [R=302,L]
+
+  (4) Leave all other rules as they are (RewriteRule ^$ index.php, blog
+      routes blog/, blog/post/..., blog/category/..., blog/tag/..., blog/search,
+      blog-admin routes blog-admin/, blog-admin/login, etc., and main admin
+      routes admin/dashboard, admin/product-add, etc.).
 
 --------------------------------------------------------------------------------
 STEP 3: HOSTINGER FOLDER STRUCTURE
@@ -96,24 +109,58 @@ STEP 6: SSL (HTTPS)
   - Use  https://  in SITE_URL so that links and redirects use HTTPS.
 
 --------------------------------------------------------------------------------
+STEP 7: AFTER FIRST DEPLOY
+--------------------------------------------------------------------------------
+
+  - Visit  https://yourdomain.com/setup-database  once if you need to create
+    or update tables (e.g. orders, quote_requests, site_content, blog tables).
+    Then remove or protect setup-database.php in production if it’s sensitive.
+  - Ensure you have an admin user (create via signup and promote in the
+    database, or use your existing admin account from the imported DB).
+  - Main admin panel: /admin/dashboard — Catalog, Orders, Form submissions,
+    Explore (categories), Shop, Site content, Users.
+  - Blog (frontend): /blog — listing, posts, categories, tags, search. Uses
+    same database; ensure blog tables exist (via setup-database or blog-admin
+    install).
+  - Blog Admin (separate panel): https://yourdomain.com/blog-admin
+    Run  https://yourdomain.com/blog-admin/install  once to create blog admin
+    tables and default user (faymureblogadmin / BlogAdmin123). Then delete or
+    protect blog-admin/install.php. Change the default password after first
+    login. See blog-admin/README.md for details.
+  - Create writable folders if needed:  uploads/blog  (blog admin media),
+    cache/blog  (blog frontend cache). Hostinger usually allows creation;
+    ensure the web server can write to these.
+
+--------------------------------------------------------------------------------
 QUICK REFERENCE (SITE AT DOMAIN ROOT)
 --------------------------------------------------------------------------------
 
   config/config.php:
     SITE_URL   = 'https://yourdomain.com'
-    BASE_PATH = ''
+    BASE_PATH  = ''
 
   .htaccess:
     RewriteBase /
-    Redirect rule:  RewriteRule ^ /%1%2 [R=301,L]
+    RewriteCond %{THE_REQUEST} \s/([^.]+)\.php(\?[^\s]*)? [NC]
+    RewriteRule ^ /%1%2 [R=301,L]
+    RewriteRule ^index/?$ / [R=302,L]
+    (Keep existing rules for blog/, blog-admin/, admin/.)
+
+  Key URLs (with BASE_PATH = ''):
+    Site:        https://yourdomain.com/
+    Main admin:  https://yourdomain.com/admin/dashboard
+    Blog:        https://yourdomain.com/blog
+    Blog admin:  https://yourdomain.com/blog-admin  (run /blog-admin/install once)
 
 --------------------------------------------------------------------------------
 TROUBLESHOOTING
 --------------------------------------------------------------------------------
 
-  - 404 on clean URLs (e.g. /about): Make sure mod_rewrite is enabled and
-    .htaccess is in the same directory as index.php. Hostinger usually
-    allows .htaccess by default.
+  - 404 on clean URLs (e.g. /about, /admin/dashboard, /blog, /blog-admin): Ensure
+    mod_rewrite is enabled and .htaccess is in the same directory as index.php.
+    The file includes rules for main pages, blog (blog/, blog/post/..., etc.),
+    blog-admin (blog-admin/, blog-admin/login, ...), and main admin. Hostinger
+    usually allows .htaccess by default.
 
   - Wrong links or redirects: Double-check SITE_URL and BASE_PATH. After
     changing config, clear browser cache or test in a private window.
@@ -124,6 +171,25 @@ TROUBLESHOOTING
 
   - Emails not received: Configure Hostinger’s mail (or SMTP) and use an
     ADMIN_EMAIL that uses your domain so it’s less likely to be blocked.
+
+  - Blog admin login fails or “Invalid username or password”: Run
+    /blog-admin/install again to (re)create the default user and set password
+    to BlogAdmin123; then change password after first login. Ensure
+    blog_admin_users and blog_admin_audit_log tables exist.
+
+  - Blog or blog-admin 404: Verify .htaccess has the blog and blog-admin
+    RewriteRules (blog-admin/?$ and blog-admin/(.*) to blog-admin/index.php).
+    If login works but “dashboard” or other blog-admin pages show “Page Not
+    Found”, the server is not rewriting /blog-admin/* to index.php. Ensure
+    (1) the .htaccess file in your site root (e.g. public_html) contains those
+    two RewriteRule lines for blog-admin, and (2) RewriteBase is / when the
+    site is at the domain root (not /FAYMURE).
+
+  - Test if blog-admin folder is reachable: Open in browser
+    https://yourdomain.com/blog-admin/test-rewrite.php
+    If you see "OK" and PHP version, the folder and PHP work; if you get 404,
+    the server document root or .htaccess is wrong. Delete test-rewrite.php
+    after debugging.
 
 ================================================================================
   END OF HOSTINGER SETUP GUIDE

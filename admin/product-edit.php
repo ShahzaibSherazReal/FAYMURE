@@ -23,8 +23,18 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = sanitize($_POST['name'] ?? '');
     $slug = sanitize($_POST['slug'] ?? '');
+    $sku = trim($_POST['sku'] ?? '');
     $description = sanitize($_POST['description'] ?? '');
     $product_details = sanitize($_POST['product_details'] ?? '');
+    $key_features = $product['key_features'] ?? ''; // Keep existing; field removed from form
+    // Build specifications from table fields
+    $spec_keys = ['Material', 'Dimensions', 'Weight', 'Lining', 'Hardware', 'Origin', 'Category', 'SKU'];
+    $spec_lines = [];
+    foreach ($spec_keys as $key) {
+        $val = trim($_POST['spec_' . $key] ?? '');
+        $spec_lines[] = $key . ': ' . $val;
+    }
+    $specifications = implode("\n", $spec_lines);
     $category_id = intval($_POST['category_id'] ?? 0);
     $subcategory = sanitize($_POST['subcategory'] ?? 'unisex');
     $moq = intval($_POST['moq'] ?? 1);
@@ -93,8 +103,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     if ($name && $slug && $category_id) {
         $images_json = json_encode($images);
-        $stmt = $conn->prepare("UPDATE products SET name=?, slug=?, description=?, product_details=?, category_id=?, subcategory=?, moq=?, price=?, image=?, images=?, status=? WHERE id=?");
-        $stmt->bind_param("ssssisidsssi", $name, $slug, $description, $product_details, $category_id, $subcategory, $moq, $price, $image, $images_json, $status, $product_id);
+        $stmt = $conn->prepare("UPDATE products SET name=?, slug=?, sku=?, description=?, product_details=?, key_features=?, specifications=?, category_id=?, subcategory=?, moq=?, price=?, image=?, images=?, status=? WHERE id=?");
+        // 15 params: 7 strings, int, string, int, double, 3 strings, int (product_id)
+        $bind_types = str_repeat('s', 7) . 'i' . 's' . 'i' . 'd' . str_repeat('s', 3) . 'i';
+        $stmt->bind_param($bind_types, $name, $slug, $sku, $description, $product_details, $key_features, $specifications, $category_id, $subcategory, $moq, $price, $image, $images_json, $status, $product_id);
         
         if ($stmt->execute()) {
             $success = true;
@@ -110,6 +122,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 $categories = $conn->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")->fetch_all(MYSQLI_ASSOC);
 $images = json_decode($product['images'] ?? '[]', true) ?: [];
+$return_catalog = isset($_GET['return']) && $_GET['return'] === 'catalog' && isset($_GET['category']);
+$return_category_id = $return_catalog ? (int)$_GET['category'] : 0;
+
+// Parse specifications for table (Label: Value per line)
+$spec_parsed = [];
+if (!empty(trim($product['specifications'] ?? ''))) {
+    foreach (explode("\n", $product['specifications']) as $line) {
+        $line = trim($line);
+        if ($line === '') continue;
+        $pos = strpos($line, ':');
+        if ($pos !== false) {
+            $spec_parsed[trim(substr($line, 0, $pos))] = trim(substr($line, $pos + 1));
+        }
+    }
+}
+$spec_Material = $spec_parsed['Material'] ?? '';
+$spec_Dimensions = $spec_parsed['Dimensions'] ?? '';
+$spec_Weight = $spec_parsed['Weight'] ?? '';
+$spec_Lining = $spec_parsed['Lining'] ?? '';
+$spec_Hardware = $spec_parsed['Hardware'] ?? '';
+$spec_Origin = $spec_parsed['Origin'] ?? '';
+$spec_Category = $spec_parsed['Category'] ?? '';
+$spec_SKU = $spec_parsed['SKU'] ?? '';
+
+$base = defined('BASE_PATH') ? BASE_PATH : '';
 $conn->close();
 ?>
 <!DOCTYPE html>
@@ -129,11 +166,14 @@ $conn->close();
         <div class="admin-container">
             <div class="page-header">
                 <h1>Edit Product</h1>
-                <a href="products.php" class="btn-secondary">Back to Products</a>
+                <?php if ($return_category_id): ?>
+                    <a href="<?php echo $base; ?>/admin/catalog?category=<?php echo $return_category_id; ?>" class="btn-secondary">Back to Catalog</a>
+                <?php endif; ?>
+                <a href="<?php echo $base; ?>/admin/products" class="btn-secondary">Back to Products</a>
             </div>
             
             <?php if ($success): ?>
-                <div class="success-message">Product updated successfully!</div>
+                <div class="success-message">Product updated successfully! <?php if ($return_category_id): ?><a href="<?php echo $base; ?>/admin/catalog?category=<?php echo $return_category_id; ?>">Back to Catalog</a><?php endif; ?></div>
             <?php elseif ($error): ?>
                 <div class="error-message"><?php echo $error; ?></div>
             <?php endif; ?>
@@ -148,6 +188,11 @@ $conn->close();
                     <div class="form-group">
                         <label for="slug">Slug *</label>
                         <input type="text" id="slug" name="slug" value="<?php echo htmlspecialchars($product['slug']); ?>" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sku">SKU</label>
+                        <input type="text" id="sku" name="sku" value="<?php echo htmlspecialchars($product['sku'] ?? ''); ?>" placeholder="Leave blank to auto-generate">
                     </div>
                 </div>
                 
@@ -203,6 +248,34 @@ $conn->close();
                 </div>
                 
                 <div class="form-group">
+                    <label>Specifications</label>
+                    <div class="spec-table-wrap">
+                        <table class="admin-spec-table">
+                            <thead>
+                                <tr><th>Spec</th><th>Value</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="spec-label">Material</td><td><input type="text" name="spec_Material" value="<?php echo htmlspecialchars($spec_Material); ?>" placeholder="e.g. Premium Genuine Leather"></td></tr>
+                                <tr><td class="spec-label">Dimensions</td><td><input type="text" name="spec_Dimensions" value="<?php echo htmlspecialchars($spec_Dimensions); ?>" placeholder="e.g. 40 x 30 x 10 cm"></td></tr>
+                                <tr><td class="spec-label">Weight</td><td><input type="text" name="spec_Weight" value="<?php echo htmlspecialchars($spec_Weight); ?>" placeholder="e.g. 1.2 kg"></td></tr>
+                                <tr><td class="spec-label">Lining</td><td><input type="text" name="spec_Lining" value="<?php echo htmlspecialchars($spec_Lining); ?>" placeholder="e.g. Premium Fabric Lining"></td></tr>
+                                <tr><td class="spec-label">Hardware</td><td><input type="text" name="spec_Hardware" value="<?php echo htmlspecialchars($spec_Hardware); ?>" placeholder="e.g. Premium Metal Hardware"></td></tr>
+                                <tr><td class="spec-label">Origin</td><td><input type="text" name="spec_Origin" value="<?php echo htmlspecialchars($spec_Origin); ?>" placeholder="e.g. Handcrafted in Pakistan"></td></tr>
+                                <tr><td class="spec-label">Category</td><td>
+                                    <select name="spec_Category">
+                                        <option value="">— Select —</option>
+                                        <?php foreach ($categories as $cat): ?>
+                                            <option value="<?php echo htmlspecialchars($cat['name']); ?>"<?php echo ($spec_Category !== '' && $spec_Category === $cat['name']) ? ' selected' : ''; ?>><?php echo htmlspecialchars($cat['name']); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </td></tr>
+                                <tr><td class="spec-label">SKU</td><td><input type="text" name="spec_SKU" value="<?php echo htmlspecialchars($spec_SKU); ?>" placeholder="e.g. BAG-001"></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="form-group">
                     <label>Main Image</label>
                     <?php if ($product['image']): ?>
                         <div style="margin-bottom: 15px;">
@@ -238,7 +311,11 @@ $conn->close();
                 
                 <div class="form-actions">
                     <button type="submit" class="btn-primary">Update Product</button>
-                    <a href="products.php" class="btn-secondary">Cancel</a>
+                    <?php if ($return_category_id): ?>
+                        <a href="<?php echo $base; ?>/admin/catalog?category=<?php echo $return_category_id; ?>" class="btn-secondary">Cancel</a>
+                    <?php else: ?>
+                        <a href="<?php echo $base; ?>/admin/products" class="btn-secondary">Cancel</a>
+                    <?php endif; ?>
                 </div>
             </form>
         </div>

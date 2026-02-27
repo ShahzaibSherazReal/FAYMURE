@@ -288,6 +288,24 @@
     text-transform: uppercase;
 }
 
+/* Status dropdown in form submissions */
+.status-dropdown-form {
+    min-width: 0;
+}
+.status-select {
+    padding: 4px 8px;
+    font-size: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    min-width: 100px;
+}
+.status-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
 .status-pending {
     background: #fff3cd;
     color: #856404;
@@ -1073,5 +1091,47 @@
         padding: 4px 8px;
         font-size: 10px;
     }
+}
+
+/* Specifications table (add/edit product) */
+.spec-table-wrap {
+    overflow-x: auto;
+    margin-top: 8px;
+}
+.admin-spec-table {
+    width: 100%;
+    max-width: 600px;
+    border-collapse: collapse;
+    border: 1px solid var(--border-color, #ddd);
+    background: #fff;
+}
+.admin-spec-table th,
+.admin-spec-table td {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, #eee);
+    text-align: left;
+    vertical-align: middle;
+}
+.admin-spec-table th {
+    background: var(--primary-color, #001F3F);
+    color: #fff;
+    font-weight: 600;
+}
+.admin-spec-table .spec-label {
+    font-weight: 500;
+    color: var(--text-color);
+    width: 120px;
+}
+.admin-spec-table input[type="text"],
+.admin-spec-table select {
+    width: 100%;
+    min-width: 200px;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 4px;
+    font-size: 14px;
+}
+.admin-spec-table select {
+    cursor: pointer;
 }
 

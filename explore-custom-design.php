@@ -12,8 +12,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = sanitize($_POST['name'] ?? '');
     $email = sanitize($_POST['email'] ?? '');
     $phone = sanitize($_POST['phone'] ?? '');
-    $product_type = sanitize($_POST['product_type'] ?? '');
-    $description = sanitize($_POST['description'] ?? '');
+    // Form uses category_type and additional_details; map to DB fields product_type and description
+    $product_type = sanitize($_POST['category_type'] ?? $_POST['product_type'] ?? '');
+    $description = sanitize($_POST['additional_details'] ?? $_POST['description'] ?? '');
     $quantity = intval($_POST['quantity'] ?? 1);
     $timeline = sanitize($_POST['timeline'] ?? '');
     $budget = sanitize($_POST['budget'] ?? '');

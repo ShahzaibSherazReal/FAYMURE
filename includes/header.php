@@ -28,6 +28,7 @@ $translations = [
         'login' => 'Login',
         'search' => 'Search',
         'explore' => 'Explore',
+        'blog' => 'Blog',
         'logout' => 'Logout',
         'admin' => 'Admin'
     ],
@@ -41,6 +42,7 @@ $translations = [
         'login' => 'Iniciar Sesión',
         'search' => 'Buscar',
         'explore' => 'Explorar',
+        'blog' => 'Blog',
         'logout' => 'Cerrar Sesión',
         'admin' => 'Administrador'
     ]
@@ -58,23 +60,56 @@ $base = defined('BASE_PATH') ? BASE_PATH : '';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo SITE_NAME; ?> - Premium Leather Goods</title>
+    <title><?php echo isset($page_title) ? htmlspecialchars($page_title) : (SITE_NAME . ' - Premium Leather Goods'); ?></title>
+    <?php if (!empty($page_meta_description)): ?>
+    <meta name="description" content="<?php echo htmlspecialchars($page_meta_description); ?>">
+    <?php endif; ?>
+    <?php if (!empty($page_canonical)): ?>
+    <link rel="canonical" href="<?php echo htmlspecialchars($page_canonical); ?>">
+    <?php endif; ?>
+    <?php if (!empty($page_og_title)): ?>
+    <meta property="og:title" content="<?php echo htmlspecialchars($page_og_title); ?>">
+    <meta property="og:description" content="<?php echo htmlspecialchars($page_og_description ?? $page_meta_description ?? ''); ?>">
+    <meta property="og:url" content="<?php echo htmlspecialchars($page_canonical ?? ''); ?>">
+    <meta property="og:type" content="<?php echo isset($page_og_type) ? htmlspecialchars($page_og_type) : 'website'; ?>">
+    <?php if (!empty($page_og_image)): ?>
+    <meta property="og:image" content="<?php echo htmlspecialchars($page_og_image); ?>">
+    <?php endif; ?>
+    <?php endif; ?>
+    <meta name="twitter:card" content="summary_large_image">
+    <?php if (!empty($page_og_title)): ?>
+    <meta name="twitter:title" content="<?php echo htmlspecialchars($page_og_title); ?>">
+    <meta name="twitter:description" content="<?php echo htmlspecialchars($page_og_description ?? $page_meta_description ?? ''); ?>">
+    <?php endif; ?>
+    <?php if (!empty($page_og_image)): ?>
+    <meta name="twitter:image" content="<?php echo htmlspecialchars($page_og_image); ?>">
+    <?php endif; ?>
+    <?php if (!empty($page_extra_head)) echo $page_extra_head; ?>
+    <link rel="icon" href="<?php echo $base; ?>/assets/images/favicon.png.jpeg" type="image/jpeg">
     <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/style.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/animations.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/character.css?v=<?php echo time(); ?>">
+    <?php if (!empty($page_extra_css)): ?>
+    <link rel="stylesheet" href="<?php echo $base . '/' . ltrim($page_extra_css, '/'); ?>?v=<?php echo time(); ?>">
+    <?php endif; ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script defer src="<?php echo $base; ?>/assets/js/faymure-font.js"></script>
 </head>
 <body>
     <?php
-    // Check if shop is in coming soon mode
+    // Check if shop is in coming soon mode and if blog is hidden
     $conn = getDBConnection();
     $shop_coming_soon = false;
-    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='shop_coming_soon'");
+    $blog_hidden = false;
+    $result = $conn->query("SELECT content_key, content_value FROM site_content WHERE content_key IN ('shop_coming_soon','blog_hidden')");
     if ($result) {
-        $row = $result->fetch_assoc();
-        if ($row && is_array($row) && !empty($row['content_value']) && $row['content_value'] == '1') {
-            $shop_coming_soon = true;
+        while ($row = $result->fetch_assoc()) {
+            if (isset($row['content_key']) && $row['content_key'] === 'shop_coming_soon' && !empty($row['content_value']) && $row['content_value'] == '1') {
+                $shop_coming_soon = true;
+            }
+            if (isset($row['content_key']) && $row['content_key'] === 'blog_hidden' && !empty($row['content_value']) && $row['content_value'] == '1') {
+                $blog_hidden = true;
+            }
         }
     }
     $conn->close();
@@ -107,6 +142,9 @@ $base = defined('BASE_PATH') ? BASE_PATH : '';
                     <a href="<?php echo $base; ?>/" class="nav-underline"><?php echo t('home'); ?></a>
                     <a href="<?php echo $base; ?>/about" class="nav-underline"><?php echo t('about'); ?></a>
                     <a href="<?php echo $base; ?>/manufacturing" class="nav-underline"><?php echo t('manufacturing'); ?></a>
+                    <?php if (!$blog_hidden): ?>
+                    <a href="<?php echo $base; ?>/blog" class="nav-underline"><?php echo t('blog'); ?></a>
+                    <?php endif; ?>
                     <a href="<?php echo $base; ?>/contact" class="nav-underline"><?php echo t('contact'); ?></a>
                 </div>
                 <div class="nav-right">

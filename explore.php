@@ -20,13 +20,14 @@ function getContent($key, $default = '') {
 $explore_title = getContent('explore_title', 'Catalog');
 $explore_subtitle = getContent('explore_subtitle', 'Browse our product categories');
 
-// Get all categories
+// Always use categories table (managed in Admin → Explore); same list drives explore, browse, and catalog everywhere
 $categories = [];
 $categories_result = $conn->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY sort_order, name");
 if ($categories_result) {
     $categories = $categories_result->fetch_all(MYSQLI_ASSOC);
 }
 
+$base = defined('BASE_PATH') ? BASE_PATH : '';
 $conn->close();
 ?>
     <main class="explore-page">
@@ -47,7 +48,7 @@ $conn->close();
                         <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/products?category=<?php echo $category['slug']; ?>" class="category-card hover-lift reveal" data-delay="<?php echo ($index * 50) + 100; ?>">
                             <div class="category-image">
                                 <?php if ($category['image']): ?>
-                                    <img src="<?php echo htmlspecialchars($category['image']); ?>" alt="<?php echo htmlspecialchars($category['name']); ?>">
+                                    <img src="<?php echo ($base ? $base . '/' : '') . htmlspecialchars($category['image']); ?>" alt="<?php echo htmlspecialchars($category['name']); ?>">
                                 <?php else: ?>
                                     <div class="placeholder-image">
                                         <i class="fas fa-image"></i>

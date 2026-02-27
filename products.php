@@ -3,12 +3,12 @@ require_once 'config/config.php';
 require_once 'includes/header.php';
 
 $conn = getDBConnection();
-$category_slug = $_GET['category'] ?? '';
+$category_slug = trim($_GET['category'] ?? '');
 $filter_gender = $_GET['gender'] ?? 'all';
 
-// Get category
+// Get category by slug
 $category = null;
-if ($category_slug) {
+if ($category_slug !== '') {
     $stmt = $conn->prepare("SELECT * FROM categories WHERE slug = ? AND deleted_at IS NULL");
     $stmt->bind_param("s", $category_slug);
     $stmt->execute();
@@ -20,8 +20,8 @@ if (!$category) {
     redirect('categories.php');
 }
 
-// Build query
-$query = "SELECT * FROM products WHERE category_id = ? AND deleted_at IS NULL AND status = 'active'";
+// Build query: show active products (or status IS NULL for older rows without status column set)
+$query = "SELECT * FROM products WHERE category_id = ? AND deleted_at IS NULL AND (status = 'active' OR status IS NULL)";
 $params = [$category['id']];
 $types = "i";
 
@@ -281,20 +281,19 @@ $conn->close();
         }
         
         .product-card-body {
-            padding: 6px 10px;
+            padding: 10px 14px 12px;
         }
         
         .product-title {
             font-size: 18px;
             font-weight: 600;
             color: #333;
-            line-height: 1.2;
-            margin: 0 0 4px 0;
-            height: 36px;
-            overflow: hidden;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
+            line-height: 1.3;
+            margin: 0 0 8px 0;
+            /* Let the title wrap to as many lines as needed so it never hides behind the price row */
+            height: auto;
+            overflow: visible;
+            display: block;
         }
         
         .product-price-section {
@@ -410,12 +409,12 @@ $conn->close();
             }
             
             .product-card-body {
-                padding: 14px;
+                padding: 12px 12px 14px;
             }
             
             .product-title {
-                font-size: 13px;
-                height: 38px;
+                font-size: 15px;
+                line-height: 1.3;
             }
             
             .product-price {

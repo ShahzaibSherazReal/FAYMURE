@@ -145,11 +145,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['form_type']) && $_POST
             $conn->query($create_table_sql);
         }
         
-        // Check and add missing columns
+        // Check and add missing columns (table may have been created by explore-browse with fewer columns)
         $columns_to_add = [
             'company_name' => "ALTER TABLE product_customizations ADD COLUMN company_name VARCHAR(255) AFTER customer_phone",
             'customization_options' => "ALTER TABLE product_customizations ADD COLUMN customization_options TEXT AFTER customizations",
-            'customization_ability' => "ALTER TABLE product_customizations ADD COLUMN customization_ability VARCHAR(100) AFTER customization_options"
+            'customization_ability' => "ALTER TABLE product_customizations ADD COLUMN customization_ability VARCHAR(100) AFTER customization_options",
+            'images' => "ALTER TABLE product_customizations ADD COLUMN images TEXT AFTER description"
         ];
         
         foreach ($columns_to_add as $col => $sql) {
@@ -311,9 +312,39 @@ if ($rating_stmt) {
 }
 
 // Generate SKU if not exists
-$product_sku = $product['sku'] ?? 'FAY-' . str_pad($product['id'], 6, '0', STR_PAD_LEFT);
+$product_sku = !empty(trim($product['sku'] ?? '')) ? trim($product['sku']) : 'FAY-' . str_pad($product['id'], 6, '0', STR_PAD_LEFT);
 $stock_status = 'Make to order'; // Can be enhanced with actual stock management
 $delivery_estimate = 'Based on order.';
+
+// Key features: use product's or default from site_content (one per line)
+$key_features_lines = [];
+if (!empty(trim($product['key_features'] ?? ''))) {
+    $key_features_lines = array_filter(array_map('trim', explode("\n", $product['key_features'])));
+}
+if (empty($key_features_lines)) {
+    $default_kf = $conn->query("SELECT content_value FROM site_content WHERE content_key = 'default_product_key_features'");
+    if ($default_kf && $default_kf->num_rows > 0) {
+        $row = $default_kf->fetch_assoc();
+        if (!empty(trim($row['content_value'] ?? ''))) {
+            $key_features_lines = array_filter(array_map('trim', explode("\n", $row['content_value'])));
+        }
+    }
+}
+
+// Parse custom specifications: "Label: Value" per line
+$spec_rows = [];
+if (!empty(trim($product['specifications'] ?? ''))) {
+    foreach (explode("\n", $product['specifications']) as $line) {
+        $line = trim($line);
+        if ($line === '') continue;
+        $pos = strpos($line, ':');
+        if ($pos !== false) {
+            $spec_rows[] = ['label' => trim(substr($line, 0, $pos)), 'value' => trim(substr($line, $pos + 1))];
+        } else {
+            $spec_rows[] = ['label' => $line, 'value' => ''];
+        }
+    }
+}
 
 $conn->close();
 
@@ -529,6 +560,13 @@ if ($avg_rating > 0) {
                         <p class="no-content">No description available.</p>
                     <?php endif; ?>
                     
+                    <?php if (!empty(trim($product['product_details'] ?? ''))): ?>
+                        <div class="product-details-text" style="margin-top: 1.25rem;">
+                            <h3 class="product-details-heading" style="font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--primary-color);">Product Details</h3>
+                            <div class="product-details-content"><?php echo nl2br(htmlspecialchars($product['product_details'])); ?></div>
+                        </div>
+                    <?php endif; ?>
+                    
                     <!-- Craftsmanship Story -->
                     <div class="craftsmanship-story">
                         <h3>Craftsmanship Excellence</h3>
@@ -536,6 +574,23 @@ if ($avg_rating > 0) {
                     </div>
                 </div>
             </section>
+
+            <?php if (!empty($key_features_lines)): ?>
+            <!-- Key Features -->
+            <section class="detail-section" id="key-features-section">
+                <h2 class="section-title premium-section-title">
+                    <i class="fas fa-star"></i>
+                    Key Features
+                </h2>
+                <div class="section-content premium-content">
+                    <ul class="key-features-list">
+                        <?php foreach ($key_features_lines as $feature): ?>
+                            <li><?php echo htmlspecialchars($feature); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </section>
+            <?php endif; ?>
 
             <!-- Specifications Table -->
             <section class="detail-section" id="specifications-section">
@@ -546,38 +601,47 @@ if ($avg_rating > 0) {
                 <div class="section-content premium-content">
                     <table class="specifications-table">
                         <tbody>
-                            <tr>
-                                <td class="spec-label">Material</td>
-                                <td class="spec-value">Premium Genuine Leather</td>
-                            </tr>
-                            <tr>
-                                <td class="spec-label">Dimensions</td>
-                                <td class="spec-value">Custom (varies by product)</td>
-                            </tr>
-                            <tr>
-                                <td class="spec-label">Weight</td>
-                                <td class="spec-value">Varies by size</td>
-                            </tr>
-                            <tr>
-                                <td class="spec-label">Lining</td>
-                                <td class="spec-value">Premium Fabric Lining</td>
-                            </tr>
-                            <tr>
-                                <td class="spec-label">Hardware</td>
-                                <td class="spec-value">Premium Metal Hardware</td>
-                            </tr>
-                            <tr>
-                                <td class="spec-label">Origin</td>
-                                <td class="spec-value">Handcrafted in Pakistan</td>
-                            </tr>
-                            <tr>
-                                <td class="spec-label">Category</td>
-                                <td class="spec-value"><?php echo htmlspecialchars($product['category_name'] ?? 'N/A'); ?></td>
-                            </tr>
-                            <tr>
-                                <td class="spec-label">SKU</td>
-                                <td class="spec-value"><?php echo htmlspecialchars($product_sku); ?></td>
-                            </tr>
+                            <?php if (!empty($spec_rows)): ?>
+                                <?php foreach ($spec_rows as $row): ?>
+                                    <tr>
+                                        <td class="spec-label"><?php echo htmlspecialchars($row['label']); ?></td>
+                                        <td class="spec-value"><?php echo htmlspecialchars($row['value']); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td class="spec-label">Material</td>
+                                    <td class="spec-value">Premium Genuine Leather</td>
+                                </tr>
+                                <tr>
+                                    <td class="spec-label">Dimensions</td>
+                                    <td class="spec-value">Custom (varies by product)</td>
+                                </tr>
+                                <tr>
+                                    <td class="spec-label">Weight</td>
+                                    <td class="spec-value">Varies by size</td>
+                                </tr>
+                                <tr>
+                                    <td class="spec-label">Lining</td>
+                                    <td class="spec-value">Premium Fabric Lining</td>
+                                </tr>
+                                <tr>
+                                    <td class="spec-label">Hardware</td>
+                                    <td class="spec-value">Premium Metal Hardware</td>
+                                </tr>
+                                <tr>
+                                    <td class="spec-label">Origin</td>
+                                    <td class="spec-value">Handcrafted in Pakistan</td>
+                                </tr>
+                                <tr>
+                                    <td class="spec-label">Category</td>
+                                    <td class="spec-value"><?php echo htmlspecialchars($product['category_name'] ?? 'N/A'); ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="spec-label">SKU</td>
+                                    <td class="spec-value"><?php echo htmlspecialchars($product_sku); ?></td>
+                                </tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -1512,6 +1576,26 @@ if ($avg_rating > 0) {
         .spec-value {
             padding: 15px;
             color: #333;
+        }
+
+        /* Key Features */
+        .key-features-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .key-features-list li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            color: #333;
+        }
+        .key-features-list li::before {
+            content: "\f00c";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
         }
 
         /* Care Instructions */

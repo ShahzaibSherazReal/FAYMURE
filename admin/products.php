@@ -101,7 +101,7 @@ $conn->close();
         <div class="admin-container">
             <div class="page-header">
                 <h1>Products</h1>
-                <a href="product-add.php" class="btn-primary"><i class="fas fa-plus"></i> Add New Product</a>
+                <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/admin/product-add" class="btn-primary"><i class="fas fa-plus"></i> Add New Product</a>
             </div>
             
             <!-- Filters -->
@@ -132,7 +132,7 @@ $conn->close();
                     </select>
                     
                     <button type="submit" class="btn-filter">Filter</button>
-                    <a href="products.php" class="btn-secondary">Clear</a>
+                    <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/admin/products" class="btn-secondary">Clear</a>
                 </form>
             </div>
             
@@ -187,7 +187,7 @@ $conn->close();
                                     <td><span class="status-badge status-<?php echo $product['status']; ?>"><?php echo ucfirst($product['status']); ?></span></td>
                                     <td><?php echo date('M d, Y', strtotime($product['created_at'])); ?></td>
                                     <td class="actions">
-                                        <a href="product-edit.php?id=<?php echo $product['id']; ?>" class="btn-edit"><i class="fas fa-edit"></i></a>
+                                        <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/admin/product-edit?id=<?php echo $product['id']; ?>" class="btn-edit"><i class="fas fa-edit"></i></a>
                                         <form method="POST" style="display:inline;" onsubmit="return confirm('Delete this product?');">
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="id" value="<?php echo $product['id']; ?>">
