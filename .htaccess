@@ -27,6 +27,8 @@ RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
 # ----- Clean URL -> PHP (with optional query string) -----
+RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
+RewriteRule ^robots\.txt$ robots.php [L,QSA]
 RewriteRule ^$ index.php [L,QSA]
 # /index or /index/ -> redirect to site root so homepage loads (avoids 404 if rewrite fails)
 RewriteRule ^index/?$ /FAYMURE/ [R=302,L]

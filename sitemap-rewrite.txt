@@ -1,0 +1,15 @@
+# Sitemap rewrite: /sitemap.xml -> sitemap.php
+# Robots rewrite: /robots.txt -> robots.php
+# Ensure these rewrites are active so the dynamic files are served.
+
+# --- Apache (.htaccess) ---
+# Already added in this project's .htaccess and htaccess-LIVE.txt:
+#   RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
+#   RewriteRule ^robots\.txt$ robots.php [L,QSA]
+# Place them in the "Clean URL" section (after "Serve real files", before other rules).
+
+# --- Nginx ---
+# Add inside the server { } block:
+#   location = /sitemap.xml { rewrite ^ /sitemap.php last; }
+#   location = /robots.txt  { rewrite ^ /robots.php last; }
+# Ensure PHP is processed for *.php (e.g. location ~ \.php$ { ... }).
