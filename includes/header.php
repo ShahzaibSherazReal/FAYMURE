@@ -85,6 +85,8 @@ $base = defined('BASE_PATH') ? BASE_PATH : '';
     <meta name="twitter:image" content="<?php echo htmlspecialchars($page_og_image); ?>">
     <?php endif; ?>
     <?php if (!empty($page_extra_head)) echo $page_extra_head; ?>
+    <link rel="icon" type="image/png" href="<?php echo $base; ?>/assets/images/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="<?php echo $base; ?>/assets/images/favicon.png">
     <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/style.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/animations.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/character.css?v=<?php echo time(); ?>">

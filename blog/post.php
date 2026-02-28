@@ -89,7 +89,7 @@ $schema_article = [
     'datePublished' => !empty($post['published_at']) ? date('c', strtotime($post['published_at'])) : '',
     'dateModified' => !empty($post['updated_at']) ? date('c', strtotime($post['updated_at'])) : '',
     'author' => ['@type' => 'Person', 'name' => $post['author_name'] ?? SITE_NAME],
-    'publisher' => ['@type' => 'Organization', 'name' => SITE_NAME, 'logo' => ['@type' => 'ImageObject', 'url' => $site_url . $base . '/assets/images/favicon.png.jpeg']]
+    'publisher' => ['@type' => 'Organization', 'name' => SITE_NAME, 'logo' => ['@type' => 'ImageObject', 'url' => $site_url . $base . '/assets/images/favicon.png']]
 ];
 if (!empty($page_og_image)) $schema_article['image'] = $page_og_image;
 $page_extra_head = '<script type="application/ld+json">' . json_encode($schema_breadcrumb, JSON_UNESCAPED_SLASHES) . '</script>' .
