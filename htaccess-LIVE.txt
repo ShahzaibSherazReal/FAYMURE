@@ -17,6 +17,9 @@ RewriteBase /
 Options -Indexes
 AddDefaultCharset UTF-8
 
+# Serve WebP with correct MIME type (required on many live hosts for .webp to display)
+AddType image/webp .webp
+
 # PHP Settings
 php_value upload_max_filesize 10M
 php_value post_max_size 10M
@@ -82,3 +85,4 @@ RewriteRule ^admin/products/?$ admin/products.php [L,QSA]
 RewriteRule ^admin/product-add/?$ admin/product-add.php [L,QSA]
 RewriteRule ^admin/product-edit/?$ admin/product-edit.php [L,QSA]
 RewriteRule ^admin/categories/?$ admin/categories.php [L,QSA]
+RewriteRule ^admin/convert-images-to-webp/?$ admin/convert-images-to-webp.php [L,QSA]

@@ -1,5 +1,6 @@
 <?php
 require_once 'check-auth.php';
+require_once __DIR__ . '/../includes/image-upload-webp.php';
 
 $product_id = $_GET['id'] ?? 0;
 $conn = getDBConnection();
@@ -84,7 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $file_ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
         $file_name = uniqid() . '.' . $file_ext;
         if (move_uploaded_file($_FILES['image']['tmp_name'], $upload_dir . $file_name)) {
-            $image = 'assets/images/products/' . $file_name;
+            $webp = convert_file_to_webp($upload_dir . $file_name);
+            $image = $webp ? str_replace('../', '', $webp) : ('assets/images/products/' . $file_name);
         }
     }
     
@@ -95,7 +97,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $file_ext = pathinfo($_FILES['images']['name'][$key], PATHINFO_EXTENSION);
                 $file_name = uniqid() . '.' . $file_ext;
                 if (move_uploaded_file($tmp_name, $upload_dir . $file_name)) {
-                    $images[] = 'assets/images/products/' . $file_name;
+                    $webp = convert_file_to_webp($upload_dir . $file_name);
+                    $images[] = $webp ? str_replace('../', '', $webp) : ('assets/images/products/' . $file_name);
                 }
             }
         }
@@ -280,10 +283,7 @@ $conn->close();
                     <?php if ($product['image']): ?>
                         <div style="margin-bottom: 15px;">
                             <img src="../<?php echo htmlspecialchars($product['image']); ?>" alt="Current" style="max-width: 200px; display: block; margin-bottom: 10px; border: 1px solid var(--border-color);">
-                            <form method="POST" style="display: inline;">
-                                <input type="hidden" name="remove_main_image" value="1">
-                                <button type="submit" class="btn-delete" onclick="return confirm('Remove main image?')">Remove Image</button>
-                            </form>
+                            <button type="button" class="btn-delete" onclick="submitRemoveMainImage()">Remove Image</button>
                         </div>
                     <?php endif; ?>
                     <label for="image"><?php echo $product['image'] ? 'Upload New Main Image' : 'Upload Main Image'; ?></label>
@@ -297,10 +297,7 @@ $conn->close();
                             <?php foreach ($images as $index => $img): ?>
                                 <div class="gallery-item" style="position: relative; display: inline-block; margin: 5px;">
                                     <img src="../<?php echo htmlspecialchars($img); ?>" alt="Gallery" style="width: 100px; height: 100px; object-fit: cover; border: 1px solid var(--border-color);">
-                                    <form method="POST" style="position: absolute; top: 0; right: 0;">
-                                        <input type="hidden" name="remove_image_index" value="<?php echo $index; ?>">
-                                        <button type="submit" class="btn-delete" style="padding: 2px 6px; font-size: 10px;" onclick="return confirm('Remove this image?')" title="Remove">×</button>
-                                    </form>
+                                    <button type="button" class="btn-delete" style="position: absolute; top: 0; right: 0; padding: 2px 6px; font-size: 10px;" onclick="submitRemoveImageIndex(<?php echo $index; ?>)" title="Remove">×</button>
                                 </div>
                             <?php endforeach; ?>
                         </div>
@@ -320,6 +317,36 @@ $conn->close();
             </form>
         </div>
     </main>
+    <script>
+        function submitRemoveMainImage() {
+            if (confirm('Remove main image?')) {
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '';
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'remove_main_image';
+                input.value = '1';
+                form.appendChild(input);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        function submitRemoveImageIndex(index) {
+            if (confirm('Remove this image?')) {
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '';
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'remove_image_index';
+                input.value = index;
+                form.appendChild(input);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    </script>
 </body>
 </html>
 

@@ -102,13 +102,28 @@ $conn->close();
             <?php
             $image_path = __DIR__ . '/' . $hero_image;
             $video_path = __DIR__ . '/' . $hero_video;
-            
-            // Prioritize image over video
-            if (file_exists($image_path)): ?>
-                <img src="<?php echo $hero_image; ?>" alt="Hero" class="hero__image" style="position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1;">
+            // If file missing on disk, try same name with .webp, .jpg, .png (for local fallback)
+            if (!file_exists($image_path) && preg_match('/^(.+?)\.(webp|jpe?g|png|gif)$/i', $hero_image, $m)) {
+                $hero_base = $m[1];
+                foreach (['webp', 'jpg', 'jpeg', 'png'] as $ext) {
+                    $try = $hero_base . '.' . $ext;
+                    if (file_exists(__DIR__ . '/' . $try)) {
+                        $hero_image = $try;
+                        break;
+                    }
+                }
+            }
+            // Root-relative URL so images load on live (works with BASE_PATH '' or '/FAYMURE')
+            $hero_src = (isset($base) && $base !== '') ? rtrim($base, '/') . '/' . $hero_image : '/' . ltrim($hero_image, '/');
+            $hero_poster_src = (isset($base) && $base !== '') ? rtrim($base, '/') . '/' . $hero_poster : '/' . ltrim($hero_poster, '/');
+            $hero_video_src = (isset($base) && $base !== '') ? rtrim($base, '/') . '/' . $hero_video : '/' . ltrim($hero_video, '/');
+            // Show image when we have a path (let browser load it; on live file_exists may differ from URL)
+            if ($hero_image !== ''): ?>
+                <img src="<?php echo htmlspecialchars($hero_src); ?>" alt="Hero" class="hero__image" style="position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="hero-placeholder" style="position: absolute; width: 100%; height: 100%; background: var(--background-color); z-index: 1; display: none;"></div>
             <?php elseif (file_exists($video_path)): ?>
-                <video class="hero__video" autoplay muted loop playsinline preload="metadata" poster="<?php echo $hero_poster; ?>">
-                    <source src="<?php echo $hero_video; ?>" type="video/mp4">
+                <video class="hero__video" autoplay muted loop playsinline preload="metadata" poster="<?php echo htmlspecialchars($hero_poster_src); ?>">
+                    <source src="<?php echo htmlspecialchars($hero_video_src); ?>" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
             <?php else: ?>

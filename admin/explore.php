@@ -1,5 +1,6 @@
 <?php
 require_once 'check-auth.php';
+require_once __DIR__ . '/../includes/image-upload-webp.php';
 
 $conn = getDBConnection();
 $success = false;
@@ -37,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_catalog_heading']
     $stmt->execute();
     $stmt->close();
     $success = true;
-    header('Location: explore.php?saved=1');
+    header('Location: explore?saved=1');
     exit;
 }
 
@@ -55,7 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['category_action']) && 
         $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
         $fname = uniqid() . '.' . $ext;
         if (move_uploaded_file($_FILES['image']['tmp_name'], $upload_dir . $fname)) {
-            $image = 'assets/images/categories/' . $fname;
+            $webp = convert_file_to_webp($upload_dir . $fname);
+            $image = $webp ? str_replace('../', '', $webp) : ('assets/images/categories/' . $fname);
         }
     }
     if ($name !== '' && $slug !== '') {
@@ -71,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['category_action']) && 
         $error = 'Title and slug are required.';
     }
     if (!$error) {
-        header('Location: explore.php?saved=1');
+        header('Location: explore?saved=1');
         exit;
     }
 }
@@ -99,7 +101,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['category_action']) && 
             $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
             $fname = uniqid() . '.' . $ext;
             if (move_uploaded_file($_FILES['image']['tmp_name'], $upload_dir . $fname)) {
-                $image = 'assets/images/categories/' . $fname;
+                $webp = convert_file_to_webp($upload_dir . $fname);
+                $image = $webp ? str_replace('../', '', $webp) : ('assets/images/categories/' . $fname);
             }
         }
         $stmt = $conn->prepare("UPDATE categories SET name = ?, slug = ?, description = ?, image = ? WHERE id = ?");
@@ -114,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['category_action']) && 
         $error = 'Invalid data.';
     }
     if (!$error) {
-        header('Location: explore.php?saved=1');
+        header('Location: explore?saved=1');
         exit;
     }
 }
@@ -126,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_one']) && isset
         $conn->query("UPDATE categories SET deleted_at = NOW() WHERE id = $id");
         $success = true;
     }
-    header('Location: explore.php?saved=1');
+    header('Location: explore?saved=1');
     exit;
 }
 
@@ -142,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_selected']) && 
         $stmt->close();
         $success = true;
     }
-    header('Location: explore.php?saved=1');
+    header('Location: explore?saved=1');
     exit;
 }
 
@@ -150,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_selected']) && 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_all'])) {
     $conn->query("UPDATE categories SET deleted_at = NOW() WHERE deleted_at IS NULL");
     $success = true;
-    header('Location: explore.php?saved=1');
+    header('Location: explore?saved=1');
     exit;
 }
 

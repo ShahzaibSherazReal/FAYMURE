@@ -2,6 +2,7 @@
 require_once 'config/config.php';
 require_once 'includes/header.php';
 require_once 'includes/cart-functions.php';
+require_once __DIR__ . '/includes/image-upload-webp.php';
 
 // Handle add to cart
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_to_cart'])) {
@@ -110,7 +111,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['form_type']) && $_POST
                 $upload_path = $upload_dir . $new_filename;
                 
                 if (move_uploaded_file($tmp_name, $upload_path)) {
-                    $uploaded_images[] = $upload_path;
+                    $webp = convert_file_to_webp(__DIR__ . '/' . $upload_path);
+                    $uploaded_images[] = $webp ? ($upload_dir . basename($webp)) : $upload_path;
                 }
             }
         }
@@ -254,11 +256,12 @@ if ($product['images']) {
 if ($product['image']) {
     array_unshift($images, $product['image']);
 }
-// Ensure image URLs work from any URL depth (e.g. /product-detail/slug): use root-relative or base-prefixed paths
+// Ensure image URLs work from any URL depth and on live (root-relative); normalize path slashes
 $base_prefix = (defined('BASE_PATH') && BASE_PATH !== '') ? rtrim(BASE_PATH, '/') . '/' : '/';
 $image_urls = array_map(function($path) use ($base_prefix) {
     if ($path === '' || $path === null) return $base_prefix . 'assets/images/placeholder.jpg';
     if (strpos($path, 'http') === 0 || strpos($path, '//') === 0) return $path;
+    $path = str_replace('\\', '/', trim($path));
     $path = ltrim($path, '/');
     return $base_prefix . $path;
 }, $images);
@@ -423,7 +426,8 @@ if ($avg_rating > 0) {
                                  alt="<?php echo htmlspecialchars($product['name']); ?>"
                                  id="mainImage"
                                  class="main-product-image"
-                                 loading="lazy">
+                                 loading="lazy"
+                                 onerror="this.onerror=null; this.src='<?php echo htmlspecialchars($base_prefix . 'assets/images/placeholder.jpg'); ?>';">
                             <button class="zoom-btn" onclick="openFullscreen()" title="View Fullscreen">
                                 <i class="fas fa-expand"></i>
                             </button>

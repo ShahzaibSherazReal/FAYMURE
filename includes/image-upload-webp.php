@@ -25,12 +25,12 @@ if (!defined('IMAGE_UPLOAD_MAX_BYTES')) {
 
 /** Allowed MIME types (must match allowed extensions) */
 if (!defined('IMAGE_UPLOAD_ALLOWED_MIMES')) {
-    define('IMAGE_UPLOAD_ALLOWED_MIMES', ['image/jpeg', 'image/png', 'image/webp']);
+    define('IMAGE_UPLOAD_ALLOWED_MIMES', ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 }
 
 /** Allowed file extensions (lowercase) */
 if (!defined('IMAGE_UPLOAD_ALLOWED_EXT')) {
-    define('IMAGE_UPLOAD_ALLOWED_EXT', ['jpg', 'jpeg', 'png', 'webp']);
+    define('IMAGE_UPLOAD_ALLOWED_EXT', ['jpg', 'jpeg', 'png', 'gif', 'webp']);
 }
 
 /** WebP output quality (0–100) */
@@ -103,7 +103,7 @@ function upload_image_to_webp(array $file, string $subdir = ''): array
     if ($imageInfo === false || !isset($imageInfo[2])) {
         return ['error' => 'File is not a valid image.'];
     }
-    $allowedImgTypes = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP];
+    $allowedImgTypes = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF, IMAGETYPE_WEBP];
     if (!in_array($imageInfo[2], $allowedImgTypes, true)) {
         return ['error' => 'Image type not allowed.'];
     }
@@ -152,6 +152,49 @@ function upload_image_to_webp(array $file, string $subdir = ''): array
 }
 
 /**
+ * Convert an existing image file to WebP in place (same directory).
+ * Deletes the original file. Use after move_uploaded_file() to convert uploads.
+ *
+ * @param string $filePath Path to the image (relative or absolute)
+ * @return string|null New path with .webp extension, or null on failure
+ */
+function convert_file_to_webp(string $filePath): ?string
+{
+    $abs = realpath($filePath) ?: $filePath;
+    if (!is_file($abs) || !is_readable($abs)) {
+        return null;
+    }
+    $imageInfo = @getimagesize($abs);
+    if ($imageInfo === false || !isset($imageInfo[2])) {
+        return null;
+    }
+    $allowed = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF, IMAGETYPE_WEBP];
+    if (!in_array($imageInfo[2], $allowed, true)) {
+        return null;
+    }
+    $dir = dirname($abs);
+    $base = pathinfo($abs, PATHINFO_FILENAME);
+    $destPath = $dir . DIRECTORY_SEPARATOR . $base . '.webp';
+
+    $converted = false;
+    if (extension_loaded('imagick')) {
+        $converted = convert_to_webp_imagick($abs, $destPath, $imageInfo);
+    }
+    if (!$converted && extension_loaded('gd')) {
+        $converted = convert_to_webp_gd($abs, $destPath, $imageInfo);
+    }
+    if (!$converted) {
+        return null;
+    }
+    @unlink($abs);
+
+    $returnDir = dirname($filePath);
+    $returnBase = pathinfo($filePath, PATHINFO_FILENAME);
+    $sep = (substr($returnDir, -1) === '/' || substr($returnDir, -1) === DIRECTORY_SEPARATOR) ? '' : '/';
+    return str_replace('\\', '/', $returnDir . $sep . $returnBase . '.webp');
+}
+
+/**
  * Convert image to WebP using Imagick.
  * Preserves PNG/WebP transparency.
  */
@@ -167,8 +210,8 @@ function convert_to_webp_imagick(string $srcPath, string $destPath, array $image
         $im->setImageFormat('webp');
         $im->setImageCompressionQuality(IMAGE_UPLOAD_WEBP_QUALITY);
 
-        // Preserve transparency for PNG/WebP
-        if ($imageInfo[2] === IMAGETYPE_PNG || $imageInfo[2] === IMAGETYPE_WEBP) {
+        // Preserve transparency for PNG/GIF/WebP
+        if (in_array($imageInfo[2], [IMAGETYPE_PNG, IMAGETYPE_GIF, IMAGETYPE_WEBP], true)) {
             $im->setImageAlphaChannel(Imagick::ALPHACHANNEL_ACTIVATE);
             $im->setBackgroundColor(new ImagickPixel('transparent'));
         }
@@ -194,8 +237,9 @@ function convert_to_webp_gd(string $srcPath, string $destPath, array $imageInfo)
     $img = match ($type) {
         IMAGETYPE_JPEG => @imagecreatefromjpeg($srcPath),
         IMAGETYPE_PNG  => @imagecreatefrompng($srcPath),
+        IMAGETYPE_GIF  => @imagecreatefromgif($srcPath),
         IMAGETYPE_WEBP => @imagecreatefromwebp($srcPath),
-        default       => null,
+        default        => null,
     };
 
     if ($img === false || $img === null) {
@@ -209,8 +253,8 @@ function convert_to_webp_gd(string $srcPath, string $destPath, array $imageInfo)
         return false;
     }
 
-    // Preserve transparency for PNG/WebP
-    if (in_array($type, [IMAGETYPE_PNG, IMAGETYPE_WEBP], true)) {
+    // Preserve transparency for PNG/GIF/WebP
+    if (in_array($type, [IMAGETYPE_PNG, IMAGETYPE_GIF, IMAGETYPE_WEBP], true)) {
         imagealphablending($img, false);
         imagesavealpha($img, true);
     }

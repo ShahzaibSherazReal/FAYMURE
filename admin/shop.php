@@ -1,5 +1,6 @@
 <?php
 require_once 'check-auth.php';
+require_once __DIR__ . '/../includes/image-upload-webp.php';
 
 $conn = getDBConnection();
 $active_tab = $_GET['tab'] ?? 'products';
@@ -134,7 +135,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['shop_hero_action'])) {
             $target_file = $upload_dir_images . $file_name;
             
             if (move_uploaded_file($_FILES['shop_hero_image']['tmp_name'], $target_file)) {
-                $image_path = 'assets/images/' . $file_name;
+                $webp = convert_file_to_webp($target_file);
+                $image_path = $webp ? str_replace('../', '', $webp) : ('assets/images/' . $file_name);
                 // Check if record exists
                 $check = $conn->query("SELECT id FROM site_content WHERE content_key='shop_hero_image'");
                 if ($check && $check->num_rows > 0) {

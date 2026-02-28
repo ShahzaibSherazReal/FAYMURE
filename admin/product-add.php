@@ -1,5 +1,6 @@
 <?php
 require_once 'check-auth.php';
+require_once __DIR__ . '/../includes/image-upload-webp.php';
 
 $conn = getDBConnection();
 $success = false;
@@ -52,7 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $file_ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
         $file_name = uniqid() . '.' . ($file_ext ?: 'jpg');
         if (move_uploaded_file($_FILES['image']['tmp_name'], $upload_dir . $file_name)) {
-            $image = 'assets/images/products/' . $file_name;
+            $webp = convert_file_to_webp($upload_dir . $file_name);
+            $image = $webp ? str_replace('../', '', $webp) : ('assets/images/products/' . $file_name);
         }
     }
 
@@ -64,13 +66,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $file_ext = pathinfo($_FILES['images']['name'][$key], PATHINFO_EXTENSION);
                 $file_name = uniqid() . '.' . ($file_ext ?: 'jpg');
                 if (move_uploaded_file($tmp_name, $upload_dir . $file_name)) {
-                    $images[] = 'assets/images/products/' . $file_name;
+                    $webp = convert_file_to_webp($upload_dir . $file_name);
+                    $images[] = $webp ? str_replace('../', '', $webp) : ('assets/images/products/' . $file_name);
                 }
             }
         }
     }
 
     if ($name !== '' && $slug !== '' && $category_id > 0) {
+        // Ensure slug is unique (append -2, -3, ... if duplicate)
+        $original_slug = $slug;
+        $slug_check = $conn->prepare("SELECT id FROM products WHERE slug = ?");
+        if ($slug_check) {
+            $slug_check->bind_param("s", $slug);
+            $suffix = 0;
+            while (true) {
+                $slug_check->execute();
+                $res = $slug_check->get_result();
+                if (!$res || $res->num_rows === 0) {
+                    break;
+                }
+                $suffix++;
+                $slug = $original_slug . '-' . $suffix;
+                $slug_check->bind_param("s", $slug);
+            }
+            $slug_check->close();
+        }
+
         // Ensure product columns exist (one-time migration if table was created before sku/key_features/specifications)
         $check = $conn->query("SHOW COLUMNS FROM products LIKE 'sku'");
         if (!$check || $check->num_rows === 0) {

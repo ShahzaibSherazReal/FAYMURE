@@ -1,5 +1,6 @@
 <?php
 require_once 'check-auth.php';
+require_once __DIR__ . '/../includes/image-upload-webp.php';
 
 $conn = getDBConnection();
 
@@ -17,9 +18,10 @@ if (isset($_POST['remove_hero_video'])) {
 
 // Handle remove hero image
 if (isset($_POST['remove_hero_image'])) {
-    $image_file = '../assets/images/hero-poster.jpg';
-    if (file_exists($image_file)) {
-        unlink($image_file);
+    foreach (['../assets/images/hero-poster.jpg', '../assets/images/hero-poster.png', '../assets/images/hero-poster.webp'] as $image_file) {
+        if (file_exists($image_file)) {
+            unlink($image_file);
+        }
     }
     $stmt = $conn->prepare("DELETE FROM site_content WHERE content_key='hero_poster'");
     $stmt->execute();
@@ -80,6 +82,8 @@ if (isset($_FILES['hero_image']) && $_FILES['hero_image']['error'] == 0) {
     $file_name = 'hero-poster.' . $file_ext;
     $target_file = $upload_dir_images . $file_name;
     if (move_uploaded_file($_FILES['hero_image']['tmp_name'], $target_file)) {
+        $webp_path = convert_file_to_webp($target_file);
+        $file_name = $webp_path ? basename($webp_path) : $file_name;
         $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES ('hero_poster', ?) 
                                 ON DUPLICATE KEY UPDATE content_value = ?");
         $stmt->bind_param("ss", $file_name, $file_name);
@@ -95,7 +99,8 @@ if (isset($_FILES['vision_image']) && $_FILES['vision_image']['error'] == 0) {
     $file_name = 'vision.' . $file_ext;
     $target_file = $upload_dir_images . $file_name;
     if (move_uploaded_file($_FILES['vision_image']['tmp_name'], $target_file)) {
-        $image_path = 'assets/images/' . $file_name;
+        $webp_path = convert_file_to_webp($target_file);
+        $image_path = $webp_path ? str_replace('../', '', $webp_path) : ('assets/images/' . $file_name);
         $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES ('vision_image', ?) 
                                 ON DUPLICATE KEY UPDATE content_value = ?");
         $stmt->bind_param("ss", $image_path, $image_path);
@@ -111,7 +116,8 @@ if (isset($_FILES['mission_image']) && $_FILES['mission_image']['error'] == 0) {
     $file_name = 'mission.' . $file_ext;
     $target_file = $upload_dir_images . $file_name;
     if (move_uploaded_file($_FILES['mission_image']['tmp_name'], $target_file)) {
-        $image_path = 'assets/images/' . $file_name;
+        $webp_path = convert_file_to_webp($target_file);
+        $image_path = $webp_path ? str_replace('../', '', $webp_path) : ('assets/images/' . $file_name);
         $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES ('mission_image', ?) 
                                 ON DUPLICATE KEY UPDATE content_value = ?");
         $stmt->bind_param("ss", $image_path, $image_path);
@@ -127,7 +133,8 @@ if (isset($_FILES['services_image']) && $_FILES['services_image']['error'] == 0)
     $file_name = 'services.' . $file_ext;
     $target_file = $upload_dir_images . $file_name;
     if (move_uploaded_file($_FILES['services_image']['tmp_name'], $target_file)) {
-        $image_path = 'assets/images/' . $file_name;
+        $webp_path = convert_file_to_webp($target_file);
+        $image_path = $webp_path ? str_replace('../', '', $webp_path) : ('assets/images/' . $file_name);
         $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES ('services_image', ?) 
                                 ON DUPLICATE KEY UPDATE content_value = ?");
         $stmt->bind_param("ss", $image_path, $image_path);
@@ -190,6 +197,17 @@ if (isset($_POST['delete_faq']) && isset($_POST['faq_index'])) {
             $stmt->close();
             $success = true;
         }
+    }
+}
+
+if (isset($_POST['delete_review']) && isset($_POST['review_id'])) {
+    $rid = (int)$_POST['review_id'];
+    if ($rid > 0) {
+        $stmt = $conn->prepare("UPDATE reviews SET status = 'inactive' WHERE id = ?");
+        $stmt->bind_param("i", $rid);
+        $stmt->execute();
+        $stmt->close();
+        $success = true;
     }
 }
 
@@ -365,10 +383,7 @@ $conn->close();
                             <div style="background: #fff; padding: 15px; margin-bottom: 15px; border: 1px solid var(--border-color);">
                                 <strong>Q: <?php echo htmlspecialchars($faq['question']); ?></strong>
                                 <p style="margin-top: 8px;">A: <?php echo htmlspecialchars($faq['answer']); ?></p>
-                                <form method="POST" style="display: inline;">
-                                    <input type="hidden" name="faq_index" value="<?php echo $index; ?>">
-                                    <button type="submit" name="delete_faq" class="btn-delete" onclick="return confirm('Delete this FAQ?')">Delete</button>
-                                </form>
+                                <button type="button" class="btn-delete" onclick="submitDeleteFaq(<?php echo $index; ?>)">Delete</button>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -423,10 +438,7 @@ $conn->close();
                         <?php if (!empty($content_map['vision_image'])): ?>
                             <div style="margin-bottom: 10px;">
                                 <img src="../<?php echo htmlspecialchars($content_map['vision_image']); ?>" alt="Vision" style="max-width: 200px; display: block; margin-bottom: 10px;">
-                                <form method="POST" style="display: inline;">
-                                    <input type="hidden" name="remove_image" value="vision_image">
-                                    <button type="submit" class="btn-delete" onclick="return confirm('Remove this image?')">Remove Image</button>
-                                </form>
+                                <button type="button" class="btn-delete" onclick="submitRemoveImage('vision_image')">Remove Image</button>
                             </div>
                         <?php endif; ?>
                         <input type="file" id="vision_image" name="vision_image" accept="image/*">
@@ -454,10 +466,7 @@ $conn->close();
                         <?php if (!empty($content_map['mission_image'])): ?>
                             <div style="margin-bottom: 10px;">
                                 <img src="../<?php echo htmlspecialchars($content_map['mission_image']); ?>" alt="Mission" style="max-width: 200px; display: block; margin-bottom: 10px;">
-                                <form method="POST" style="display: inline;">
-                                    <input type="hidden" name="remove_image" value="mission_image">
-                                    <button type="submit" class="btn-delete" onclick="return confirm('Remove this image?')">Remove Image</button>
-                                </form>
+                                <button type="button" class="btn-delete" onclick="submitRemoveImage('mission_image')">Remove Image</button>
                             </div>
                         <?php endif; ?>
                         <input type="file" id="mission_image" name="mission_image" accept="image/*">
@@ -485,10 +494,7 @@ $conn->close();
                         <?php if (!empty($content_map['services_image'])): ?>
                             <div style="margin-bottom: 10px;">
                                 <img src="../<?php echo htmlspecialchars($content_map['services_image']); ?>" alt="Services" style="max-width: 200px; display: block; margin-bottom: 10px;">
-                                <form method="POST" style="display: inline;">
-                                    <input type="hidden" name="remove_image" value="services_image">
-                                    <button type="submit" class="btn-delete" onclick="return confirm('Remove this image?')">Remove Image</button>
-                                </form>
+                                <button type="button" class="btn-delete" onclick="submitRemoveImage('services_image')">Remove Image</button>
                             </div>
                         <?php endif; ?>
                         <input type="file" id="services_image" name="services_image" accept="image/*">
@@ -533,13 +539,7 @@ $conn->close();
                                 <p style="margin: 8px 0;">&ldquo;<?php echo htmlspecialchars($rev['review_text']); ?>&rdquo;</p>
                                 <p style="margin: 4px 0; color: #666;">Rating: <?php echo (int)$rev['rating']; ?> / 5</p>
                                 <?php if (($rev['status'] ?? '') !== 'inactive'): ?>
-                                <form method="POST" style="display: inline;" class="inline-form">
-                                    <input type="hidden" name="review_id" value="<?php echo (int)$rev['id']; ?>">
-                                    <input type="hidden" name="review_customer_name" value="<?php echo htmlspecialchars($rev['customer_name']); ?>">
-                                    <input type="hidden" name="review_text" value="<?php echo htmlspecialchars($rev['review_text']); ?>">
-                                    <input type="hidden" name="review_rating" value="<?php echo (int)$rev['rating']; ?>">
-                                    <button type="submit" name="delete_review" class="btn-delete" onclick="return confirm('Remove this review from the homepage?');">Remove</button>
-                                </form>
+                                <button type="button" class="btn-delete" onclick="submitDeleteReview(<?php echo (int)$rev['id']; ?>)">Remove</button>
                                 <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
@@ -709,7 +709,7 @@ $conn->close();
             if (confirm('Remove hero video? This will delete the video file.')) {
                 var form = document.createElement('form');
                 form.method = 'POST';
-                form.action = 'site-content.php';
+                form.action = ''; // post to current URL (works with clean URLs)
                 var input = document.createElement('input');
                 input.type = 'hidden';
                 input.name = 'remove_hero_video';
@@ -724,12 +724,67 @@ $conn->close();
             if (confirm('Remove hero poster image? This will delete the image file.')) {
                 var form = document.createElement('form');
                 form.method = 'POST';
-                form.action = 'site-content.php';
+                form.action = ''; // post to current URL (works with clean URLs)
                 var input = document.createElement('input');
                 input.type = 'hidden';
                 input.name = 'remove_hero_image';
                 input.value = '1';
                 form.appendChild(input);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function submitRemoveImage(key) {
+            if (confirm('Remove this image?')) {
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '';
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'remove_image';
+                input.value = key;
+                form.appendChild(input);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function submitDeleteFaq(index) {
+            if (confirm('Delete this FAQ?')) {
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '';
+                var i1 = document.createElement('input');
+                i1.type = 'hidden';
+                i1.name = 'faq_index';
+                i1.value = index;
+                var i2 = document.createElement('input');
+                i2.type = 'hidden';
+                i2.name = 'delete_faq';
+                i2.value = '1';
+                form.appendChild(i1);
+                form.appendChild(i2);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function submitDeleteReview(reviewId) {
+            if (confirm('Remove this review from the homepage?')) {
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '';
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'delete_review';
+                input.value = '1';
+                var inputId = document.createElement('input');
+                inputId.type = 'hidden';
+                inputId.name = 'review_id';
+                inputId.value = reviewId;
+                form.appendChild(input);
+                form.appendChild(inputId);
                 document.body.appendChild(form);
                 form.submit();
             }

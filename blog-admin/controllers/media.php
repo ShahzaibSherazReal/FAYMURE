@@ -1,7 +1,9 @@
 <?php
 /**
  * Blog Admin – Media library: list, upload (with resize/compress), delete.
+ * All uploads are converted to WebP.
  */
+require_once dirname(__DIR__, 2) . '/includes/image-upload-webp.php';
 $conn = blog_admin_conn();
 $base = BLOG_ADMIN_BASE;
 $upload_dir = BLOG_ADMIN_UPLOAD_DIR;
@@ -43,10 +45,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && blog_admin_validate_csrf()) {
         $path = '/uploads/blog/' . $name;
         $full = dirname(__DIR__, 2) . $path;
         if (move_uploaded_file($_FILES['file']['tmp_name'], $full)) {
+            $webp_path = convert_file_to_webp($full);
+            if ($webp_path) {
+                $full = $webp_path;
+                $name = basename($webp_path);
+                $path = '/uploads/blog/' . $name;
+            }
             $w = $h = null;
             if (function_exists('getimagesize')) { $info = @getimagesize($full); if ($info) { $w = $info[0]; $h = $info[1]; } }
             $thumb = $medium = $large = null;
-            if (function_exists('imagecreatefromjpeg') || function_exists('imagecreatefrompng')) {
+            if (function_exists('imagecreatefromjpeg') || function_exists('imagecreatefrompng') || function_exists('imagecreatefromwebp')) {
                 $thumb_path = '/uploads/blog/thumb_' . $name;
                 $medium_path = '/uploads/blog/medium_' . $name;
                 $large_path = '/uploads/blog/large_' . $name;
@@ -58,6 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && blog_admin_validate_csrf()) {
             $stmt = $conn->prepare("INSERT INTO blog_media (file_path, file_name_original, mime_type, file_size, width, height, thumb_path, medium_path, large_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $orig = $_FILES['file']['name'];
             $sz = (int)$_FILES['file']['size'];
+            $mime = 'image/webp';
             $stmt->bind_param('sssiiisss', $path, $orig, $mime, $sz, $w, $h, $thumb, $medium, $large);
             $stmt->execute();
             blog_admin_audit($conn, 'upload', 'media', $conn->insert_id, null, $orig);
@@ -73,22 +82,45 @@ function blog_admin_resize_image($src, $dest, $max_w, $max_h) {
     $info = @getimagesize($src);
     if (!$info) return;
     $w = $info[0]; $h = $info[1]; $mime = $info['mime'];
-    if ($w <= $max_w && $h <= $max_h) { @copy($src, $dest); return; }
-    $ratio = min($max_w / $w, $max_h / $h);
-    $nw = (int)($w * $ratio); $nh = (int)($h * $ratio);
+    $dest_ext = strtolower(pathinfo($dest, PATHINFO_EXTENSION));
     $img = null;
     if ($mime === 'image/jpeg') $img = @imagecreatefromjpeg($src);
     elseif ($mime === 'image/png') $img = @imagecreatefrompng($src);
     elseif ($mime === 'image/gif') $img = @imagecreatefromgif($src);
     elseif ($mime === 'image/webp' && function_exists('imagecreatefromwebp')) $img = @imagecreatefromwebp($src);
     if (!$img) return;
+    if ($w <= $max_w && $h <= $max_h) {
+        if ($dest_ext === 'webp' && function_exists('imagewebp')) {
+            imagewebp($img, $dest, 85);
+        } else {
+            if ($mime === 'image/jpeg') imagejpeg($img, $dest, 85);
+            elseif ($mime === 'image/png') imagepng($img, $dest, 8);
+            elseif ($mime === 'image/gif') imagegif($img, $dest);
+            elseif ($mime === 'image/webp' && function_exists('imagewebp')) imagewebp($img, $dest, 85);
+        }
+        imagedestroy($img);
+        return;
+    }
+    $ratio = min($max_w / $w, $max_h / $h);
+    $nw = (int)($w * $ratio); $nh = (int)($h * $ratio);
     $out = imagecreatetruecolor($nw, $nh);
     if ($out) {
+        if (in_array($mime, ['image/png', 'image/gif', 'image/webp'], true)) {
+            imagealphablending($out, false);
+            imagesavealpha($out, true);
+        }
         imagecopyresampled($out, $img, 0, 0, 0, 0, $nw, $nh, $w, $h);
-        if ($mime === 'image/jpeg') imagejpeg($out, $dest, 85);
-        elseif ($mime === 'image/png') imagepng($out, $dest, 8);
-        elseif ($mime === 'image/gif') imagegif($out, $dest);
-        elseif ($mime === 'image/webp' && function_exists('imagewebp')) imagewebp($out, $dest, 85);
+        if ($dest_ext === 'webp' && function_exists('imagewebp')) {
+            imagewebp($out, $dest, 85);
+        } elseif ($mime === 'image/jpeg') {
+            imagejpeg($out, $dest, 85);
+        } elseif ($mime === 'image/png') {
+            imagepng($out, $dest, 8);
+        } elseif ($mime === 'image/gif') {
+            imagegif($out, $dest);
+        } elseif ($mime === 'image/webp' && function_exists('imagewebp')) {
+            imagewebp($out, $dest, 85);
+        }
         imagedestroy($out);
     }
     imagedestroy($img);

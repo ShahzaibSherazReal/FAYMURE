@@ -1,5 +1,6 @@
 <?php
 require_once 'check-auth.php';
+require_once __DIR__ . '/../includes/image-upload-webp.php';
 
 $conn = getDBConnection();
 
@@ -22,7 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $file_ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
                     $file_name = uniqid() . '.' . $file_ext;
                     if (move_uploaded_file($_FILES['image']['tmp_name'], $upload_dir . $file_name)) {
-                        $image = 'assets/images/categories/' . $file_name;
+                        $webp = convert_file_to_webp($upload_dir . $file_name);
+                        $image = $webp ? str_replace('../', '', $webp) : ('assets/images/categories/' . $file_name);
                     }
                 }
                 
@@ -60,7 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $file_ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
                     $file_name = uniqid() . '.' . $file_ext;
                     if (move_uploaded_file($_FILES['image']['tmp_name'], $upload_dir . $file_name)) {
-                        $image = 'assets/images/categories/' . $file_name;
+                        $webp = convert_file_to_webp($upload_dir . $file_name);
+                        $image = $webp ? str_replace('../', '', $webp) : ('assets/images/categories/' . $file_name);
                     }
                 }
                 
