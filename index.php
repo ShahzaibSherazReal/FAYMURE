@@ -119,7 +119,7 @@ $conn->close();
                 <div class="hero-logo reveal" data-delay="0">
                     <h1><?php echo SITE_NAME; ?></h1>
                 </div>
-                <p class="hero-tagline reveal" data-delay="120"><?php echo $hero_tagline; ?></p>
+                <p class="hero-tagline reveal" data-delay="120"><?php echo str_replace('Vission', 'Vision', $hero_tagline); ?></p>
                 <a href="<?php echo $base; ?>/explore" class="btn-explore btn-press reveal" data-delay="240"><?php echo t('explore'); ?> <i class="fas fa-arrow-right"></i></a>
             </div>
         </section>
