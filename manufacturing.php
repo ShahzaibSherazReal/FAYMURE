@@ -107,7 +107,7 @@ $conn->close();
                             <h3 class="option-title"><?php echo htmlspecialchars($option2_title); ?></h3>
                             <p class="option-description"><?php echo htmlspecialchars($option2_description); ?></p>
                             <div class="option-cta">
-                                <span>Browse Now</span>
+                                <span>Browse</span>
                                 <i class="fas fa-arrow-right"></i>
                             </div>
                         </div>
@@ -377,17 +377,32 @@ $conn->close();
                 font-size: 28px;
             }
             .manufacturing-explore .explore-options-grid {
-                grid-template-columns: 1fr;
-                gap: 24px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+                max-width: 100%;
             }
             .manufacturing-explore .explore-option-card {
-                min-height: 340px;
+                min-height: 280px;
             }
             .manufacturing-explore .option-content {
-                padding: 35px 25px;
+                padding: 24px 16px;
+            }
+            .manufacturing-explore .option-icon {
+                width: 56px;
+                height: 56px;
+                font-size: 24px;
             }
             .manufacturing-explore .option-title {
-                font-size: 22px;
+                font-size: 18px;
+                margin-bottom: 8px;
+            }
+            .manufacturing-explore .option-description {
+                font-size: 12px;
+                margin-bottom: 16px;
+            }
+            .manufacturing-explore .option-cta {
+                padding: 10px 20px;
+                font-size: 12px;
             }
         }
     </style>

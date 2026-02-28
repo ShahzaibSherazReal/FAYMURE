@@ -5,7 +5,7 @@
                     <h3>Contact</h3>
                     <?php
                     $conn = getDBConnection();
-                    $email = 'contact@faymure.com';
+                    $email = 'info@faymure.com';
                     $phone = '+1 (555) 123-4567';
                     $fb = '#';
                     $ig = '#';
@@ -40,6 +40,9 @@
                         }
                     }
                     $conn->close();
+                    if (trim(strtolower($email)) === 'contact@faymure.com') {
+                        $email = 'info@faymure.com';
+                    }
                     ?>
                     <p><i class="fas fa-envelope"></i> <a href="mailto:<?php echo $email; ?>"><?php echo $email; ?></a></p>
                     <p><i class="fas fa-phone"></i> <a href="tel:<?php echo $phone; ?>"><?php echo $phone; ?></a></p>
@@ -49,7 +52,7 @@
                         <a href="<?php echo $tw; ?>" target="_blank"><i class="fab fa-twitter"></i></a>
                     </div>
                 </div>
-                <div class="footer-section">
+                <div class="footer-section footer-story">
                     <h3>Our Story</h3>
                     <p>FAYMURE is dedicated to crafting premium leather goods that combine traditional craftsmanship with modern design.</p>
                     <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/about">Learn More</a>

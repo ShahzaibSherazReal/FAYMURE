@@ -167,7 +167,7 @@ $conn->close();
                             <h3 class="option-title"><?php echo htmlspecialchars($option2_title); ?></h3>
                             <p class="option-description"><?php echo htmlspecialchars($option2_description); ?></p>
                             <div class="option-cta">
-                                <span>Browse Now</span>
+                                <span>Browse</span>
                                 <i class="fas fa-arrow-right"></i>
                             </div>
                         </div>
@@ -455,30 +455,38 @@ $conn->close();
             }
             
             .explore-options-grid {
-                grid-template-columns: 1fr;
-                gap: 22px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+                max-width: 100%;
             }
             
             .explore-option-card {
-                min-height: 320px;
+                min-height: 280px;
             }
             
             .option-content {
-                padding: 32px 24px;
+                padding: 24px 16px;
             }
             
             .option-icon {
-                width: 64px;
-                height: 64px;
-                font-size: 28px;
+                width: 56px;
+                height: 56px;
+                font-size: 24px;
             }
             
             .option-title {
-                font-size: 22px;
+                font-size: 18px;
+                margin-bottom: 8px;
             }
             
             .option-description {
-                font-size: 14px;
+                font-size: 12px;
+                margin-bottom: 16px;
+            }
+            
+            .option-cta {
+                padding: 10px 20px;
+                font-size: 12px;
             }
         }
     </style>

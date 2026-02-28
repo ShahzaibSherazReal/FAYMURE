@@ -319,7 +319,7 @@ $conn->close();
                     <p class="form-hint">These appear on the Contact page. Email and phone also show in the footer if set there.</p>
                     <div class="form-group">
                         <label for="contact_email">Contact Email</label>
-                        <input type="email" id="contact_email" name="contact_email" value="<?php echo htmlspecialchars($content_map['contact_email'] ?? $content_map['footer_email'] ?? ''); ?>" placeholder="e.g. contact@faymure.com">
+                        <input type="email" id="contact_email" name="contact_email" value="<?php echo htmlspecialchars($content_map['contact_email'] ?? $content_map['footer_email'] ?? ''); ?>" placeholder="e.g. info@faymure.com">
                     </div>
                     <div class="form-group">
                         <label for="contact_phone">Contact Phone</label>

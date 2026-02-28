@@ -581,16 +581,32 @@ $conn->close();
                 font-size: 28px;
             }
             .custom-design-workflow {
-                padding: 40px 20px 60px;
+                padding: 40px 16px 60px;
             }
             .workflow-steps {
-                flex-wrap: wrap;
-                flex-direction: column;
-                justify-content: center;
-                gap: 30px;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                justify-content: flex-start;
+                gap: 12px;
+                padding-bottom: 12px;
+                -webkit-overflow-scrolling: touch;
+            }
+            .workflow-step {
+                flex: 0 0 auto;
+                min-width: 90px;
+            }
+            .workflow-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+            .workflow-label {
+                font-size: 10px;
+                text-align: center;
             }
             .workflow-arrow {
-                transform: rotate(90deg);
+                flex: 0 0 auto;
+                transform: none;
             }
             .custom-design-page {
                 padding: 0 0 50px;
@@ -603,7 +619,8 @@ $conn->close();
                 font-size: 22px;
             }
             .form-row {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
             }
         }
     </style>

@@ -530,6 +530,7 @@ body {
     color: var(--text-color);
     font-weight: 300;
     letter-spacing: 0.2px;
+    text-align: justify;
 }
 
 .carousel-btn {
@@ -680,6 +681,10 @@ body {
     font-weight: 300;
     line-height: 1.7;
     letter-spacing: 0.2px;
+}
+
+.footer-story p {
+    text-align: justify;
 }
 
 .footer-section a {
@@ -1520,6 +1525,7 @@ body {
     .slide-text p {
         font-size: 12px;
         line-height: 1.5;
+        text-align: justify;
     }
     
     .carousel-btn {

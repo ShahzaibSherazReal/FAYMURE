@@ -3,7 +3,7 @@ require_once 'config/config.php';
 require_once 'includes/header.php';
 
 $conn = getDBConnection();
-$email = 'contact@faymure.com';
+$email = 'info@faymure.com';
 $phone = '+1 (555) 123-4567';
 $address = '';
 
@@ -98,6 +98,9 @@ if ($columns_check && $columns_check->num_rows > 0) {
     }
 }
 $conn->close();
+if (trim(strtolower($email)) === 'contact@faymure.com') {
+    $email = 'info@faymure.com';
+}
 ?>
     <main class="contact-page">
         <div class="container">
@@ -415,17 +418,58 @@ $conn->close();
             }
             
             .contact-info-grid {
-                grid-template-columns: 1fr;
-                gap: 30px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+            
+            .contact-card {
+                padding: 30px 20px;
+            }
+            
+            .contact-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
+            }
+            
+            .contact-card h3 {
+                font-size: 18px;
+            }
+            
+            .contact-card p {
+                font-size: 14px;
+            }
+            
+            .social-section {
+                padding: 40px 20px;
+            }
+            
+            .social-section h2 {
+                font-size: 28px;
             }
             
             .social-links-grid {
-                grid-template-columns: repeat(2, 1fr);
+                display: flex;
+                flex-wrap: nowrap;
+                justify-content: center;
+                gap: 12px;
+                overflow-x: auto;
+                padding-bottom: 8px;
+                -webkit-overflow-scrolling: touch;
             }
             
             .social-link {
-                min-width: auto;
-                flex: 1;
+                min-width: 80px;
+                padding: 20px 16px;
+                flex: 0 0 auto;
+            }
+            
+            .social-link span {
+                font-size: 11px;
+            }
+            
+            .social-link i {
+                font-size: 24px;
             }
         }
     </style>

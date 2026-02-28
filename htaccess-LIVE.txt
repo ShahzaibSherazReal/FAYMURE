@@ -6,8 +6,6 @@
 # 1. Copy everything BELOW the line of equals signs into a new file named .htaccess
 # 2. Upload it to your site root (e.g. public_html on Hostinger)
 # 3. Replace any existing .htaccess or merge with host rules if needed
-# 4. Ensure config/config.php on the server has: BASE_PATH = '';  SITE_URL = 'https://yourdomain.com';
-#
 # =============================================================================
 
 # FAYMURE Website .htaccess - Clean URLs (LIVE / domain root)

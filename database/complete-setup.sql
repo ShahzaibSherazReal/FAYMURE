@@ -154,7 +154,7 @@ INSERT INTO site_content (content_key, content_value, content_type) VALUES
 ('services_title', 'Our Services', 'text'),
 ('services_text', 'We offer custom leather goods, bulk orders, and personalized products tailored to your needs.', 'text'),
 ('services_image', 'assets/images/services.jpg', 'image'),
-('footer_email', 'contact@faymure.com', 'text'),
+('footer_email', 'info@faymure.com', 'text'),
 ('footer_phone', '+1 (555) 123-4567', 'text'),
 ('footer_facebook', 'https://facebook.com/faymure', 'url'),
 ('footer_instagram', 'https://instagram.com/faymure', 'url'),

@@ -196,6 +196,42 @@ $conn->close();
         .actions .btn-delete:hover {
             background: #a00;
         }
+        /* Form submissions tabs as buttons */
+        .admin-tabs {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+        .admin-tabs .tab-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: #f0f0f0;
+            border: 1px solid var(--border-color, #ddd);
+            border-radius: 6px;
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: background 0.2s, border-color 0.2s, color 0.2s;
+        }
+        .admin-tabs .tab-link:hover {
+            background: #e5e5e5;
+            border-color: var(--primary-color, #c9a962);
+            color: var(--primary-color, #c9a962);
+        }
+        .admin-tabs .tab-link.active {
+            background: var(--primary-color, #c9a962);
+            border-color: var(--primary-color, #c9a962);
+            color: #fff;
+        }
+        .admin-tabs .tab-link.active:hover {
+            background: var(--dark-color, #1a1a1a);
+            border-color: var(--dark-color, #1a1a1a);
+            color: #fff;
+        }
     </style>
 </head>
 <body>

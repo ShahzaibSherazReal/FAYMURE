@@ -231,20 +231,25 @@ $conn->close();
             }
             
             .categories-grid {
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-                gap: 20px;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
             }
             
             .category-image {
-                height: 200px;
+                height: 100px;
             }
             
             .category-info {
-                padding: 20px;
+                padding: 12px 8px;
             }
             
             .category-info h3 {
-                font-size: 20px;
+                font-size: 13px;
+                margin-bottom: 4px;
+            }
+            
+            .category-info p {
+                font-size: 11px;
             }
         }
     </style>
