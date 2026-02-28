@@ -5,8 +5,13 @@ require_once __DIR__ . '/../includes/image-upload-webp.php';
 $conn = getDBConnection();
 $success = false;
 $error = '';
+$sticky = []; // Preserve form data on validation error
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // Detect empty POST (often caused by post_max_size exceeded on live hosts)
+    if (empty($_POST) || (!isset($_POST['category_id']) && !isset($_POST['name']))) {
+        $error = "Form submission failed. Your request may exceed the server upload limit. Try using smaller images (under 2 MB each) or fewer images, then try again.";
+    } else {
     $name = trim($_POST['name'] ?? '');
     $slug = trim($_POST['slug'] ?? '');
     $sku = trim($_POST['sku'] ?? '');
@@ -124,11 +129,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } else {
             $error = "Please fill in all required fields.";
         }
+        $sticky = [
+            'name' => $name, 'slug' => $slug, 'sku' => $sku,
+            'description' => $description, 'product_details' => $product_details,
+            'category_id' => $category_id, 'subcategory' => $subcategory,
+            'moq' => $moq, 'price' => $price, 'status' => $status,
+            'spec_Material' => trim($_POST['spec_Material'] ?? ''),
+            'spec_Dimensions' => trim($_POST['spec_Dimensions'] ?? ''),
+            'spec_Weight' => trim($_POST['spec_Weight'] ?? ''),
+            'spec_Lining' => trim($_POST['spec_Lining'] ?? ''),
+            'spec_Hardware' => trim($_POST['spec_Hardware'] ?? ''),
+            'spec_Origin' => trim($_POST['spec_Origin'] ?? ''),
+            'spec_Category' => trim($_POST['spec_Category'] ?? ''),
+            'spec_SKU' => trim($_POST['spec_SKU'] ?? ''),
+        ];
+    }
     }
 }
 
 $categories = $conn->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")->fetch_all(MYSQLI_ASSOC);
 $preselect_category_id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
+if (!empty($sticky['category_id'])) {
+    $preselect_category_id = (int)$sticky['category_id'];
+}
 $base = defined('BASE_PATH') ? BASE_PATH : '';
 $conn->close();
 ?>
@@ -167,22 +190,22 @@ $conn->close();
                 <div class="error-message"><?php echo $error; ?></div>
             <?php endif; ?>
             
-            <form method="POST" enctype="multipart/form-data" class="admin-form">
+            <form method="POST" action="" enctype="multipart/form-data" class="admin-form">
                 <div class="form-row">
                     <div class="form-group">
                         <label for="name">Product Name *</label>
-                        <input type="text" id="name" name="name" required>
+                        <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($sticky['name'] ?? ''); ?>" required>
                     </div>
                     
                     <div class="form-group">
                         <label for="slug">Slug *</label>
-                        <input type="text" id="slug" name="slug" required>
+                        <input type="text" id="slug" name="slug" value="<?php echo htmlspecialchars($sticky['slug'] ?? ''); ?>" required>
                         <small>URL-friendly version (e.g., leather-jacket-001)</small>
                     </div>
                     
                     <div class="form-group">
                         <label for="sku">SKU</label>
-                        <input type="text" id="sku" name="sku" placeholder="e.g. BAG-001 or leave blank to auto-generate">
+                        <input type="text" id="sku" name="sku" value="<?php echo htmlspecialchars($sticky['sku'] ?? ''); ?>" placeholder="e.g. BAG-001 or leave blank to auto-generate">
                     </div>
                 </div>
                 
@@ -200,39 +223,39 @@ $conn->close();
                     <div class="form-group">
                         <label for="subcategory">Subcategory</label>
                         <select id="subcategory" name="subcategory">
-                            <option value="unisex">Unisex</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
+                            <option value="unisex"<?php echo ($sticky['subcategory'] ?? '') === 'unisex' ? ' selected' : ''; ?>>Unisex</option>
+                            <option value="male"<?php echo ($sticky['subcategory'] ?? '') === 'male' ? ' selected' : ''; ?>>Male</option>
+                            <option value="female"<?php echo ($sticky['subcategory'] ?? '') === 'female' ? ' selected' : ''; ?>>Female</option>
                         </select>
                     </div>
                     
                     <div class="form-group">
                         <label for="moq">Minimum Order Quantity (MOQ)</label>
-                        <input type="number" id="moq" name="moq" min="1" value="1">
+                        <input type="number" id="moq" name="moq" min="1" value="<?php echo (int)($sticky['moq'] ?? 1); ?>">
                     </div>
                     
                     <div class="form-group">
                         <label for="price">Price</label>
-                        <input type="number" id="price" name="price" step="0.01" min="0">
+                        <input type="number" id="price" name="price" step="0.01" min="0" value="<?php echo htmlspecialchars($sticky['price'] ?? ''); ?>">
                     </div>
                     
                     <div class="form-group">
                         <label for="status">Status</label>
                         <select id="status" name="status">
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
+                            <option value="active"<?php echo ($sticky['status'] ?? '') === 'inactive' ? '' : ' selected'; ?>>Active</option>
+                            <option value="inactive"<?php echo ($sticky['status'] ?? '') === 'inactive' ? ' selected' : ''; ?>>Inactive</option>
                         </select>
                     </div>
                 </div>
                 
                 <div class="form-group">
                     <label for="description">Description</label>
-                    <textarea id="description" name="description" rows="5"></textarea>
+                    <textarea id="description" name="description" rows="5"><?php echo htmlspecialchars($sticky['description'] ?? ''); ?></textarea>
                 </div>
                 
                 <div class="form-group">
                     <label for="product_details">Product Details</label>
-                    <textarea id="product_details" name="product_details" rows="5"></textarea>
+                    <textarea id="product_details" name="product_details" rows="5"><?php echo htmlspecialchars($sticky['product_details'] ?? ''); ?></textarea>
                 </div>
                 
                 <div class="form-group">
@@ -243,21 +266,21 @@ $conn->close();
                                 <tr><th>Spec</th><th>Value</th></tr>
                             </thead>
                             <tbody>
-                                <tr><td class="spec-label">Material</td><td><input type="text" name="spec_Material" value="" placeholder="e.g. Premium Genuine Leather"></td></tr>
-                                <tr><td class="spec-label">Dimensions</td><td><input type="text" name="spec_Dimensions" value="" placeholder="e.g. 40 x 30 x 10 cm"></td></tr>
-                                <tr><td class="spec-label">Weight</td><td><input type="text" name="spec_Weight" value="" placeholder="e.g. 1.2 kg"></td></tr>
-                                <tr><td class="spec-label">Lining</td><td><input type="text" name="spec_Lining" value="" placeholder="e.g. Premium Fabric Lining"></td></tr>
-                                <tr><td class="spec-label">Hardware</td><td><input type="text" name="spec_Hardware" value="" placeholder="e.g. Premium Metal Hardware"></td></tr>
-                                <tr><td class="spec-label">Origin</td><td><input type="text" name="spec_Origin" value="" placeholder="e.g. Handcrafted in Pakistan"></td></tr>
+                                <tr><td class="spec-label">Material</td><td><input type="text" name="spec_Material" value="<?php echo htmlspecialchars($sticky['spec_Material'] ?? ''); ?>" placeholder="e.g. Premium Genuine Leather"></td></tr>
+                                <tr><td class="spec-label">Dimensions</td><td><input type="text" name="spec_Dimensions" value="<?php echo htmlspecialchars($sticky['spec_Dimensions'] ?? ''); ?>" placeholder="e.g. 40 x 30 x 10 cm"></td></tr>
+                                <tr><td class="spec-label">Weight</td><td><input type="text" name="spec_Weight" value="<?php echo htmlspecialchars($sticky['spec_Weight'] ?? ''); ?>" placeholder="e.g. 1.2 kg"></td></tr>
+                                <tr><td class="spec-label">Lining</td><td><input type="text" name="spec_Lining" value="<?php echo htmlspecialchars($sticky['spec_Lining'] ?? ''); ?>" placeholder="e.g. Premium Fabric Lining"></td></tr>
+                                <tr><td class="spec-label">Hardware</td><td><input type="text" name="spec_Hardware" value="<?php echo htmlspecialchars($sticky['spec_Hardware'] ?? ''); ?>" placeholder="e.g. Premium Metal Hardware"></td></tr>
+                                <tr><td class="spec-label">Origin</td><td><input type="text" name="spec_Origin" value="<?php echo htmlspecialchars($sticky['spec_Origin'] ?? ''); ?>" placeholder="e.g. Handcrafted in Pakistan"></td></tr>
                                 <tr><td class="spec-label">Category</td><td>
                                     <select name="spec_Category">
                                         <option value="">— Select —</option>
                                         <?php foreach ($categories as $cat): ?>
-                                            <option value="<?php echo htmlspecialchars($cat['name']); ?>"<?php echo ($preselect_category_id && (int)$cat['id'] === $preselect_category_id) ? ' selected' : ''; ?>><?php echo htmlspecialchars($cat['name']); ?></option>
+                                            <option value="<?php echo htmlspecialchars($cat['name']); ?>"<?php echo (($sticky['spec_Category'] ?? '') === $cat['name'] || ($preselect_category_id && (int)$cat['id'] === $preselect_category_id)) ? ' selected' : ''; ?>><?php echo htmlspecialchars($cat['name']); ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </td></tr>
-                                <tr><td class="spec-label">SKU</td><td><input type="text" name="spec_SKU" value="" placeholder="e.g. BAG-001 or leave blank"></td></tr>
+                                <tr><td class="spec-label">SKU</td><td><input type="text" name="spec_SKU" value="<?php echo htmlspecialchars($sticky['spec_SKU'] ?? ''); ?>" placeholder="e.g. BAG-001 or leave blank"></td></tr>
                             </tbody>
                         </table>
                     </div>
