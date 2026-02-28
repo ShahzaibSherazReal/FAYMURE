@@ -101,6 +101,11 @@ $conn->close();
             color: var(--text-color);
             font-weight: 300;
             margin-bottom: 40px;
+            text-align: justify;
+        }
+
+        .content-section p {
+            text-align: justify;
         }
 
         .section-heading {
@@ -143,6 +148,7 @@ $conn->close();
             color: var(--text-color);
             font-weight: 300;
             letter-spacing: 0.2px;
+            text-align: justify;
         }
 
         @media (max-width: 768px) {

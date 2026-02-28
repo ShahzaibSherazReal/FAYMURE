@@ -54,6 +54,19 @@ function t($key) {
 }
 
 $base = defined('BASE_PATH') ? BASE_PATH : '';
+$base_url = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . ($base !== '' ? $base : '');
+$path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+if ($base !== '' && strpos($path, $base) === 0) {
+    $path = substr($path, strlen($base)) ?: '/';
+}
+$path = rtrim($path, '/') ?: '/';
+$nav_active = [
+    'home'         => ($path === '/' || $path === ''),
+    'about'        => ($path === '/about'),
+    'manufacturing'=> ($path === '/manufacturing'),
+    'blog'         => ($path === '/blog'),
+    'contact'      => ($path === '/contact'),
+];
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $current_lang; ?>">
@@ -85,8 +98,8 @@ $base = defined('BASE_PATH') ? BASE_PATH : '';
     <meta name="twitter:image" content="<?php echo htmlspecialchars($page_og_image); ?>">
     <?php endif; ?>
     <?php if (!empty($page_extra_head)) echo $page_extra_head; ?>
-    <link rel="icon" type="image/png" href="<?php echo $base; ?>/assets/images/favicon.png">
-    <link rel="shortcut icon" type="image/png" href="<?php echo $base; ?>/assets/images/favicon.png">
+    <link rel="icon" type="image/png" href="<?php echo $base_url; ?>/assets/images/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="<?php echo $base_url; ?>/assets/images/favicon.png">
     <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/style.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/animations.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/character.css?v=<?php echo time(); ?>">
@@ -140,13 +153,13 @@ $base = defined('BASE_PATH') ? BASE_PATH : '';
                     <a href="<?php echo $base; ?>/" class="logo"><?php echo SITE_NAME; ?></a>
                 </div>
                 <div class="nav-center">
-                    <a href="<?php echo $base; ?>/" class="nav-underline"><?php echo t('home'); ?></a>
-                    <a href="<?php echo $base; ?>/about" class="nav-underline"><?php echo t('about'); ?></a>
-                    <a href="<?php echo $base; ?>/manufacturing" class="nav-underline"><?php echo t('manufacturing'); ?></a>
+                    <a href="<?php echo $base; ?>/" class="nav-underline<?php echo $nav_active['home'] ? ' nav-active' : ''; ?>"><?php echo t('home'); ?></a>
+                    <a href="<?php echo $base; ?>/about" class="nav-underline<?php echo $nav_active['about'] ? ' nav-active' : ''; ?>"><?php echo t('about'); ?></a>
+                    <a href="<?php echo $base; ?>/manufacturing" class="nav-underline<?php echo $nav_active['manufacturing'] ? ' nav-active' : ''; ?>"><?php echo t('manufacturing'); ?></a>
                     <?php if (!$blog_hidden): ?>
-                    <a href="<?php echo $base; ?>/blog" class="nav-underline"><?php echo t('blog'); ?></a>
+                    <a href="<?php echo $base; ?>/blog" class="nav-underline<?php echo $nav_active['blog'] ? ' nav-active' : ''; ?>"><?php echo t('blog'); ?></a>
                     <?php endif; ?>
-                    <a href="<?php echo $base; ?>/contact" class="nav-underline"><?php echo t('contact'); ?></a>
+                    <a href="<?php echo $base; ?>/contact" class="nav-underline<?php echo $nav_active['contact'] ? ' nav-active' : ''; ?>"><?php echo t('contact'); ?></a>
                 </div>
                 <div class="nav-right">
                     <?php if (isLoggedIn()): ?>

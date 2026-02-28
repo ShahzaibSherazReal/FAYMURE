@@ -171,6 +171,15 @@ body {
     color: var(--primary-color);
 }
 
+.nav-center a.nav-active {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.nav-center a.nav-active::after {
+    width: 100%;
+}
+
 .nav-right {
     display: flex;
     gap: 20px;
@@ -404,21 +413,21 @@ body {
 
 .btn-explore {
     display: inline-block;
-    padding: 14px 36px;
-    background: rgba(255, 111, 32, 0.2);
+    padding: 14px 32px;
+    background: rgba(0, 31, 63, 0.35);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     color: #fff;
     text-decoration: none;
-    border-radius: 0;
+    border-radius: 50px;
     font-weight: 600;
     font-size: 14px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.35);
     font-family: 'Inter', sans-serif;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 31, 63, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
     position: relative;
     overflow: hidden;
 }
@@ -442,7 +451,7 @@ body {
     background: #e55a0f;
     border-color: #e55a0f;
     transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(229, 90, 15, 0.6);
+    box-shadow: 0 6px 20px rgba(229, 90, 15, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 /* Carousel Section */

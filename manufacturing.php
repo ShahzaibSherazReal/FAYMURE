@@ -134,10 +134,12 @@ $conn->close();
             line-height: 1.8;
             color: var(--text-color);
             font-weight: 300;
+            text-align: justify;
         }
 
         .intro-text p {
             margin-bottom: 20px;
+            text-align: justify;
         }
 
         .intro-text p:last-child {
