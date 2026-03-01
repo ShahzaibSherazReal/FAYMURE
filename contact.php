@@ -204,7 +204,7 @@ if (trim(strtolower($email)) === 'contact@faymure.com') {
         }
         
         .page-title {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 56px;
             color: var(--primary-color);
             margin-bottom: 20px;
@@ -286,7 +286,7 @@ if (trim(strtolower($email)) === 'contact@faymure.com') {
         }
         
         .contact-card h3 {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 24px;
             color: var(--primary-color);
             margin-bottom: 15px;
@@ -327,7 +327,7 @@ if (trim(strtolower($email)) === 'contact@faymure.com') {
         }
         
         .social-section h2 {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 36px;
             color: var(--primary-color);
             margin-bottom: 15px;
@@ -449,19 +449,16 @@ if (trim(strtolower($email)) === 'contact@faymure.com') {
             }
             
             .social-links-grid {
-                display: flex;
-                flex-wrap: nowrap;
-                justify-content: center;
-                gap: 12px;
-                overflow-x: auto;
-                padding-bottom: 8px;
-                -webkit-overflow-scrolling: touch;
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+                max-width: 320px;
+                margin: 0 auto;
             }
             
             .social-link {
-                min-width: 80px;
+                min-width: 0;
                 padding: 20px 16px;
-                flex: 0 0 auto;
             }
             
             .social-link span {

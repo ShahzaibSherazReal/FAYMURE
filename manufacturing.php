@@ -153,7 +153,7 @@ $conn->close();
             margin-top: 40px;
         }
         .manufacturing-design-hero-title {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 38px;
             font-weight: 500;
             letter-spacing: 0.5px;
@@ -231,7 +231,7 @@ $conn->close();
             margin-bottom: 50px;
         }
         .manufacturing-explore .section-title {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 42px;
             color: var(--primary-color);
             margin-bottom: 12px;
@@ -308,7 +308,7 @@ $conn->close();
             transform: scale(1.1) rotate(5deg);
         }
         .manufacturing-explore .option-title {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 26px;
             color: var(--primary-color);
             margin-bottom: 16px;
@@ -354,6 +354,17 @@ $conn->close();
             .intro-text {
                 font-size: 16px;
             }
+
+            .intro-text,
+            .intro-text p,
+            .content-section p {
+                hyphens: auto;
+                -webkit-hyphens: auto;
+                -ms-hyphens: auto;
+                hyphenate-limit-chars: auto 3 2;
+                -webkit-hyphenate-limit-chars: auto 3 2;
+            }
+
             .manufacturing-design-hero {
                 padding: 40px 20px 50px;
                 margin-top: 30px;

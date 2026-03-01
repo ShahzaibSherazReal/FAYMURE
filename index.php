@@ -162,7 +162,7 @@ $conn->close();
                             <h3 class="option-title"><?php echo htmlspecialchars($option1_title); ?></h3>
                             <p class="option-description"><?php echo htmlspecialchars($option1_description); ?></p>
                             <div class="option-cta">
-                                <span>Get Started</span>
+                                <span>Design</span>
                                 <i class="fas fa-arrow-right"></i>
                             </div>
                         </div>
@@ -199,7 +199,7 @@ $conn->close();
                         <div class="carousel-slide active reveal" data-delay="0">
                             <div class="slide-content">
                                 <div class="slide-image img-zoom">
-                                    <img src="<?php echo $base . '/' . ($vision_data['image'] ?? 'assets/images/vision.jpg'); ?>" alt="Vision">
+                                    <img src="<?php echo $base . '/' . ltrim($vision_data['image'] ?? 'assets/images/vision.jpg', '/'); ?>" alt="Vision">
                                 </div>
                                 <div class="slide-text">
                                     <h2><?php echo $vision_data['title'] ?? 'Our Vision'; ?></h2>
@@ -210,7 +210,7 @@ $conn->close();
                         <div class="carousel-slide reveal" data-delay="100">
                             <div class="slide-content">
                                 <div class="slide-image img-zoom">
-                                    <img src="<?php echo $base . '/' . ($mission_data['image'] ?? 'assets/images/mission.jpg'); ?>" alt="Mission">
+                                    <img src="<?php echo $base . '/' . ltrim($mission_data['image'] ?? 'assets/images/mission.jpg', '/'); ?>" alt="Mission">
                                 </div>
                                 <div class="slide-text">
                                     <h2><?php echo $mission_data['title'] ?? 'Our Mission'; ?></h2>
@@ -221,7 +221,7 @@ $conn->close();
                         <div class="carousel-slide reveal" data-delay="200">
                             <div class="slide-content">
                                 <div class="slide-image img-zoom">
-                                    <img src="<?php echo $base . '/' . ($services_data['image'] ?? 'assets/images/services.jpg'); ?>" alt="Services">
+                                    <img src="<?php echo $base . '/' . ltrim($services_data['image'] ?? 'assets/images/services.jpg', '/'); ?>" alt="Services">
                                 </div>
                                 <div class="slide-text">
                                     <h2><?php echo $services_data['title'] ?? 'Our Services'; ?></h2>
@@ -309,7 +309,7 @@ $conn->close();
         }
         
         .section-title {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 38px;
             color: var(--primary-color);
             margin-bottom: 12px;
@@ -408,7 +408,7 @@ $conn->close();
         }
         
         .option-title {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 26px;
             color: var(--primary-color);
             margin-bottom: 14px;

@@ -1,22 +1,17 @@
-# Font Files Required
+# Font Files (TT DRUGS TRIAL)
 
-This directory should contain the TT DRUGS font files:
+This directory uses the **TT Drugs Trial** .otf files:
 
-- `TT-DRUGS-Regular.woff2`
-- `TT-DRUGS-Regular.woff`
-- `TT-DRUGS-Regular.ttf`
+- `TT Drugs Trial Regular.otf` – header logo (FAYMURE)
+- `TT Drugs Trial Light.otf` – all headings (h1–h6, section titles, etc.)
+- `TT Drugs Trial Condensed Regular.otf` – all body/content text
 
-## How to Add the Font Files:
+## Usage on the site
 
-1. Obtain the TT DRUGS font files (from the font provider or purchase)
-2. Place the three font files listed above in this directory
-3. The font will automatically be applied to all "FAYMURE" text on the website
+- **Header “FAYMURE”** → TT DRUGS TRIAL REGULAR  
+- **Headings** → TT DRUGS TRIAL LIGHT  
+- **Body/content text** → TT DRUGS TRIAL CONDENSED REGULAR  
 
-## Font File Sources:
+## Font source
 
-You can obtain the TT DRUGS font from:
-- TypeType (https://typetype.org/) - The official source for TT fonts
-- Or your font license provider
-
-**Note:** Make sure you have the proper license to use this font on your website.
-
+TT DRUGS fonts are from TypeType (https://typetype.org/). Ensure you have the correct license for web use.

@@ -518,7 +518,7 @@ $conn->close();
         }
         
         .page-title {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 48px;
             color: var(--primary-color);
             margin-bottom: 20px;
@@ -582,7 +582,7 @@ $conn->close();
         }
         
         .category-info h3 {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 24px;
             color: var(--primary-color);
             margin-bottom: 10px;
@@ -636,7 +636,7 @@ $conn->close();
         }
         
         .view-header h2 {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 36px;
             color: var(--primary-color);
             margin-bottom: 8px;
@@ -910,7 +910,7 @@ $conn->close();
         }
         
         .product-detail-info h2 {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 32px;
             color: var(--primary-color);
             margin-bottom: 20px;
@@ -952,7 +952,7 @@ $conn->close();
         }
         
         .product-detail-section h3 {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 20px;
             color: var(--primary-color);
             margin-bottom: 10px;
@@ -1032,7 +1032,7 @@ $conn->close();
             background: #fff;
             color: var(--text-color);
             font-size: 15px;
-            font-family: 'Inter', sans-serif;
+            font-family: 'TT DRUGS TRIAL CONDENSED REGULAR', sans-serif;
             transition: all 0.3s ease;
         }
         
@@ -1065,7 +1065,7 @@ $conn->close();
             text-transform: uppercase;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-family: 'Inter', sans-serif;
+            font-family: 'TT DRUGS TRIAL CONDENSED REGULAR', sans-serif;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
@@ -1087,7 +1087,7 @@ $conn->close();
             text-transform: uppercase;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-family: 'Inter', sans-serif;
+            font-family: 'TT DRUGS TRIAL CONDENSED REGULAR', sans-serif;
         }
         
         .btn-secondary:hover {
@@ -1119,7 +1119,7 @@ $conn->close();
         }
         
         .success-message h2 {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 28px;
             margin-bottom: 15px;
         }

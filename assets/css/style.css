@@ -2,24 +2,42 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap');
 
-/* TT DRUGS Font */
+/* TT DRUGS TRIAL - .otf from assets/fonts */
 @font-face {
-    font-family: 'TT DRUGS';
-    src: url('../fonts/TT-DRUGS-Regular.woff2') format('woff2'),
-         url('../fonts/TT-DRUGS-Regular.woff') format('woff'),
-         url('../fonts/TT-DRUGS-Regular.ttf') format('truetype');
+    font-family: 'TT DRUGS TRIAL REGULAR';
+    src: url('../fonts/TT%20Drugs%20Trial%20Regular.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'TT DRUGS TRIAL LIGHT';
+    src: url('../fonts/TT%20Drugs%20Trial%20Light.otf') format('opentype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'TT DRUGS TRIAL CONDENSED REGULAR';
+    src: url('../fonts/TT%20Drugs%20Trial%20Thin.otf') format('opentype');
+    font-weight: 100;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'TT DRUGS TRIAL CONDENSED REGULAR';
+    src: url('../fonts/TT%20Drugs%20Trial%20Condensed%20Regular.otf') format('opentype');
     font-weight: normal;
     font-style: normal;
     font-display: swap;
 }
 
-/* FAYMURE Font Class - Apply to all FAYMURE text */
+/* Header logo - FAYMURE (header only; hero h1 uses LIGHT with other headings) */
 .faymure-font,
 .logo,
-.hero-logo h1,
 .site-name,
 .admin-logo a {
-    font-family: 'TT DRUGS', 'Playfair Display', serif !important;
+    font-family: 'TT DRUGS TRIAL REGULAR', sans-serif !important;
 }
 
 * {
@@ -42,7 +60,7 @@
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'TT DRUGS TRIAL CONDENSED REGULAR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     color: var(--text-color);
     line-height: 1.7;
     background-color: var(--background-color);
@@ -51,6 +69,15 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.01em;
+}
+
+/* All headings use TT DRUGS TRIAL LIGHT */
+h1, h2, h3, h4, h5, h6,
+.section-title, .page-title, .page-subtitle,
+.footer-section h3, .category-info h3, .contact-card h3,
+.service-title, .commitment-title, .section-heading,
+.add-review-title, .reviewer-name {
+    font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
 }
 
 .container {
@@ -120,7 +147,7 @@ body {
 }
 
 .nav-left .logo {
-    font-family: 'Playfair Display', serif;
+    font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
     font-size: 28px;
     font-weight: 500;
     color: var(--primary-color);
@@ -140,6 +167,7 @@ body {
 }
 
 .nav-center a {
+    font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
     color: var(--text-color);
     text-decoration: none;
     font-weight: 300;
@@ -172,6 +200,7 @@ body {
 }
 
 .nav-center a.nav-active {
+    font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
     color: var(--primary-color);
     font-weight: 500;
 }
@@ -389,7 +418,7 @@ body {
 }
 
 .hero-logo h1 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
     font-size: 52px;
     margin-bottom: 14px;
     font-weight: 500;
@@ -400,6 +429,7 @@ body {
 }
 
 .hero-tagline {
+    font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
     font-size: 18px;
     margin-bottom: 28px;
     font-weight: 300;
@@ -426,7 +456,7 @@ body {
     letter-spacing: 1.5px;
     text-transform: uppercase;
     border: 2px solid rgba(255, 255, 255, 0.35);
-    font-family: 'Inter', sans-serif;
+    font-family: 'TT DRUGS TRIAL CONDENSED REGULAR', sans-serif;
     box-shadow: 0 4px 15px rgba(0, 31, 63, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
     position: relative;
     overflow: hidden;
@@ -524,7 +554,7 @@ body {
 }
 
 .slide-text h2 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
     color: var(--primary-color);
     margin-bottom: 14px;
     font-size: 34px;
@@ -604,7 +634,7 @@ body {
 }
 
 .section-title {
-    font-family: 'Playfair Display', serif;
+    font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
     text-align: center;
     font-size: 38px;
     color: var(--primary-color);
@@ -674,8 +704,27 @@ body {
     margin-bottom: 40px;
 }
 
+/* Desktop: equal columns and uniform content spacing */
+@media (min-width: 992px) {
+    .footer-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 32px;
+    }
+}
+
+.footer-section {
+    padding: 0 20px;
+    min-width: 0;
+}
+
+@media (min-width: 992px) {
+    .footer-section {
+        padding: 0 24px;
+    }
+}
+
 .footer-section h3 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
     margin-bottom: 24px;
     color: #fff;
     font-weight: 500;
@@ -692,9 +741,12 @@ body {
     letter-spacing: 0.2px;
 }
 
-.footer-story p {
-    text-align: justify;
-}
+    .footer-story p {
+        text-align: left;
+        hyphens: auto;
+        -webkit-hyphens: auto;
+        -ms-hyphens: auto;
+    }
 
 .footer-section a {
     color: rgba(255,255,255,0.8);
@@ -750,7 +802,7 @@ body {
 }
 
 .page-title {
-    font-family: 'Playfair Display', serif;
+    font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
     text-align: center;
     font-size: 56px;
     color: var(--primary-color);
@@ -775,6 +827,8 @@ body {
     color: var(--text-color);
     transition: all 0.3s ease;
     border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
 }
 
 .category-card:hover {
@@ -811,10 +865,17 @@ body {
 
 .category-info {
     padding: 32px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.category-arrow {
+    margin-top: auto;
 }
 
 .category-info h3 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
     color: var(--primary-color);
     margin-bottom: 12px;
     font-weight: 500;
@@ -870,7 +931,7 @@ body {
 }
 
 .products-sidebar .sidebar-header h3 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
     margin: 0;
     color: #fff;
     font-weight: 500;
@@ -980,7 +1041,7 @@ body {
     letter-spacing: 0.5px;
     text-transform: uppercase;
     transition: all 0.3s ease;
-    font-family: 'Inter', sans-serif;
+    font-family: 'TT DRUGS TRIAL CONDENSED REGULAR', sans-serif;
 }
 
 .filter-toggle-btn:hover {
@@ -1003,7 +1064,7 @@ body {
 }
 
 .products-header h1 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
     color: var(--primary-color);
     font-weight: 500;
     font-size: 48px;
@@ -1064,7 +1125,7 @@ body {
 }
 
 .product-info h3 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
     color: var(--primary-color);
     margin-bottom: 12px;
     font-weight: 500;
@@ -1138,7 +1199,7 @@ body {
 }
 
 .product-info h1 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
     color: var(--primary-color);
     margin-bottom: 24px;
     font-weight: 500;
@@ -1169,7 +1230,7 @@ body {
 .product-details h3,
 .product-moq h3,
 .product-price h3 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
     color: var(--primary-color);
     margin-bottom: 16px;
     font-weight: 500;
@@ -1222,7 +1283,7 @@ body {
 }
 
 .contact-form-page h1 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
     text-align: center;
     color: var(--primary-color);
     margin-bottom: 48px;
@@ -1275,7 +1336,7 @@ body {
     transition: border-color 0.3s ease;
     color: var(--text-color);
     font-weight: 300;
-    font-family: 'Inter', sans-serif;
+    font-family: 'TT DRUGS TRIAL CONDENSED REGULAR', sans-serif;
 }
 
 .form-group input:focus,
@@ -1303,7 +1364,7 @@ body {
     transition: all 0.3s ease;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    font-family: 'Inter', sans-serif;
+    font-family: 'TT DRUGS TRIAL CONDENSED REGULAR', sans-serif;
 }
 
 .btn-submit:hover {
@@ -1354,7 +1415,7 @@ body {
 }
 
 .auth-box h1 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
     text-align: center;
     color: var(--primary-color);
     margin-bottom: 40px;
@@ -1396,7 +1457,7 @@ body {
     letter-spacing: 1px;
     text-transform: uppercase;
     font-size: 13px;
-    font-family: 'Inter', sans-serif;
+    font-family: 'TT DRUGS TRIAL CONDENSED REGULAR', sans-serif;
 }
 
 .btn-primary:hover {
@@ -1419,7 +1480,7 @@ body {
     letter-spacing: 1px;
     text-transform: uppercase;
     font-size: 13px;
-    font-family: 'Inter', sans-serif;
+    font-family: 'TT DRUGS TRIAL CONDENSED REGULAR', sans-serif;
 }
 
 .btn-secondary:hover {
@@ -1599,6 +1660,11 @@ body {
     .footer-section p,
     .footer-section a {
         font-size: 12px;
+    }
+    
+    .main-footer .social-links a {
+        font-size: 15px;
+        padding: 6px;
     }
     
     /* Categories Page - Keep grid, scale down */

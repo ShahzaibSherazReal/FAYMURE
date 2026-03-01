@@ -85,7 +85,7 @@ $conn->close();
         }
         
         .page-title {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 48px;
             color: var(--primary-color);
             margin-bottom: 20px;
@@ -115,7 +115,8 @@ $conn->close();
             color: var(--text-color);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            display: block;
+            display: flex;
+            flex-direction: column;
         }
         
         .category-card:hover {
@@ -171,10 +172,13 @@ $conn->close();
         
         .category-info {
             padding: 30px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
         
         .category-info h3 {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 24px;
             color: var(--primary-color);
             margin-bottom: 12px;
@@ -195,6 +199,7 @@ $conn->close();
             font-size: 20px;
             transition: transform 0.3s ease;
             display: inline-block;
+            margin-top: auto;
         }
         
         .category-card:hover .category-arrow {

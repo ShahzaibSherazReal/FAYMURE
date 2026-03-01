@@ -186,7 +186,7 @@ $conn->close();
         }
         
         .receipt-header h1 {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             color: var(--primary-color);
             font-size: 36px;
             margin-bottom: 15px;
@@ -202,7 +202,7 @@ $conn->close();
         }
         
         .receipt-section h2 {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             color: var(--primary-color);
             font-size: 24px;
             margin-bottom: 20px;

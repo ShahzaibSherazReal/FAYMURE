@@ -1,6 +1,5 @@
 <?php
 require_once 'check-auth.php';
-require_once __DIR__ . '/../includes/image-upload-webp.php';
 
 $conn = getDBConnection();
 
@@ -29,7 +28,7 @@ if (isset($_POST['remove_hero_image'])) {
     $success = true;
 }
 
-// Handle remove image requests
+// Handle remove image requests (use path relative to this script so it works on live)
 if (isset($_POST['remove_image'])) {
     $image_key = sanitize($_POST['remove_image']);
     $stmt = $conn->prepare("SELECT content_value FROM site_content WHERE content_key=?");
@@ -37,9 +36,9 @@ if (isset($_POST['remove_image'])) {
     $stmt->execute();
     $result = $stmt->get_result();
     if ($result && $row = $result->fetch_assoc() && !empty($row['content_value'])) {
-        $image_path = '../' . $row['content_value'];
+        $image_path = __DIR__ . '/../' . ltrim($row['content_value'], '/');
         if (file_exists($image_path)) {
-            unlink($image_path);
+            @unlink($image_path);
         }
     }
     $stmt->close();
@@ -51,10 +50,10 @@ if (isset($_POST['remove_image'])) {
     $success = true;
 }
 
-// Handle file uploads
-$upload_dir_images = '../assets/images/';
+// Handle file uploads (path relative to this script so it works on live)
+$upload_dir_images = __DIR__ . '/../assets/images/';
 if (!file_exists($upload_dir_images)) {
-    mkdir($upload_dir_images, 0777, true);
+    @mkdir($upload_dir_images, 0755, true);
 }
 
 $upload_dir_videos = '../assets/videos/';
@@ -82,9 +81,7 @@ if (isset($_FILES['hero_image']) && $_FILES['hero_image']['error'] == 0) {
     $file_name = 'hero-poster.' . $file_ext;
     $target_file = $upload_dir_images . $file_name;
     if (move_uploaded_file($_FILES['hero_image']['tmp_name'], $target_file)) {
-        $webp_path = convert_file_to_webp($target_file);
-        $file_name = $webp_path ? basename($webp_path) : $file_name;
-        $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES ('hero_poster', ?) 
+        $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES ('hero_poster', ?)
                                 ON DUPLICATE KEY UPDATE content_value = ?");
         $stmt->bind_param("ss", $file_name, $file_name);
         $stmt->execute();
@@ -99,8 +96,7 @@ if (isset($_FILES['vision_image']) && $_FILES['vision_image']['error'] == 0) {
     $file_name = 'vision.' . $file_ext;
     $target_file = $upload_dir_images . $file_name;
     if (move_uploaded_file($_FILES['vision_image']['tmp_name'], $target_file)) {
-        $webp_path = convert_file_to_webp($target_file);
-        $image_path = $webp_path ? str_replace('../', '', $webp_path) : ('assets/images/' . $file_name);
+        $image_path = 'assets/images/' . $file_name;
         $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES ('vision_image', ?) 
                                 ON DUPLICATE KEY UPDATE content_value = ?");
         $stmt->bind_param("ss", $image_path, $image_path);
@@ -116,8 +112,7 @@ if (isset($_FILES['mission_image']) && $_FILES['mission_image']['error'] == 0) {
     $file_name = 'mission.' . $file_ext;
     $target_file = $upload_dir_images . $file_name;
     if (move_uploaded_file($_FILES['mission_image']['tmp_name'], $target_file)) {
-        $webp_path = convert_file_to_webp($target_file);
-        $image_path = $webp_path ? str_replace('../', '', $webp_path) : ('assets/images/' . $file_name);
+        $image_path = 'assets/images/' . $file_name;
         $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES ('mission_image', ?) 
                                 ON DUPLICATE KEY UPDATE content_value = ?");
         $stmt->bind_param("ss", $image_path, $image_path);
@@ -133,8 +128,7 @@ if (isset($_FILES['services_image']) && $_FILES['services_image']['error'] == 0)
     $file_name = 'services.' . $file_ext;
     $target_file = $upload_dir_images . $file_name;
     if (move_uploaded_file($_FILES['services_image']['tmp_name'], $target_file)) {
-        $webp_path = convert_file_to_webp($target_file);
-        $image_path = $webp_path ? str_replace('../', '', $webp_path) : ('assets/images/' . $file_name);
+        $image_path = 'assets/images/' . $file_name;
         $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES ('services_image', ?) 
                                 ON DUPLICATE KEY UPDATE content_value = ?");
         $stmt->bind_param("ss", $image_path, $image_path);
@@ -210,6 +204,9 @@ if (isset($_POST['delete_review']) && isset($_POST['review_id'])) {
         $success = true;
     }
 }
+
+// Base URL for image preview (SITE_URL already includes path e.g. http://localhost/FAYMURE or https://faymure.com)
+$site_base_url = rtrim(defined('SITE_URL') ? SITE_URL : '', '/');
 
 // Load all content
 $content = [];
@@ -437,7 +434,7 @@ $conn->close();
                         <label for="vision_image">Vision Image</label>
                         <?php if (!empty($content_map['vision_image'])): ?>
                             <div style="margin-bottom: 10px;">
-                                <img src="../<?php echo htmlspecialchars($content_map['vision_image']); ?>" alt="Vision" style="max-width: 200px; display: block; margin-bottom: 10px;">
+                                <img src="<?php echo htmlspecialchars($site_base_url . '/' . ltrim($content_map['vision_image'], '/')); ?>" alt="Vision" style="max-width: 200px; display: block; margin-bottom: 10px;">
                                 <button type="button" class="btn-delete" onclick="submitRemoveImage('vision_image')">Remove Image</button>
                             </div>
                         <?php endif; ?>
@@ -465,7 +462,7 @@ $conn->close();
                         <label for="mission_image">Mission Image</label>
                         <?php if (!empty($content_map['mission_image'])): ?>
                             <div style="margin-bottom: 10px;">
-                                <img src="../<?php echo htmlspecialchars($content_map['mission_image']); ?>" alt="Mission" style="max-width: 200px; display: block; margin-bottom: 10px;">
+                                <img src="<?php echo htmlspecialchars($site_base_url . '/' . ltrim($content_map['mission_image'], '/')); ?>" alt="Mission" style="max-width: 200px; display: block; margin-bottom: 10px;">
                                 <button type="button" class="btn-delete" onclick="submitRemoveImage('mission_image')">Remove Image</button>
                             </div>
                         <?php endif; ?>
@@ -493,7 +490,7 @@ $conn->close();
                         <label for="services_image">Services Image</label>
                         <?php if (!empty($content_map['services_image'])): ?>
                             <div style="margin-bottom: 10px;">
-                                <img src="../<?php echo htmlspecialchars($content_map['services_image']); ?>" alt="Services" style="max-width: 200px; display: block; margin-bottom: 10px;">
+                                <img src="<?php echo htmlspecialchars($site_base_url . '/' . ltrim($content_map['services_image'], '/')); ?>" alt="Services" style="max-width: 200px; display: block; margin-bottom: 10px;">
                                 <button type="button" class="btn-delete" onclick="submitRemoveImage('services_image')">Remove Image</button>
                             </div>
                         <?php endif; ?>

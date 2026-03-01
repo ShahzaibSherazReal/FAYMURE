@@ -109,7 +109,7 @@ $conn->close();
         }
 
         .section-heading {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 36px;
             color: var(--primary-color);
             margin-bottom: 40px;
@@ -133,7 +133,7 @@ $conn->close();
 
         .service-title,
         .commitment-title {
-            font-family: 'Playfair Display', serif;
+            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
             font-size: 24px;
             color: var(--primary-color);
             margin-bottom: 16px;
@@ -180,6 +180,17 @@ $conn->close();
             .intro-text {
                 font-size: 16px;
                 margin-bottom: 30px;
+            }
+
+            .intro-text,
+            .content-section p,
+            .service-item p,
+            .commitment-item p {
+                hyphens: auto;
+                -webkit-hyphens: auto;
+                -ms-hyphens: auto;
+                hyphenate-limit-chars: auto 3 2;
+                -webkit-hyphenate-limit-chars: auto 3 2;
             }
 
             .service-item,
