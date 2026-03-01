@@ -1899,3 +1899,270 @@ h1, h2, h3, h4, h5, h6,
         margin-bottom: 24px;
     }
 }
+
+/* ========== Narrow phones (360px e.g. Tecno Camon 19 Neo) - prevent overlap ========== */
+@media (max-width: 400px) {
+    body {
+        overflow-x: hidden;
+    }
+
+    .container {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    /* Header - tighter so nothing overlaps */
+    .header-nav .container {
+        gap: 8px;
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .nav-left .logo {
+        font-size: 17px;
+        max-width: 90px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .nav-center {
+        gap: 8px 12px;
+        margin-top: 8px;
+        padding-top: 8px;
+    }
+
+    .nav-center a {
+        font-size: 10px;
+        padding: 2px 4px;
+    }
+
+    .nav-right {
+        gap: 6px;
+    }
+
+    .nav-icon {
+        padding: 4px;
+        font-size: 14px;
+    }
+
+    .lang-btn {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+
+    /* Hero - scale down for narrow width */
+    .hero-section {
+        min-height: 240px;
+        padding: 28px 0;
+    }
+
+    .hero-content {
+        padding: 0 12px;
+    }
+
+    .hero-logo h1 {
+        font-size: 22px;
+        margin-bottom: 6px;
+    }
+
+    .hero-tagline {
+        font-size: 12px;
+        margin-bottom: 14px;
+        padding: 0 4px;
+    }
+
+    .btn-explore {
+        padding: 8px 20px;
+        font-size: 10px;
+    }
+
+    /* Carousel - stack vertically so image and text don't overlap */
+    .info-carousel-section {
+        padding: 24px 0 20px;
+    }
+
+    .carousel-wrapper {
+        position: relative;
+        padding-left: 36px;
+        padding-right: 36px;
+    }
+
+    .carousel-slide {
+        padding: 16px 8px;
+    }
+
+    .slide-content {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+    }
+
+    .slide-image {
+        flex: none;
+        width: 100%;
+    }
+
+    .slide-image img {
+        width: 100%;
+        height: auto;
+        min-height: 100px;
+        max-height: 160px;
+        object-fit: cover;
+    }
+
+    .slide-text {
+        min-width: 0;
+    }
+
+    .slide-text h2 {
+        font-size: 18px;
+        margin-bottom: 8px;
+    }
+
+    .slide-text p {
+        font-size: 11px;
+        line-height: 1.5;
+    }
+
+    /* Carousel buttons - keep inside (no negative left/right) */
+    .carousel-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .carousel-btn.prev {
+        left: 4px;
+    }
+
+    .carousel-btn.next {
+        right: 4px;
+    }
+
+    /* Categories - 2 columns so cards don't squish (360/2 = 180px each) */
+    .categories-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .category-image {
+        height: auto;
+        min-height: 80px;
+    }
+
+    .category-image img {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+    }
+
+    .category-info {
+        padding: 10px 6px;
+    }
+
+    .category-info h3 {
+        font-size: 12px;
+        margin-bottom: 2px;
+    }
+
+    .category-info p {
+        font-size: 10px;
+    }
+
+    /* Products - 2 columns, sidebar full width */
+    .products-sidebar {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .product-image {
+        height: auto;
+        min-height: 90px;
+    }
+
+    .product-info h3 {
+        font-size: 11px;
+    }
+
+    /* Footer - single column so sections don't squeeze */
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .footer-section {
+        min-width: 0;
+    }
+
+    /* Reviews - smaller card min-width so horizontal scroll works */
+    .review-card {
+        min-width: min(260px, 92vw);
+        padding: 14px 16px;
+    }
+
+    .section-title {
+        font-size: 20px;
+        margin-bottom: 16px;
+    }
+
+    /* Product detail - stack on narrow */
+    .product-detail-layout {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .thumbnail-images img {
+        width: 44px;
+        height: 44px;
+    }
+
+    .product-info h1 {
+        font-size: 20px;
+    }
+}
+
+/* ========== 360px (e.g. Tecno Camon 19 Neo) - single column where needed ========== */
+@media (max-width: 360px) {
+    .container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .nav-left .logo {
+        font-size: 16px;
+        max-width: 80px;
+    }
+
+    .nav-center a {
+        font-size: 9px;
+    }
+
+    .hero-logo h1 {
+        font-size: 20px;
+    }
+
+    .hero-tagline {
+        font-size: 11px;
+    }
+
+    /* Single column for catalog so cards use full width */
+    .categories-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .category-image {
+        min-height: 100px;
+    }
+
+    /* Products single column */
+    .products-grid {
+        grid-template-columns: 1fr;
+    }
+}
