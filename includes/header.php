@@ -54,7 +54,7 @@ function t($key) {
 }
 
 $base = defined('BASE_PATH') ? BASE_PATH : '';
-$base_url = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . ($base !== '' ? $base : '');
+$base_url = rtrim(defined('SITE_URL') ? SITE_URL : '', '/');
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 if ($base !== '' && strpos($path, $base) === 0) {
     $path = substr($path, strlen($base)) ?: '/';
@@ -98,8 +98,8 @@ $nav_active = [
     <meta name="twitter:image" content="<?php echo htmlspecialchars($page_og_image); ?>">
     <?php endif; ?>
     <?php if (!empty($page_extra_head)) echo $page_extra_head; ?>
-    <link rel="icon" type="image/png" href="<?php echo $base_url; ?>/assets/images/favicon.png">
-    <link rel="shortcut icon" type="image/png" href="<?php echo $base_url; ?>/assets/images/favicon.png">
+    <link rel="icon" type="image/png" href="<?php echo $base . '/assets/images/favicon.png'; ?>">
+    <link rel="shortcut icon" type="image/png" href="<?php echo $base . '/assets/images/favicon.png'; ?>">
     <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/style.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/animations.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/character.css?v=<?php echo time(); ?>">
