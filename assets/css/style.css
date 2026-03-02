@@ -462,9 +462,12 @@ h1, h2, h3, h4, h5, h6,
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    border: 2px solid rgba(255, 255, 255, 0.35);
+    border: 2px solid var(--accent-color, #FF6F20);
     font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
-    box-shadow: 0 4px 15px rgba(0, 31, 63, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 15px rgba(0, 31, 63, 0.25),
+                0 0 20px rgba(255, 111, 32, 0.45),
+                0 0 40px rgba(255, 111, 32, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
     position: relative;
     overflow: hidden;
 }
@@ -486,9 +489,12 @@ h1, h2, h3, h4, h5, h6,
 
 .btn-explore:hover {
     background: #e55a0f;
-    border-color: #e55a0f;
+    border-color: var(--accent-color, #FF6F20);
     transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(229, 90, 15, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: 0 6px 20px rgba(229, 90, 15, 0.6),
+                0 0 28px rgba(255, 111, 32, 0.7),
+                0 0 50px rgba(255, 111, 32, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 /* Carousel Section */

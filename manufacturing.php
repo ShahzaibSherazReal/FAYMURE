@@ -89,7 +89,7 @@ $conn->close();
                             <h3 class="option-title"><?php echo htmlspecialchars($option1_title); ?></h3>
                             <p class="option-description"><?php echo htmlspecialchars($option1_description); ?></p>
                             <div class="option-cta">
-                                <span>Get Started</span>
+                                <span>Design</span>
                                 <i class="fas fa-arrow-right"></i>
                             </div>
                         </div>
