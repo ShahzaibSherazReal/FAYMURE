@@ -53,19 +53,29 @@ foreach ($services as $item) {
     $services_data[$key] = $item['content_value'];
 }
 
-// Get hero video/image before closing connection
-$hero_video = 'assets/videos/hero.mp4';
+// Get hero video/image before closing connection (only use video when set in dashboard)
+$hero_video = '';
 $hero_poster = 'assets/images/hero-poster.png'; // Default to PNG
-$hero_image = 'assets/images/hero-poster.png'; // Main hero image
+$hero_image = '';
 if ($columns_check && $columns_check->num_rows > 0) {
     $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='hero_video'");
-    if ($result && $row = $result->fetch_assoc() && !empty($row['content_value'])) {
-        $hero_video = 'assets/videos/' . $row['content_value'];
+    if ($result) {
+        $row = $result->fetch_assoc();
+        if (is_array($row) && isset($row['content_value']) && $row['content_value'] !== '') {
+            $hero_video = 'assets/videos/' . $row['content_value'];
+        }
     }
     $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='hero_poster'");
-    if ($result && $row = $result->fetch_assoc() && !empty($row['content_value'])) {
-        $hero_poster = 'assets/images/' . $row['content_value'];
-        $hero_image = 'assets/images/' . $row['content_value'];
+    if ($result) {
+        $row = $result->fetch_assoc();
+        if (is_array($row) && isset($row['content_value']) && $row['content_value'] !== '') {
+            $hero_poster = 'assets/images/' . $row['content_value'];
+        }
+    }
+    // When no video in DB or video file missing, show poster image instead
+    if ($hero_video === '' || !file_exists(__DIR__ . '/' . $hero_video)) {
+        $hero_video = '';
+        $hero_image = $hero_poster;
     }
 }
 
@@ -100,30 +110,31 @@ $conn->close();
         <!-- Hero Section -->
         <section class="hero-section">
             <?php
-            $image_path = __DIR__ . '/' . $hero_image;
-            $video_path = __DIR__ . '/' . $hero_video;
-            // If file missing on disk, try same name with .webp, .jpg, .png (for local fallback)
-            if (!file_exists($image_path) && preg_match('/^(.+?)\.(webp|jpe?g|png|gif)$/i', $hero_image, $m)) {
-                $hero_base = $m[1];
-                foreach (['webp', 'jpg', 'jpeg', 'png'] as $ext) {
-                    $try = $hero_base . '.' . $ext;
-                    if (file_exists(__DIR__ . '/' . $try)) {
-                        $hero_image = $try;
-                        break;
-                    }
-                }
-            }
-            // Root-relative URL so images load on live (works with BASE_PATH '' or '/FAYMURE')
-            $hero_src = (isset($base) && $base !== '') ? rtrim($base, '/') . '/' . $hero_image : '/' . ltrim($hero_image, '/');
+            $video_path = $hero_video !== '' ? __DIR__ . '/' . $hero_video : '';
             $hero_poster_src = (isset($base) && $base !== '') ? rtrim($base, '/') . '/' . $hero_poster : '/' . ltrim($hero_poster, '/');
             $hero_video_src = (isset($base) && $base !== '') ? rtrim($base, '/') . '/' . $hero_video : '/' . ltrim($hero_video, '/');
-            // Show image when we have a path (let browser load it; on live file_exists may differ from URL)
+            $hero_video_type = $hero_video !== '' ? 'video/' . (pathinfo($hero_video, PATHINFO_EXTENSION) ?: 'mp4') : 'video/mp4';
+            // Prefer video when we have a path and file exists, else image, else placeholder
+            if ($hero_image !== '') {
+                $image_path = __DIR__ . '/' . $hero_image;
+                if (!file_exists($image_path) && preg_match('/^(.+?)\.(webp|jpe?g|png|gif)$/i', $hero_image, $m)) {
+                    $hero_base = $m[1];
+                    foreach (['webp', 'jpg', 'jpeg', 'png'] as $ext) {
+                        $try = $hero_base . '.' . $ext;
+                        if (file_exists(__DIR__ . '/' . $try)) {
+                            $hero_image = $try;
+                            break;
+                        }
+                    }
+                }
+                $hero_src = (isset($base) && $base !== '') ? rtrim($base, '/') . '/' . $hero_image : '/' . ltrim($hero_image, '/');
+            }
             if ($hero_image !== ''): ?>
                 <img src="<?php echo htmlspecialchars($hero_src); ?>" alt="Hero" class="hero__image" style="position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                 <div class="hero-placeholder" style="position: absolute; width: 100%; height: 100%; background: var(--background-color); z-index: 1; display: none;"></div>
-            <?php elseif (file_exists($video_path)): ?>
+            <?php elseif ($hero_video !== '' && $video_path !== '' && file_exists($video_path)): ?>
                 <video class="hero__video" autoplay muted loop playsinline preload="metadata" poster="<?php echo htmlspecialchars($hero_poster_src); ?>">
-                    <source src="<?php echo htmlspecialchars($hero_video_src); ?>" type="video/mp4">
+                    <source src="<?php echo htmlspecialchars($hero_video_src); ?>" type="<?php echo htmlspecialchars($hero_video_type); ?>">
                     Your browser does not support the video tag.
                 </video>
             <?php else: ?>

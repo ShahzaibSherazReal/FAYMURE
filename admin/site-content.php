@@ -3,11 +3,14 @@ require_once 'check-auth.php';
 
 $conn = getDBConnection();
 
-// Handle remove hero video
+// Handle remove hero video (delete file from DB value, then remove DB row)
 if (isset($_POST['remove_hero_video'])) {
-    $video_file = '../assets/videos/hero.mp4';
-    if (file_exists($video_file)) {
-        unlink($video_file);
+    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='hero_video'");
+    if ($result && $row = $result->fetch_assoc() && !empty($row['content_value'])) {
+        $video_file = __DIR__ . '/../assets/videos/' . basename($row['content_value']);
+        if (file_exists($video_file)) {
+            @unlink($video_file);
+        }
     }
     $stmt = $conn->prepare("DELETE FROM site_content WHERE content_key='hero_video'");
     $stmt->execute();
@@ -61,11 +64,27 @@ if (!file_exists($upload_dir_videos)) {
     mkdir($upload_dir_videos, 0777, true);
 }
 
-// Hero video upload
+// Hero video upload (unique filename so new upload = new URL, no cache; delete previous file)
 if (isset($_FILES['hero_video']) && $_FILES['hero_video']['error'] == 0) {
-    $file_name = 'hero.mp4';
-    $target_file = $upload_dir_videos . $file_name;
-    if (move_uploaded_file($_FILES['hero_video']['tmp_name'], $target_file)) {
+    $ext = strtolower(pathinfo($_FILES['hero_video']['name'], PATHINFO_EXTENSION)) ?: 'mp4';
+    if (!in_array($ext, ['mp4', 'webm', 'mov'])) {
+        $ext = 'mp4';
+    }
+    $file_name = 'hero_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+    $upload_dir_abs = __DIR__ . '/../assets/videos/';
+    if (!is_dir($upload_dir_abs)) {
+        @mkdir($upload_dir_abs, 0755, true);
+    }
+    $target_abs = $upload_dir_abs . $file_name;
+    if (move_uploaded_file($_FILES['hero_video']['tmp_name'], $target_abs)) {
+        // Delete previous hero video file if any (from DB)
+        $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='hero_video'");
+        if ($result && $row = $result->fetch_assoc() && !empty($row['content_value'])) {
+            $old_file = $upload_dir_abs . basename($row['content_value']);
+            if (file_exists($old_file) && realpath($old_file) !== realpath($target_abs)) {
+                @unlink($old_file);
+            }
+        }
         $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES ('hero_video', ?) 
                                 ON DUPLICATE KEY UPDATE content_value = ?");
         $stmt->bind_param("ss", $file_name, $file_name);
@@ -288,7 +307,7 @@ $conn->close();
                     <div class="form-group">
                         <label for="hero_video">Hero Video (MP4)</label>
                         <input type="file" id="hero_video" name="hero_video" accept="video/mp4">
-                        <small>Current: <?php echo htmlspecialchars($content_map['hero_video'] ?? 'hero.mp4'); ?></small>
+                        <small>Current: <?php echo isset($content_map['hero_video']) && $content_map['hero_video'] !== '' ? htmlspecialchars($content_map['hero_video']) : 'None'; ?></small>
                         <?php if (isset($content_map['hero_video'])): ?>
                             <div style="margin-top: 10px;">
                                 <button type="button" onclick="removeHeroVideo()" class="btn-danger">Remove Video</button>
