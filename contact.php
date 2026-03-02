@@ -204,7 +204,7 @@ if (trim(strtolower($email)) === 'contact@faymure.com') {
         }
         
         .page-title {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 56px;
             color: var(--primary-color);
             margin-bottom: 20px;
@@ -286,7 +286,7 @@ if (trim(strtolower($email)) === 'contact@faymure.com') {
         }
         
         .contact-card h3 {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 24px;
             color: var(--primary-color);
             margin-bottom: 15px;
@@ -327,7 +327,7 @@ if (trim(strtolower($email)) === 'contact@faymure.com') {
         }
         
         .social-section h2 {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 36px;
             color: var(--primary-color);
             margin-bottom: 15px;

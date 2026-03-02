@@ -225,7 +225,7 @@ $conn->close();
         }
         
         .page-title {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 48px;
             color: var(--primary-color);
             margin-bottom: 50px;
@@ -240,7 +240,7 @@ $conn->close();
         
         .checkout-form h2,
         .order-summary-section h2 {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             color: var(--primary-color);
             margin-bottom: 30px;
             font-size: 24px;

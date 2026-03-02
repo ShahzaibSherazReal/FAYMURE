@@ -23,7 +23,7 @@ if ($shop_coming_soon) {
             <div style="font-size: 80px; color: var(--accent-color); margin-bottom: 30px;">
                 <i class="fas fa-clock"></i>
             </div>
-            <h1 style="font-family: 'TT DRUGS TRIAL LIGHT', sans-serif; font-size: 48px; color: var(--primary-color); margin-bottom: 20px; font-weight: 500;">
+            <h1 style="font-family: 'TT DRUGS TRIAL REGULAR', sans-serif; font-size: 48px; color: var(--primary-color); margin-bottom: 20px; font-weight: 500;">
                 Shop Coming Soon
             </h1>
             <p style="font-size: 18px; color: var(--text-color); line-height: 1.8; margin-bottom: 40px;">
@@ -257,7 +257,7 @@ $conn->close();
         }
 
         .sidebar-header h2 {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 24px;
             font-weight: 500;
             margin: 0;
@@ -289,7 +289,7 @@ $conn->close();
         }
 
         .sidebar-section h3 {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 18px;
             color: var(--primary-color);
             margin-bottom: 16px;
@@ -439,7 +439,7 @@ $conn->close();
         }
 
         .shop-hero-title {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 48px;
             font-weight: 500;
             margin-bottom: 20px;
@@ -460,7 +460,7 @@ $conn->close();
         }
 
         .section-title {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 36px;
             color: var(--primary-color);
             margin-bottom: 50px;

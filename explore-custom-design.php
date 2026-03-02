@@ -338,7 +338,7 @@ $conn->close();
             z-index: 1;
         }
         .custom-design-hero .hero-title {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 42px;
             font-weight: 500;
             letter-spacing: 0.5px;
@@ -406,7 +406,7 @@ $conn->close();
             z-index: 2;
         }
         .form-section .section-title {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 28px;
             color: var(--primary-color);
             margin-bottom: 35px;
@@ -445,7 +445,7 @@ $conn->close();
             background: #fff;
             color: var(--text-color);
             font-size: 15px;
-            font-family: 'TT DRUGS TRIAL CONDENSED REGULAR', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             transition: all 0.3s ease;
         }
         
@@ -506,7 +506,7 @@ $conn->close();
             text-transform: uppercase;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-family: 'TT DRUGS TRIAL CONDENSED REGULAR', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
         }
         
         .btn-submit:hover {
@@ -526,7 +526,7 @@ $conn->close();
             letter-spacing: 1px;
             text-transform: uppercase;
             transition: all 0.3s ease;
-            font-family: 'TT DRUGS TRIAL CONDENSED REGULAR', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -561,7 +561,7 @@ $conn->close();
         }
         
         .success-message h2 {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 28px;
             margin-bottom: 15px;
         }

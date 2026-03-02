@@ -111,7 +111,7 @@ $conn->close();
         }
         
         .page-title {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 48px;
             color: var(--primary-color);
             margin-bottom: 50px;
@@ -124,7 +124,7 @@ $conn->close();
         }
         
         .empty-cart h2 {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             color: var(--primary-color);
             margin-bottom: 15px;
         }
@@ -153,7 +153,7 @@ $conn->close();
         }
         
         .cart-item-details h3 {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             color: var(--primary-color);
             margin-bottom: 10px;
             font-size: 20px;
@@ -221,7 +221,7 @@ $conn->close();
         }
         
         .cart-summary h3 {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             color: var(--primary-color);
             margin-bottom: 20px;
             font-size: 24px;

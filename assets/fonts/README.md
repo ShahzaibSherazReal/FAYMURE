@@ -9,8 +9,7 @@ This directory uses the **TT Drugs Trial** .otf files:
 ## Usage on the site
 
 - **Header “FAYMURE”** → TT DRUGS TRIAL REGULAR  
-- **Headings** → TT DRUGS TRIAL LIGHT  
-- **Body/content text** → TT DRUGS TRIAL CONDENSED REGULAR  
+- **All text** → TT DRUGS TRIAL REGULAR  
 
 ## Font source
 

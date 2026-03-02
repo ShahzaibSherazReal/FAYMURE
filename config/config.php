@@ -9,6 +9,9 @@ define('SITE_NAME', 'FAYMURE');
 define('SITE_URL', 'http://localhost/FAYMURE');
 define('ADMIN_EMAIL', 'admin@faymure.com');
 
+// Canonical base URL for SEO (always https://www in production). Used for <link rel="canonical">.
+define('CANONICAL_BASE_URL', 'https://www.faymure.com');
+
 // Base path for clean URLs (no trailing slash). Use '' if site is at domain root.
 define('BASE_PATH', '/FAYMURE');
 

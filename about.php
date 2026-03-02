@@ -109,7 +109,7 @@ $conn->close();
         }
 
         .section-heading {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 36px;
             color: var(--primary-color);
             margin-bottom: 40px;
@@ -133,7 +133,7 @@ $conn->close();
 
         .service-title,
         .commitment-title {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 24px;
             color: var(--primary-color);
             margin-bottom: 16px;

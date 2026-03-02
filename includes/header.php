@@ -67,6 +67,12 @@ $nav_active = [
     'blog'         => ($path === '/blog'),
     'contact'      => ($path === '/contact'),
 ];
+
+// Dynamic canonical URL: always https://www.faymure.com/current-path (preserves path, no query string)
+if (empty($page_canonical) && defined('CANONICAL_BASE_URL')) {
+    $canonical_path = $base . ($path === '/' || $path === '' ? '/' : $path);
+    $page_canonical = rtrim(CANONICAL_BASE_URL, '/') . $canonical_path;
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $current_lang; ?>">

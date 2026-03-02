@@ -85,7 +85,7 @@ $conn->close();
         }
         
         .page-title {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 48px;
             color: var(--primary-color);
             margin-bottom: 20px;
@@ -178,7 +178,7 @@ $conn->close();
         }
         
         .category-info h3 {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 24px;
             color: var(--primary-color);
             margin-bottom: 12px;

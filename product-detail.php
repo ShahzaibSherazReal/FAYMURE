@@ -1236,7 +1236,7 @@ if ($avg_rating > 0) {
             color: var(--primary-color);
             margin-bottom: 20px;
             line-height: 1.3;
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
         }
         .rating-summary-header {
             display: flex;
@@ -1283,7 +1283,7 @@ if ($avg_rating > 0) {
             font-size: 42px;
             font-weight: 700;
             color: var(--primary-color);
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
         }
         .price-contact {
             font-size: 28px;
@@ -1334,7 +1334,7 @@ if ($avg_rating > 0) {
             font-weight: 600;
             color: var(--primary-color);
             margin-bottom: 15px;
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
         }
         .features-list {
             list-style: none;
@@ -1537,7 +1537,7 @@ if ($avg_rating > 0) {
             display: flex;
             align-items: center;
             gap: 15px;
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             padding-bottom: 15px;
             border-bottom: 3px solid var(--secondary-color);
         }
@@ -1709,7 +1709,7 @@ if ($avg_rating > 0) {
             font-size: 72px;
             font-weight: 700;
             color: var(--primary-color);
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
         }
         .rating-stars-large {
             display: flex;
@@ -1804,7 +1804,7 @@ if ($avg_rating > 0) {
         .add-review-title {
             color: var(--primary-color);
             margin-bottom: 25px;
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
         }
         .form-row {
             display: grid;
@@ -1919,7 +1919,7 @@ if ($avg_rating > 0) {
         .craftsmanship-story h3 {
             color: var(--primary-color);
             margin-bottom: 15px;
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
         }
 
         /* Premium Modals */
@@ -1986,7 +1986,7 @@ if ($avg_rating > 0) {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
         }
         .modal-header h2 i {
             color: var(--secondary-color);
@@ -2199,7 +2199,7 @@ if ($avg_rating > 0) {
         .modal-success h3 {
             color: var(--primary-color);
             margin-bottom: 15px;
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
         }
         .modal-error {
             padding: 15px;

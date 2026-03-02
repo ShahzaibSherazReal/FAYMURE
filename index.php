@@ -309,7 +309,7 @@ $conn->close();
         }
         
         .section-title {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 38px;
             color: var(--primary-color);
             margin-bottom: 12px;
@@ -408,7 +408,7 @@ $conn->close();
         }
         
         .option-title {
-            font-family: 'TT DRUGS TRIAL LIGHT', sans-serif;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
             font-size: 26px;
             color: var(--primary-color);
             margin-bottom: 14px;
