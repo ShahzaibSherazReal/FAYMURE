@@ -109,11 +109,13 @@ if (empty($page_canonical) && defined('CANONICAL_BASE_URL')) {
     <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/style.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/animations.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/character.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/nav-effects.css?v=<?php echo time(); ?>">
     <?php if (!empty($page_extra_css)): ?>
     <link rel="stylesheet" href="<?php echo $base . '/' . ltrim($page_extra_css, '/'); ?>?v=<?php echo time(); ?>">
     <?php endif; ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script defer src="<?php echo $base; ?>/assets/js/faymure-font.js"></script>
+    <script defer src="<?php echo $base; ?>/assets/js/nav-effects.js"></script>
 </head>
 <body>
     <?php
@@ -153,19 +155,19 @@ if (empty($page_canonical) && defined('CANONICAL_BASE_URL')) {
                 <?php endif; ?>
             </div>
         </div>
-        <nav class="header-nav">
+        <nav class="header-nav site-nav">
             <div class="container">
                 <div class="nav-left">
                     <a href="<?php echo $base; ?>/" class="logo"><?php echo SITE_NAME; ?></a>
                 </div>
                 <div class="nav-center">
-                    <a href="<?php echo $base; ?>/" class="nav-underline<?php echo $nav_active['home'] ? ' nav-active' : ''; ?>"><?php echo t('home'); ?></a>
-                    <a href="<?php echo $base; ?>/about" class="nav-underline<?php echo $nav_active['about'] ? ' nav-active' : ''; ?>"><?php echo t('about'); ?></a>
-                    <a href="<?php echo $base; ?>/manufacturing" class="nav-underline<?php echo $nav_active['manufacturing'] ? ' nav-active' : ''; ?>"><?php echo t('manufacturing'); ?></a>
+                    <a href="<?php echo $base; ?>/" class="nav-underline<?php echo $nav_active['home'] ? ' nav-active' : ''; ?>"<?php echo $nav_active['home'] ? ' aria-current="page"' : ''; ?>><?php echo t('home'); ?></a>
+                    <a href="<?php echo $base; ?>/about" class="nav-underline<?php echo $nav_active['about'] ? ' nav-active' : ''; ?>"<?php echo $nav_active['about'] ? ' aria-current="page"' : ''; ?>><?php echo t('about'); ?></a>
+                    <a href="<?php echo $base; ?>/manufacturing" class="nav-underline<?php echo $nav_active['manufacturing'] ? ' nav-active' : ''; ?>"<?php echo $nav_active['manufacturing'] ? ' aria-current="page"' : ''; ?>><?php echo t('manufacturing'); ?></a>
                     <?php if (!$blog_hidden): ?>
-                    <a href="<?php echo $base; ?>/blog" class="nav-underline<?php echo $nav_active['blog'] ? ' nav-active' : ''; ?>"><?php echo t('blog'); ?></a>
+                    <a href="<?php echo $base; ?>/blog" class="nav-underline<?php echo $nav_active['blog'] ? ' nav-active' : ''; ?>"<?php echo $nav_active['blog'] ? ' aria-current="page"' : ''; ?>><?php echo t('blog'); ?></a>
                     <?php endif; ?>
-                    <a href="<?php echo $base; ?>/contact" class="nav-underline<?php echo $nav_active['contact'] ? ' nav-active' : ''; ?>"><?php echo t('contact'); ?></a>
+                    <a href="<?php echo $base; ?>/contact" class="nav-underline<?php echo $nav_active['contact'] ? ' nav-active' : ''; ?>"<?php echo $nav_active['contact'] ? ' aria-current="page"' : ''; ?>><?php echo t('contact'); ?></a>
                 </div>
                 <div class="nav-right">
                     <?php if (isLoggedIn()): ?>
