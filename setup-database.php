@@ -85,7 +85,8 @@ if ($result->num_rows > 0) {
         'deleted_at' => "ALTER TABLE products ADD COLUMN deleted_at TIMESTAMP NULL",
         'sku' => "ALTER TABLE products ADD COLUMN sku VARCHAR(100) DEFAULT NULL",
         'key_features' => "ALTER TABLE products ADD COLUMN key_features TEXT",
-        'specifications' => "ALTER TABLE products ADD COLUMN specifications TEXT"
+        'specifications' => "ALTER TABLE products ADD COLUMN specifications TEXT",
+        'color_swatches' => "ALTER TABLE products ADD COLUMN color_swatches TEXT DEFAULT NULL"
     ];
     
     foreach ($columns_to_add as $col => $sql) {
@@ -112,6 +113,7 @@ if ($result->num_rows > 0) {
         sku VARCHAR(100) DEFAULT NULL,
         key_features TEXT,
         specifications TEXT,
+        color_swatches TEXT DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         deleted_at TIMESTAMP NULL,

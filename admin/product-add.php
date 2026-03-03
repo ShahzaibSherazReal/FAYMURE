@@ -102,20 +102,42 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $slug_check->close();
         }
 
-        // Ensure product columns exist (one-time migration if table was created before sku/key_features/specifications)
+        // Ensure product columns exist
         $check = $conn->query("SHOW COLUMNS FROM products LIKE 'sku'");
         if (!$check || $check->num_rows === 0) {
             $conn->query("ALTER TABLE products ADD COLUMN sku VARCHAR(100) DEFAULT NULL");
             $conn->query("ALTER TABLE products ADD COLUMN key_features TEXT");
             $conn->query("ALTER TABLE products ADD COLUMN specifications TEXT");
         }
+        $check_cs = $conn->query("SHOW COLUMNS FROM products LIKE 'color_swatches'");
+        if (!$check_cs || $check_cs->num_rows === 0) {
+            $conn->query("ALTER TABLE products ADD COLUMN color_swatches TEXT DEFAULT NULL");
+        }
 
+        $product_image_list = array_merge([$image], $images);
+        $color_swatches = [];
+        if (!empty($_POST['color_swatch_name']) && is_array($_POST['color_swatch_name'])) {
+            foreach ($_POST['color_swatch_name'] as $i => $name) {
+                $name = trim($name ?? '');
+                if ($name === '') continue;
+                $hex = isset($_POST['color_swatch_hex'][$i]) ? trim($_POST['color_swatch_hex'][$i]) : '';
+                $imgVal = isset($_POST['color_swatch_image'][$i]) ? trim($_POST['color_swatch_image'][$i]) : '';
+                $imgPath = '';
+                if ($imgVal !== '' && is_numeric($imgVal)) {
+                    $idx = (int) $imgVal;
+                    if (isset($product_image_list[$idx])) {
+                        $imgPath = $product_image_list[$idx];
+                    }
+                }
+                $color_swatches[] = ['name' => $name, 'hex' => $hex, 'image' => $imgPath];
+            }
+        }
+        $color_swatches_json = json_encode($color_swatches);
         $images_json = json_encode($images);
-        $stmt = $conn->prepare("INSERT INTO products (name, slug, sku, description, product_details, key_features, specifications, category_id, subcategory, moq, price, image, images, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO products (name, slug, sku, description, product_details, key_features, specifications, category_id, subcategory, moq, price, image, images, status, color_swatches) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         if ($stmt) {
-            // Type string: 7s + i + s + i + d + 3s = 14 (must match bind count exactly)
-            $bind_types = str_repeat('s', 7) . 'i' . 's' . 'i' . 'd' . str_repeat('s', 3);
-            $stmt->bind_param($bind_types, $name, $slug, $sku, $description, $product_details, $key_features, $specifications, $category_id, $subcategory, $moq, $price, $image, $images_json, $status);
+            $bind_types = str_repeat('s', 7) . 'i' . 's' . 'i' . 'd' . str_repeat('s', 4);
+            $stmt->bind_param($bind_types, $name, $slug, $sku, $description, $product_details, $key_features, $specifications, $category_id, $subcategory, $moq, $price, $image, $images_json, $status, $color_swatches_json);
             if ($stmt->execute()) {
                 $success = true;
             } else {
@@ -168,6 +190,20 @@ $conn->close();
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="../assets/css/admin.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .color-swatches-wrap { margin-bottom: 8px; }
+        .color-swatches-list { max-height: 200px; overflow-y: auto; overflow-x: hidden; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; background: #fafafa; margin-bottom: 8px; }
+        .color-swatches-list::-webkit-scrollbar { width: 6px; }
+        .color-swatches-list::-webkit-scrollbar-thumb { background: #bbb; border-radius: 3px; }
+        .color-swatch-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+        .color-swatch-row:last-child { margin-bottom: 0; }
+        .color-swatch-row .color-preset { width: 130px; padding: 5px 8px; font-size: 12px; }
+        .color-swatch-row input[type="text"] { width: 90px; padding: 5px 8px; font-size: 12px; }
+        .color-swatch-row .color-hex-inp { width: 68px; padding: 5px 6px; font-size: 11px; }
+        .color-swatch-row select[name="color_swatch_image[]"] { min-width: 120px; padding: 5px 8px; font-size: 12px; flex: 1; max-width: 160px; }
+        .color-swatch-row .remove-color-swatch { padding: 4px 8px; font-size: 11px; flex-shrink: 0; }
+        .form-hint { font-size: 12px; color: #666; margin-bottom: 8px; }
+    </style>
 </head>
 <body>
     <?php include 'includes/admin-header.php'; ?>
@@ -195,6 +231,24 @@ $conn->close();
             <?php endif; ?>
             
             <form method="POST" action="" enctype="multipart/form-data" class="admin-form">
+                <div class="form-group">
+                    <label for="image">Main Image</label>
+                    <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
+                </div>
+                
+                <div class="form-group">
+                    <label for="images">Additional Images</label>
+                    <input type="file" id="images" name="images[]" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple>
+                </div>
+                <div class="form-group color-swatches-wrap">
+                    <label>Product colors &amp; linked images</label>
+                    <p class="form-hint">Add a color and link to an image. Customers can click a color on the product page to see that image.</p>
+                    <div class="color-swatches-list" id="colorSwatchesContainer"></div>
+                    <button type="button" id="addColorSwatch" class="btn-secondary">+ Add color</button>
+                </div>
+                
+                <hr style="margin: 24px 0; border: 0; border-top: 1px solid var(--border-color);">
+                
                 <div class="form-row">
                     <div class="form-group">
                         <label for="name">Product Name *</label>
@@ -290,16 +344,6 @@ $conn->close();
                     </div>
                 </div>
                 
-                <div class="form-group">
-                    <label for="image">Main Image</label>
-                    <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
-                </div>
-                
-                <div class="form-group">
-                    <label for="images">Additional Images</label>
-                    <input type="file" id="images" name="images[]" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple>
-                </div>
-                
                 <div class="form-actions">
                     <button type="submit" class="btn-primary">Add Product</button>
                     <?php if ($preselect_category_id): ?>
@@ -320,6 +364,46 @@ $conn->close();
                 .replace(/^-+|-+$/g, '');
             document.getElementById('slug').value = slug;
         });
+        // Color swatches (add product: image options are indices 0 = Main, 1 = Additional 1, ... 10 = Additional 10)
+        (function() {
+            var container = document.getElementById('colorSwatchesContainer');
+            var addBtn = document.getElementById('addColorSwatch');
+            if (!container || !addBtn) return;
+            var imageOpts = [
+                { value: '0', label: 'Main image' },
+                { value: '1', label: 'Additional 1' },
+                { value: '2', label: 'Additional 2' },
+                { value: '3', label: 'Additional 3' },
+                { value: '4', label: 'Additional 4' },
+                { value: '5', label: 'Additional 5' },
+                { value: '6', label: 'Additional 6' },
+                { value: '7', label: 'Additional 7' },
+                { value: '8', label: 'Additional 8' },
+                { value: '9', label: 'Additional 9' },
+                { value: '10', label: 'Additional 10' }
+            ];
+            var presetOpts = '<option value="">— Choose color —</option><option value="Black|#000000">Black</option><option value="White|#FFFFFF">White</option><option value="Brown|#5D4037">Brown</option><option value="Navy|#001F3F">Navy</option><option value="Tan|#D2B48C">Tan</option><option value="Red|#B71C1C">Red</option><option value="Burgundy|#722F37">Burgundy</option><option value="Grey|#616161">Grey</option><option value="__custom__">Add custom color</option>';
+            addBtn.addEventListener('click', function() {
+                var row = document.createElement('div');
+                row.className = 'color-swatch-row';
+                row.innerHTML = '<select class="color-preset" title="Quick fill">' + presetOpts + '</select><input type="text" name="color_swatch_name[]" placeholder="Color name"><input type="text" name="color_swatch_hex[]" placeholder="#hex" class="color-hex-inp"><select name="color_swatch_image[]"><option value="">— Link to image —</option>' + imageOpts.map(function(o) { return '<option value="' + o.value + '">' + o.label + '</option>'; }).join('') + '</select><button type="button" class="btn-delete remove-color-swatch">Remove</button>';
+                container.appendChild(row);
+                bindRow(row);
+            });
+            function bindRow(row) {
+                var preset = row.querySelector('.color-preset');
+                if (preset) preset.addEventListener('change', function() {
+                    var v = this.value;
+                    var nameInp = row.querySelector('input[name="color_swatch_name[]"]');
+                    var hexInp = row.querySelector('input[name="color_swatch_hex[]"]');
+                    if (v === '__custom__') { if (nameInp) nameInp.value = ''; if (hexInp) hexInp.value = ''; return; }
+                    if (v && v.indexOf('|') !== -1) { var parts = v.split('|'); if (nameInp) nameInp.value = parts[0] || ''; if (hexInp) hexInp.value = parts[1] || ''; }
+                });
+                var rm = row.querySelector('.remove-color-swatch');
+                if (rm) rm.addEventListener('click', function() { row.remove(); });
+            }
+            container.querySelectorAll('.color-swatch-row').forEach(bindRow);
+        })();
     </script>
 </body>
 </html>

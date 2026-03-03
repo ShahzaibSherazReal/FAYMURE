@@ -109,11 +109,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     
     if ($name && $slug && $category_id) {
+        $check_cs = $conn->query("SHOW COLUMNS FROM products LIKE 'color_swatches'");
+        if (!$check_cs || $check_cs->num_rows === 0) {
+            $conn->query("ALTER TABLE products ADD COLUMN color_swatches TEXT DEFAULT NULL");
+        }
+        $color_swatches = [];
+        if (!empty($_POST['color_swatch_name']) && is_array($_POST['color_swatch_name'])) {
+            foreach ($_POST['color_swatch_name'] as $i => $name) {
+                $name = trim($name ?? '');
+                if ($name === '') continue;
+                $hex = isset($_POST['color_swatch_hex'][$i]) ? trim($_POST['color_swatch_hex'][$i]) : '';
+                $img = isset($_POST['color_swatch_image'][$i]) ? trim($_POST['color_swatch_image'][$i]) : '';
+                $color_swatches[] = ['name' => $name, 'hex' => $hex, 'image' => $img];
+            }
+        }
+        $color_swatches_json = json_encode($color_swatches);
         $images_json = json_encode($images);
-        $stmt = $conn->prepare("UPDATE products SET name=?, slug=?, sku=?, description=?, product_details=?, key_features=?, specifications=?, category_id=?, subcategory=?, moq=?, price=?, image=?, images=?, status=? WHERE id=?");
-        // 15 params: 7 strings, int, string, int, double, 3 strings, int (product_id)
-        $bind_types = str_repeat('s', 7) . 'i' . 's' . 'i' . 'd' . str_repeat('s', 3) . 'i';
-        $stmt->bind_param($bind_types, $name, $slug, $sku, $description, $product_details, $key_features, $specifications, $category_id, $subcategory, $moq, $price, $image, $images_json, $status, $product_id);
+        $stmt = $conn->prepare("UPDATE products SET name=?, slug=?, sku=?, description=?, product_details=?, key_features=?, specifications=?, category_id=?, subcategory=?, moq=?, price=?, image=?, images=?, status=?, color_swatches=? WHERE id=?");
+        $bind_types = str_repeat('s', 7) . 'i' . 's' . 'i' . 'd' . str_repeat('s', 4) . 'i';
+        $stmt->bind_param($bind_types, $name, $slug, $sku, $description, $product_details, $key_features, $specifications, $category_id, $subcategory, $moq, $price, $image, $images_json, $status, $color_swatches_json, $product_id);
         
         if ($stmt->execute()) {
             $success = true;
@@ -129,6 +143,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 $categories = $conn->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")->fetch_all(MYSQLI_ASSOC);
 $images = json_decode($product['images'] ?? '[]', true) ?: [];
+$product_image_list = [];
+if (!empty($product['image'])) $product_image_list[] = $product['image'];
+$product_image_list = array_merge($product_image_list, $images);
+$color_swatches_parsed = json_decode($product['color_swatches'] ?? '[]', true) ?: [];
+$common_colors = [
+    'Black' => '#000000',
+    'White' => '#FFFFFF',
+    'Brown' => '#5D4037',
+    'Navy' => '#001F3F',
+    'Tan' => '#D2B48C',
+    'Red' => '#B71C1C',
+    'Burgundy' => '#722F37',
+    'Grey' => '#616161',
+];
 $return_catalog = isset($_GET['return']) && $_GET['return'] === 'catalog' && isset($_GET['category']);
 $return_category_id = $return_catalog ? (int)$_GET['category'] : 0;
 
@@ -164,6 +192,20 @@ $conn->close();
     <title>Edit Product - Admin - <?php echo SITE_NAME; ?></title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="../assets/css/admin.css?v=<?php echo time(); ?>">
+    <style>
+        .color-swatches-wrap { margin-bottom: 8px; }
+        .color-swatches-list { max-height: 200px; overflow-y: auto; overflow-x: hidden; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; background: #fafafa; margin-bottom: 8px; }
+        .color-swatches-list::-webkit-scrollbar { width: 6px; }
+        .color-swatches-list::-webkit-scrollbar-thumb { background: #bbb; border-radius: 3px; }
+        .color-swatch-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+        .color-swatch-row:last-child { margin-bottom: 0; }
+        .color-swatch-row .color-preset { width: 130px; padding: 5px 8px; font-size: 12px; }
+        .color-swatch-row input[type="text"] { width: 90px; padding: 5px 8px; font-size: 12px; }
+        .color-swatch-row .color-hex-inp { width: 68px; padding: 5px 6px; font-size: 11px; }
+        .color-swatch-row select[name="color_swatch_image[]"] { min-width: 120px; padding: 5px 8px; font-size: 12px; flex: 1; max-width: 160px; }
+        .color-swatch-row .remove-color-swatch { padding: 4px 8px; font-size: 11px; flex-shrink: 0; }
+        .form-hint { font-size: 12px; color: #666; margin-bottom: 8px; }
+    </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -186,6 +228,69 @@ $conn->close();
             <?php endif; ?>
             
             <form method="POST" enctype="multipart/form-data" class="admin-form">
+                <div class="form-group">
+                    <label>Main Image</label>
+                    <?php if ($product['image']): ?>
+                        <div style="margin-bottom: 15px;">
+                            <img src="../<?php echo htmlspecialchars($product['image']); ?>" alt="Current" style="max-width: 200px; display: block; margin-bottom: 10px; border: 1px solid var(--border-color);">
+                            <button type="button" class="btn-delete" onclick="submitRemoveMainImage()">Remove Image</button>
+                        </div>
+                    <?php endif; ?>
+                    <label for="image"><?php echo $product['image'] ? 'Upload New Main Image' : 'Upload Main Image'; ?></label>
+                    <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
+                </div>
+                
+                <div class="form-group">
+                    <label>Additional Images</label>
+                    <?php if (!empty($images)): ?>
+                        <div class="image-gallery" style="margin-bottom: 15px;">
+                            <?php foreach ($images as $index => $img): ?>
+                                <div class="gallery-item" style="position: relative; display: inline-block; margin: 5px;">
+                                    <img src="../<?php echo htmlspecialchars($img); ?>" alt="Gallery" style="width: 100px; height: 100px; object-fit: cover; border: 1px solid var(--border-color);">
+                                    <button type="button" class="btn-delete" style="position: absolute; top: 0; right: 0; padding: 2px 6px; font-size: 10px;" onclick="submitRemoveImageIndex(<?php echo $index; ?>)" title="Remove">×</button>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                    <label for="images">Add More Images</label>
+                    <input type="file" id="images" name="images[]" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple>
+                </div>
+                
+                <div class="form-group color-swatches-wrap">
+                    <label>Product colors &amp; linked images</label>
+                    <p class="form-hint">Add a color and link to an image. Customers can click a color on the product page to see that image.</p>
+                    <div class="color-swatches-list" id="colorSwatchesContainer">
+                        <?php foreach ($color_swatches_parsed as $idx => $swatch): 
+                            $sname = $swatch['name'] ?? '';
+                            $shex = $swatch['hex'] ?? '';
+                            $simg = $swatch['image'] ?? '';
+                        ?>
+                        <div class="color-swatch-row">
+                            <select class="color-preset" title="Quick fill">
+                                <option value="">— Choose color —</option>
+                                <?php foreach ($common_colors as $cname => $chex): ?>
+                                    <option value="<?php echo htmlspecialchars($cname); ?>|<?php echo htmlspecialchars($chex); ?>"<?php echo ($sname === $cname) ? ' selected' : ''; ?>><?php echo htmlspecialchars($cname); ?></option>
+                                <?php endforeach; ?>
+                                <option value="__custom__"<?php echo ($sname !== '' && !isset($common_colors[$sname])) ? ' selected' : ''; ?>>Add custom color</option>
+                            </select>
+                            <input type="text" name="color_swatch_name[]" placeholder="Color name" value="<?php echo htmlspecialchars($sname); ?>">
+                            <input type="text" name="color_swatch_hex[]" placeholder="#hex" value="<?php echo htmlspecialchars($shex); ?>" class="color-hex-inp">
+                            <select name="color_swatch_image[]">
+                                <option value="">— Link to image —</option>
+                                <?php foreach ($product_image_list as $imgIdx => $imgPath): ?>
+                                    <option value="<?php echo htmlspecialchars($imgPath); ?>"<?php echo ($simg === $imgPath) ? ' selected' : ''; ?>><?php echo $imgIdx === 0 ? 'Main image' : ('Additional ' . $imgIdx); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <button type="button" class="btn-delete remove-color-swatch">Remove</button>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <button type="button" id="addColorSwatch" class="btn-secondary">+ Add color</button>
+                    <script type="application/json" id="productImageListJson"><?php echo json_encode(array_map(function($p, $i) { return ['path' => $p, 'label' => $i === 0 ? 'Main image' : ('Additional ' . $i)]; }, $product_image_list, array_keys($product_image_list))); ?></script>
+                </div>
+                
+                <hr style="margin: 24px 0; border: 0; border-top: 1px solid var(--border-color);">
+                
                 <div class="form-row">
                     <div class="form-group">
                         <label for="name">Product Name *</label>
@@ -282,34 +387,6 @@ $conn->close();
                     </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>Main Image</label>
-                    <?php if ($product['image']): ?>
-                        <div style="margin-bottom: 15px;">
-                            <img src="../<?php echo htmlspecialchars($product['image']); ?>" alt="Current" style="max-width: 200px; display: block; margin-bottom: 10px; border: 1px solid var(--border-color);">
-                            <button type="button" class="btn-delete" onclick="submitRemoveMainImage()">Remove Image</button>
-                        </div>
-                    <?php endif; ?>
-                    <label for="image"><?php echo $product['image'] ? 'Upload New Main Image' : 'Upload Main Image'; ?></label>
-                    <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
-                </div>
-                
-                <div class="form-group">
-                    <label>Additional Images</label>
-                    <?php if (!empty($images)): ?>
-                        <div class="image-gallery" style="margin-bottom: 15px;">
-                            <?php foreach ($images as $index => $img): ?>
-                                <div class="gallery-item" style="position: relative; display: inline-block; margin: 5px;">
-                                    <img src="../<?php echo htmlspecialchars($img); ?>" alt="Gallery" style="width: 100px; height: 100px; object-fit: cover; border: 1px solid var(--border-color);">
-                                    <button type="button" class="btn-delete" style="position: absolute; top: 0; right: 0; padding: 2px 6px; font-size: 10px;" onclick="submitRemoveImageIndex(<?php echo $index; ?>)" title="Remove">×</button>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-                    <label for="images">Add More Images</label>
-                    <input type="file" id="images" name="images[]" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple>
-                </div>
-                
                 <div class="form-actions">
                     <button type="submit" class="btn-primary">Update Product</button>
                     <?php if ($return_category_id): ?>
@@ -322,6 +399,34 @@ $conn->close();
         </div>
     </main>
     <script>
+        (function() {
+            var container = document.getElementById('colorSwatchesContainer');
+            var addBtn = document.getElementById('addColorSwatch');
+            var imageListJson = document.getElementById('productImageListJson');
+            if (!container || !addBtn) return;
+            var imageOpts = imageListJson ? JSON.parse(imageListJson.textContent || '[]') : [];
+            addBtn.addEventListener('click', function() {
+                var row = document.createElement('div');
+                row.className = 'color-swatch-row';
+                var presetOpts = '<option value="">— Choose color —</option><option value="Black|#000000">Black</option><option value="White|#FFFFFF">White</option><option value="Brown|#5D4037">Brown</option><option value="Navy|#001F3F">Navy</option><option value="Tan|#D2B48C">Tan</option><option value="Red|#B71C1C">Red</option><option value="Burgundy|#722F37">Burgundy</option><option value="Grey|#616161">Grey</option><option value="__custom__">Add custom color</option>';
+                row.innerHTML = '<select class="color-preset" title="Quick fill">' + presetOpts + '</select><input type="text" name="color_swatch_name[]" placeholder="Color name"><input type="text" name="color_swatch_hex[]" placeholder="#hex" class="color-hex-inp"><select name="color_swatch_image[]"><option value="">— Link to image —</option>' + imageOpts.map(function(o) { return '<option value="' + (o.path || '').replace(/"/g, '&quot;') + '">' + (o.label || '').replace(/</g, '&lt;') + '</option>'; }).join('') + '</select><button type="button" class="btn-delete remove-color-swatch">Remove</button>';
+                container.appendChild(row);
+                bindRow(row);
+            });
+            function bindRow(row) {
+                var preset = row.querySelector('.color-preset');
+                if (preset) preset.addEventListener('change', function() {
+                    var v = this.value;
+                    var nameInp = row.querySelector('input[name="color_swatch_name[]"]');
+                    var hexInp = row.querySelector('input[name="color_swatch_hex[]"]');
+                    if (v === '__custom__') { if (nameInp) nameInp.value = ''; if (hexInp) hexInp.value = ''; return; }
+                    if (v && v.indexOf('|') !== -1) { var parts = v.split('|'); if (nameInp) nameInp.value = parts[0] || ''; if (hexInp) hexInp.value = parts[1] || ''; }
+                });
+                var rm = row.querySelector('.remove-color-swatch');
+                if (rm) rm.addEventListener('click', function() { row.remove(); });
+            }
+            container.querySelectorAll('.color-swatch-row').forEach(bindRow);
+        })();
         function submitRemoveMainImage() {
             if (confirm('Remove main image?')) {
                 var form = document.createElement('form');

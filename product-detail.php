@@ -269,6 +269,34 @@ if (empty($image_urls)) {
     $image_urls = [$base_prefix . 'assets/images/placeholder.jpg'];
 }
 
+// Color swatches (link colors to images) — require color_swatches column
+$color_swatches_display = [];
+if (!empty($product['color_swatches'])) {
+    $color_swatches_raw = json_decode($product['color_swatches'], true);
+    if (is_array($color_swatches_raw)) {
+        foreach ($color_swatches_raw as $s) {
+            $path = trim($s['image'] ?? '');
+            if ($path === '') continue;
+            $full = (strpos($path, 'http') === 0 || strpos($path, '//') === 0) ? $path : $base_prefix . ltrim(str_replace('\\', '/', $path), '/');
+            $idx = array_search($full, $image_urls, true);
+            if ($idx === false) {
+                $alt = $base_prefix . ltrim($path, '/');
+                foreach ($image_urls as $i => $u) {
+                    if ($u === $alt || strpos($u, $path) !== false) { $idx = $i; break; }
+                }
+            }
+            if ($idx !== false) {
+                $color_swatches_display[] = [
+                    'name' => trim($s['name'] ?? ''),
+                    'hex' => trim($s['hex'] ?? ''),
+                    'image_url' => $full,
+                    'image_index' => (int) $idx,
+                ];
+            }
+        }
+    }
+}
+
 // Check if product_reviews table exists, create if not
 $table_check = $conn->query("SHOW TABLES LIKE 'product_reviews'");
 if (!$table_check || $table_check->num_rows == 0) {
@@ -461,6 +489,22 @@ if ($avg_rating > 0) {
                         </div>
                     <?php endif; ?>
                 </div>
+                <?php if (!empty($color_swatches_display)): ?>
+                <div class="product-color-swatches product-color-swatches-mobile">
+                    <?php foreach ($color_swatches_display as $idx => $sw): ?>
+                        <div class="product-color-swatch-wrap" data-color-index="<?php echo $idx; ?>" data-image-index="<?php echo $sw['image_index']; ?>">
+                            <button type="button" class="product-color-swatch<?php echo !empty($sw['hex']) ? '' : ' product-color-swatch-name'; ?> <?php echo $idx === 0 ? 'active' : ''; ?>"
+                                style="<?php echo !empty($sw['hex']) ? 'background-color:' . htmlspecialchars($sw['hex']) . ';' : ''; ?>"
+                                onclick="changeImage('<?php echo htmlspecialchars($sw['image_url'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $sw['image_index']; ?>);"
+                                title="<?php echo htmlspecialchars($sw['name']); ?>"
+                                aria-pressed="<?php echo $idx === 0 ? 'true' : 'false'; ?>">
+                                <?php if (empty($sw['hex'])): ?><span><?php echo htmlspecialchars($sw['name']); ?></span><?php endif; ?>
+                            </button>
+                            <span class="product-color-swatch-name-label"><?php echo htmlspecialchars($sw['name']); ?></span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
             </div>
 
             <!-- Product Information -->
@@ -486,6 +530,7 @@ if ($avg_rating > 0) {
                     <div class="product-price-section premium-price">
                         <?php if ($product['price'] && $product['price'] > 0): ?>
                             <span class="price-main">$<?php echo number_format($product['price'], 2); ?></span>
+                            <span class="price-per-piece">per piece</span>
                         <?php else: ?>
                             <span class="price-main price-contact">Contact for Price</span>
                         <?php endif; ?>
@@ -514,6 +559,23 @@ if ($avg_rating > 0) {
                             <span class="meta-value"><?php echo number_format($product['moq'] ?? 1); ?> <?php echo ($product['moq'] ?? 1) > 1 ? 'pieces' : 'piece'; ?></span>
                         </div>
                     </div>
+
+                    <?php if (!empty($color_swatches_display)): ?>
+                        <div class="product-color-swatches">
+                            <?php foreach ($color_swatches_display as $idx => $sw): ?>
+                                <div class="product-color-swatch-wrap" data-color-index="<?php echo $idx; ?>" data-image-index="<?php echo $sw['image_index']; ?>">
+                                    <button type="button" class="product-color-swatch<?php echo !empty($sw['hex']) ? '' : ' product-color-swatch-name'; ?> <?php echo $idx === 0 ? 'active' : ''; ?>"
+                                        style="<?php echo !empty($sw['hex']) ? 'background-color:' . htmlspecialchars($sw['hex']) . ';' : ''; ?>"
+                                        onclick="changeImage('<?php echo htmlspecialchars($sw['image_url'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $sw['image_index']; ?>);"
+                                        title="<?php echo htmlspecialchars($sw['name']); ?>"
+                                        aria-pressed="<?php echo $idx === 0 ? 'true' : 'false'; ?>">
+                                        <?php if (empty($sw['hex'])): ?><span><?php echo htmlspecialchars($sw['name']); ?></span><?php endif; ?>
+                                    </button>
+                                    <span class="product-color-swatch-name-label"><?php echo htmlspecialchars($sw['name']); ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
 
                     <!-- Product Actions Section (above Key Features) -->
                     <div class="product-actions-section premium-actions">
@@ -1330,6 +1392,57 @@ if ($avg_rating > 0) {
             height: 100%;
             object-fit: cover;
         }
+        .product-color-swatches {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            gap: 14px 20px;
+            margin-top: 16px;
+        }
+        .product-color-swatches-mobile {
+            display: none;
+        }
+        .product-color-swatch-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .product-color-swatch {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid rgba(0,0,0,0.15);
+            padding: 0;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .product-color-swatch:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+        }
+        .product-color-swatch.active {
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+        .product-color-swatch-name {
+            width: auto;
+            height: 32px;
+            border-radius: 20px;
+            padding: 0 14px;
+            font-size: 13px;
+            background: var(--primary-color);
+            color: #fff;
+        }
+        .product-color-swatch-name span {
+            color: inherit;
+        }
+        .product-color-swatch-name-label {
+            font-size: 12px;
+            color: var(--text-color);
+            text-align: center;
+            max-width: 72px;
+            line-height: 1.2;
+        }
 
         /* Product Info */
         .product-info-section {
@@ -1386,6 +1499,15 @@ if ($avg_rating > 0) {
         }
         .product-price-section {
             margin-bottom: 30px;
+        }
+        .price-per-piece {
+            font-size: 20px;
+            font-weight: 500;
+            color: var(--text-color);
+            margin-left: 13px;
+            vertical-align: middle;
+            margin-top: -25px;
+            display: inline-block;
         }
         .price-main {
             font-size: 42px;
@@ -2332,9 +2454,6 @@ if ($avg_rating > 0) {
             .product-gallery-section {
                 position: static;
             }
-            .action-buttons-three {
-                grid-template-columns: 1fr;
-            }
             .trust-signals {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -2346,11 +2465,45 @@ if ($avg_rating > 0) {
             }
         }
         @media (max-width: 768px) {
+            .action-buttons-three {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+            .action-buttons-three .btn-action {
+                min-width: 0;
+                min-height: 80px;
+                padding: 14px 8px;
+            }
+            .action-buttons-three .btn-action span {
+                font-size: 12px;
+            }
+            .action-buttons-three .btn-action i {
+                font-size: 20px;
+            }
+            .product-info-section .product-color-swatches {
+                display: none !important;
+            }
+            .product-color-swatches-mobile {
+                display: flex !important;
+                margin-top: 16px;
+                padding: 0 4px;
+            }
             .product-title {
                 font-size: 28px;
             }
+            .product-price-section {
+                display: flex;
+                align-items: baseline;
+                flex-wrap: wrap;
+                gap: 4px 0;
+            }
             .price-main {
                 font-size: 32px;
+            }
+            .price-per-piece {
+                font-size: 18px;
+                margin-left: 16px;
+                transform: translateY(-8px);
             }
             .product-info-section,
             .product-details-sections {
@@ -2392,7 +2545,7 @@ if ($avg_rating > 0) {
         function changeImage(src, index) {
             document.getElementById('mainImage').src = src;
             currentImageIndex = index >= 0 ? index : 0;
-            
+
             document.querySelectorAll('.thumbnail-item').forEach((item, i) => {
                 if (i === currentImageIndex) {
                     item.classList.add('active');
@@ -2400,6 +2553,12 @@ if ($avg_rating > 0) {
                 } else {
                     item.classList.remove('active');
                 }
+            });
+            document.querySelectorAll('.product-color-swatch-wrap').forEach(function(wrap) {
+                var btn = wrap.querySelector('.product-color-swatch');
+                if (!btn) return;
+                var imgIdx = parseInt(wrap.getAttribute('data-image-index'), 10);
+                if (imgIdx === currentImageIndex) btn.classList.add('active'); else btn.classList.remove('active');
             });
         }
 
