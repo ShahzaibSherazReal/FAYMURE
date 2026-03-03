@@ -428,18 +428,36 @@ if ($avg_rating > 0) {
                                  class="main-product-image"
                                  loading="lazy"
                                  onerror="this.onerror=null; this.src='<?php echo htmlspecialchars($base_prefix . 'assets/images/placeholder.jpg'); ?>';">
+                            <?php if (count($image_urls) > 1): ?>
+                            <button type="button" class="gallery-arrow gallery-prev" onclick="prevMainImage()" title="Previous image" aria-label="Previous image">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button type="button" class="gallery-arrow gallery-next" onclick="nextMainImage()" title="Next image" aria-label="Next image">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <?php endif; ?>
                             <button class="zoom-btn" onclick="openFullscreen()" title="View Fullscreen">
                                 <i class="fas fa-expand"></i>
                             </button>
                         </div>
                     </div>
                     <?php if (count($image_urls) > 1): ?>
-                        <div class="thumbnail-gallery">
-                            <?php foreach ($image_urls as $index => $img_url): ?>
-                                <div class="thumbnail-item <?php echo $index === 0 ? 'active' : ''; ?>" onclick="changeImage('<?php echo htmlspecialchars($img_url, ENT_QUOTES, 'UTF-8'); ?>', <?php echo $index; ?>)">
-                                    <img src="<?php echo htmlspecialchars($img_url); ?>" alt="Thumbnail <?php echo $index + 1; ?>" loading="lazy">
+                        <div class="thumbnail-gallery-outer">
+                            <button type="button" class="thumbnail-arrow thumbnail-prev" onclick="scrollThumbnails(-1)" title="Previous thumbnails" aria-label="Previous thumbnails">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <div class="thumbnail-gallery-scroll" id="thumbnailGalleryScroll">
+                                <div class="thumbnail-gallery" id="thumbnailGallery">
+                                    <?php foreach ($image_urls as $index => $img_url): ?>
+                                        <div class="thumbnail-item <?php echo $index === 0 ? 'active' : ''; ?>" onclick="changeImage('<?php echo htmlspecialchars($img_url, ENT_QUOTES, 'UTF-8'); ?>', <?php echo $index; ?>)">
+                                            <img src="<?php echo htmlspecialchars($img_url); ?>" alt="Thumbnail <?php echo $index + 1; ?>" loading="lazy">
+                                        </div>
+                                    <?php endforeach; ?>
                                 </div>
-                            <?php endforeach; ?>
+                            </div>
+                            <button type="button" class="thumbnail-arrow thumbnail-next" onclick="scrollThumbnails(1)" title="Next thumbnails" aria-label="Next thumbnails">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -1120,11 +1138,15 @@ if ($avg_rating > 0) {
             margin-bottom: 80px;
         }
 
-        /* Product Gallery */
+        /* Product Gallery - main image fixed size; thumbnails scroll in a fixed strip */
         .product-gallery-section {
             position: sticky;
             top: 100px;
             height: fit-content;
+            min-width: 0;
+        }
+        .product-images {
+            min-width: 0;
         }
         .main-image-container {
             position: relative;
@@ -1133,6 +1155,7 @@ if ($avg_rating > 0) {
             overflow: hidden;
             background: #fff;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            min-width: 0;
         }
         .image-badges {
             position: absolute;
@@ -1197,12 +1220,97 @@ if ($avg_rating > 0) {
             background: var(--primary-color);
             transform: scale(1.1);
         }
+        .gallery-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--primary-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            z-index: 4;
+        }
+        .gallery-arrow:hover {
+            background: var(--primary-color);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(0, 31, 63, 0.3);
+        }
+        .gallery-prev { left: 12px; }
+        .gallery-next { right: 12px; }
+        .thumbnail-gallery-outer {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            min-width: 0;
+            width: 100%;
+        }
+        .thumbnail-gallery-scroll {
+            flex: 1;
+            min-width: 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            max-width: 100%;
+        }
+        .thumbnail-gallery-scroll::-webkit-scrollbar {
+            height: 6px;
+        }
+        .thumbnail-gallery-scroll::-webkit-scrollbar-thumb {
+            background: rgba(0, 31, 63, 0.3);
+            border-radius: 3px;
+        }
         .thumbnail-gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            display: flex;
+            flex-wrap: nowrap;
             gap: 12px;
+            padding: 4px 0;
+            width: max-content;
+            min-width: 100%;
+        }
+        .thumbnail-arrow {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            color: var(--primary-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        .thumbnail-arrow:hover {
+            background: var(--primary-color);
+            color: #fff;
+            border-color: var(--primary-color);
+        }
+        .thumbnail-arrow:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .thumbnail-arrow:disabled:hover {
+            background: #fff;
+            color: var(--primary-color);
         }
         .thumbnail-item {
+            flex: 0 0 80px;
+            width: 80px;
             aspect-ratio: 1;
             border-radius: 8px;
             overflow: hidden;
@@ -2283,16 +2391,35 @@ if ($avg_rating > 0) {
 
         function changeImage(src, index) {
             document.getElementById('mainImage').src = src;
-            currentImageIndex = index || 0;
+            currentImageIndex = index >= 0 ? index : 0;
             
-            // Update active thumbnail
             document.querySelectorAll('.thumbnail-item').forEach((item, i) => {
                 if (i === currentImageIndex) {
                     item.classList.add('active');
+                    item.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
                 } else {
                     item.classList.remove('active');
                 }
             });
+        }
+
+        function prevMainImage() {
+            if (images.length <= 1) return;
+            currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
+            changeImage(images[currentImageIndex], currentImageIndex);
+        }
+
+        function nextMainImage() {
+            if (images.length <= 1) return;
+            currentImageIndex = (currentImageIndex + 1) % images.length;
+            changeImage(images[currentImageIndex], currentImageIndex);
+        }
+
+        function scrollThumbnails(direction) {
+            const el = document.getElementById('thumbnailGalleryScroll');
+            if (!el) return;
+            const step = 100;
+            el.scrollBy({ left: direction * step, behavior: 'smooth' });
         }
 
         function openFullscreen() {

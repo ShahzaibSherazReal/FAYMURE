@@ -1,6 +1,5 @@
 <?php
 require_once 'check-auth.php';
-require_once __DIR__ . '/../includes/image-upload-webp.php';
 
 $product_id = $_GET['id'] ?? 0;
 $conn = getDBConnection();
@@ -72,33 +71,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
     
-    // Handle image upload
+    // Handle image upload (PNG, JPG, JPEG, WebP — store as-is, no conversion)
+    $upload_dir = '../assets/images/products/';
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0777, true);
+    }
+    $allowed_extensions = ['jpg', 'jpeg', 'png', 'webp'];
+
     if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-        $upload_dir = '../assets/images/products/';
-        if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0777, true);
-        }
-        // Remove old image if exists
         if (!empty($product['image']) && file_exists('../' . $product['image'])) {
             unlink('../' . $product['image']);
         }
-        $file_ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+        $file_ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+        if ($file_ext === '' || !in_array($file_ext, $allowed_extensions, true)) {
+            $file_ext = 'jpg';
+        }
         $file_name = uniqid() . '.' . $file_ext;
         if (move_uploaded_file($_FILES['image']['tmp_name'], $upload_dir . $file_name)) {
-            $webp = convert_file_to_webp($upload_dir . $file_name);
-            $image = $webp ? str_replace('../', '', $webp) : ('assets/images/products/' . $file_name);
+            $image = 'assets/images/products/' . $file_name;
         }
     }
-    
+
     $images = json_decode($product['images'] ?? '[]', true) ?: [];
     if (isset($_FILES['images']) && !empty($_FILES['images']['name'][0])) {
         foreach ($_FILES['images']['tmp_name'] as $key => $tmp_name) {
             if ($_FILES['images']['error'][$key] == 0) {
-                $file_ext = pathinfo($_FILES['images']['name'][$key], PATHINFO_EXTENSION);
+                $file_ext = strtolower(pathinfo($_FILES['images']['name'][$key], PATHINFO_EXTENSION));
+                if ($file_ext === '' || !in_array($file_ext, $allowed_extensions, true)) {
+                    $file_ext = 'jpg';
+                }
                 $file_name = uniqid() . '.' . $file_ext;
                 if (move_uploaded_file($tmp_name, $upload_dir . $file_name)) {
-                    $webp = convert_file_to_webp($upload_dir . $file_name);
-                    $images[] = $webp ? str_replace('../', '', $webp) : ('assets/images/products/' . $file_name);
+                    $images[] = 'assets/images/products/' . $file_name;
                 }
             }
         }
@@ -287,7 +291,7 @@ $conn->close();
                         </div>
                     <?php endif; ?>
                     <label for="image"><?php echo $product['image'] ? 'Upload New Main Image' : 'Upload Main Image'; ?></label>
-                    <input type="file" id="image" name="image" accept="image/*">
+                    <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
                 </div>
                 
                 <div class="form-group">
@@ -303,7 +307,7 @@ $conn->close();
                         </div>
                     <?php endif; ?>
                     <label for="images">Add More Images</label>
-                    <input type="file" id="images" name="images[]" accept="image/*" multiple>
+                    <input type="file" id="images" name="images[]" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple>
                 </div>
                 
                 <div class="form-actions">
