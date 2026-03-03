@@ -98,35 +98,20 @@ $conn->close();
     <link rel="stylesheet" href="../assets/css/admin.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .dashboard-welcome { margin-bottom: 28px; color: #555; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-bottom: 32px; }
-        .stat-card { background: #fff; border: 1px solid var(--border-color, #e0e0e0); border-radius: 8px; padding: 20px; display: flex; align-items: center; gap: 16px; transition: box-shadow 0.2s; }
-        .stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .dashboard-welcome { margin-bottom: 28px; color: var(--text-secondary); font-size: 0.95rem; }
         .stat-card a { text-decoration: none; color: inherit; display: flex; align-items: center; gap: 16px; flex: 1; }
-        .stat-icon { width: 48px; height: 48px; border-radius: 8px; background: var(--primary-color, #c9a962); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
-        .stat-info h3 { margin: 0 0 4px; font-size: 1.6rem; }
-        .stat-info p { margin: 0; font-size: 0.95rem; color: #333; }
-        .stat-info small { display: block; margin-top: 4px; font-size: 0.85rem; color: #666; }
-        .dashboard-section { background: #fff; border: 1px solid var(--border-color, #e0e0e0); border-radius: 8px; padding: 24px; margin-bottom: 24px; }
-        .dashboard-section h2 { margin: 0 0 16px; font-size: 1.2rem; color: var(--primary-color); padding-bottom: 10px; border-bottom: 2px solid var(--primary-color); }
-        .dashboard-section .table-container { overflow-x: auto; }
+        .stat-icon { width: 48px; height: 48px; border-radius: var(--radius-md); background: rgba(0, 31, 63, 0.08); color: var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
+        .dashboard-section .table-container { overflow-x: auto; border: none; box-shadow: none; }
         .dashboard-section .admin-table { margin: 0; }
-        .btn-view-all { display: inline-block; margin-top: 12px; padding: 8px 16px; background: var(--primary-color); color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.9rem; }
-        .btn-view-all:hover { background: var(--dark-color, #1a1a1a); color: #fff; }
-        .quick-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-        .quick-links a { display: flex; align-items: center; gap: 10px; padding: 14px 16px; background: #f8f8f8; border: 1px solid #eee; border-radius: 6px; text-decoration: none; color: #333; font-size: 0.95rem; transition: background 0.2s, border-color 0.2s; }
-        .quick-links a:hover { background: #f0f4f8; border-color: var(--primary-color); color: var(--primary-color); }
-        .quick-links a i { font-size: 1.1rem; opacity: 0.9; }
         .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
         @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } }
-        /* Blog visibility toggle */
         .toggle-switch { position: relative; display: inline-block; width: 52px; height: 28px; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; border-radius: 28px; transition: 0.3s; }
         .toggle-slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background: #fff; border-radius: 50%; transition: 0.3s; }
-        .toggle-switch input:checked + .toggle-slider { background: var(--primary-color, #c9a962); }
+        .toggle-switch input:checked + .toggle-slider { background: var(--primary-color); }
         .toggle-switch input:checked + .toggle-slider:before { transform: translateX(24px); }
-        .toggle-label { font-size: 0.95rem; color: #333; }
+        .toggle-label { font-size: 0.95rem; color: var(--text-color); }
     </style>
 </head>
 <body>

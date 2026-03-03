@@ -115,12 +115,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         $color_swatches = [];
         if (!empty($_POST['color_swatch_name']) && is_array($_POST['color_swatch_name'])) {
-            foreach ($_POST['color_swatch_name'] as $i => $name) {
-                $name = trim($name ?? '');
-                if ($name === '') continue;
+            foreach ($_POST['color_swatch_name'] as $i => $swatch_name) {
+                $swatch_name = trim($swatch_name ?? '');
+                if ($swatch_name === '') continue;
                 $hex = isset($_POST['color_swatch_hex'][$i]) ? trim($_POST['color_swatch_hex'][$i]) : '';
                 $img = isset($_POST['color_swatch_image'][$i]) ? trim($_POST['color_swatch_image'][$i]) : '';
-                $color_swatches[] = ['name' => $name, 'hex' => $hex, 'image' => $img];
+                $color_swatches[] = ['name' => $swatch_name, 'hex' => $hex, 'image' => $img];
             }
         }
         $color_swatches_json = json_encode($color_swatches);

@@ -71,19 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <button type="submit" class="btn-primary">Login</button>
             </form>
             <p class="auth-link">Don't have an account? <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/signup">Sign up</a></p>
-            <div class="auth-alt">
-                <p class="auth-alt-label">Or continue with</p>
-                <div class="auth-alt-buttons">
-                    <button type="button" class="btn-auth-alt btn-auth-google">
-                        <i class="fab fa-google"></i>
-                        <span>Continue with Google</span>
-                    </button>
-                    <button type="button" class="btn-auth-alt btn-auth-email">
-                        <i class="fa-regular fa-envelope"></i>
-                        <span>Continue with Email</span>
-                    </button>
-                </div>
-            </div>
             <p class="auth-link"><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/">Back to Home</a></p>
         </div>
     </div>

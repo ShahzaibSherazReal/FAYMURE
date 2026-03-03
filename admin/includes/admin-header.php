@@ -1,4 +1,5 @@
 <?php $base = defined('BASE_PATH') ? BASE_PATH : ''; ?>
+<script>document.body.classList.add('admin-page');</script>
 <header class="admin-header">
     <div class="admin-header-content">
         <div class="admin-logo">
