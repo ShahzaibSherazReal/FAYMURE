@@ -614,7 +614,6 @@ if ($avg_rating > 0) {
                             <li><i class="fas fa-check-circle"></i> Genuine Leather Material</li>
                             <li><i class="fas fa-check-circle"></i> Expert Artisan Craftsmanship</li>
                             <li><i class="fas fa-check-circle"></i> Durable & Long-lasting</li>
-                            <li><i class="fas fa-check-circle"></i> 30-Day Satisfaction Guarantee</li>
                         </ul>
                     </div>
 
@@ -1646,13 +1645,14 @@ if ($avg_rating > 0) {
             box-shadow: 0 6px 20px rgba(0, 31, 63, 0.3);
         }
         .btn-customization {
-            background: var(--secondary-color);
-            color: var(--primary-color);
+            background: #8B6914;
+            color: #fff;
         }
         .btn-customization:hover {
-            background: #FFD700;
+            background: #a07a18;
+            color: #fff;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
+            box-shadow: 0 6px 20px rgba(139, 105, 20, 0.35);
         }
         .btn-chat-now {
             background: #25D366;
@@ -2470,7 +2470,7 @@ if ($avg_rating > 0) {
                 gap: 10px;
             }
             .action-buttons-three .btn-action {
-                min-width: 0;
+                min-width: 1;
                 min-height: 80px;
                 padding: 14px 8px;
             }
