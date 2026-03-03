@@ -160,6 +160,73 @@ body:has(.admin-header) {
     opacity: 0.9;
 }
 
+/* Orders: Shop Orders / Quote Requests tab buttons */
+.admin-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.admin-tabs .tab-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--text-color);
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 31, 63, 0.15);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.admin-tabs .tab-link:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(0, 31, 63, 0.25);
+    color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+.admin-tabs .tab-link.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 31, 63, 0.25);
+}
+.admin-tabs .tab-link.active:hover {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+    opacity: 0.95;
+}
+
+/* Site content: Home / About Us / Manufacturing / Contact quick nav buttons */
+.content-quick-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+.content-quick-nav a {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--text-color);
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 31, 63, 0.15);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.content-quick-nav a:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(0, 31, 63, 0.25);
+    color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
 /* Stats Grid - premium cards with subtle backglow */
 .stats-grid {
     display: grid;
