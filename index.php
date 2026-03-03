@@ -440,12 +440,12 @@ $conn->close();
         .option-cta {
             display: inline-flex;
             align-items: center;
-            gap: 12px;
-            padding: 14px 32px;
+            gap: 10px;
+            padding: 12px 28px;
             background: var(--primary-color);
             color: #fff;
             border-radius: 50px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.5px;
             text-transform: uppercase;
