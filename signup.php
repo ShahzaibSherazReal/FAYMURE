@@ -62,12 +62,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - <?php echo SITE_NAME; ?></title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="auth-container">
         <div class="auth-box">
+            <div class="auth-logo">FAYMURE</div>
             <h1>Sign Up</h1>
             <?php if ($success): ?>
                 <div class="success-message">
@@ -98,6 +99,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </form>
             <?php endif; ?>
             <p class="auth-link">Already have an account? <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/login">Login</a></p>
+            <div class="auth-alt">
+                <p class="auth-alt-label">Or continue with</p>
+                <div class="auth-alt-buttons">
+                    <button type="button" class="btn-auth-alt btn-auth-google">
+                        <i class="fab fa-google"></i>
+                        <span>Continue with Google</span>
+                    </button>
+                    <button type="button" class="btn-auth-alt btn-auth-email">
+                        <i class="fa-regular fa-envelope"></i>
+                        <span>Continue with Email</span>
+                    </button>
+                </div>
+            </div>
             <p class="auth-link"><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/">Back to Home</a></p>
         </div>
     </div>
