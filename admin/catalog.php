@@ -68,6 +68,13 @@ $conn->close();
         .catalog-breadcrumb a:hover { text-decoration: underline; }
         .btn-icon.btn-danger { background: none; border: none; cursor: pointer; padding: 6px 10px; color: #666; }
         .btn-icon.btn-danger:hover { color: #c00; }
+        @media (max-width: 768px) {
+            .catalog-categories { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+            .catalog-cat-card { padding: 10px 8px; }
+            .catalog-cat-card img, .catalog-cat-card .no-img { height: 72px; margin-bottom: 8px; }
+            .catalog-cat-card h3 { font-size: 11px; }
+            .catalog-cat-card p { font-size: 9px; }
+        }
     </style>
 </head>
 <body>

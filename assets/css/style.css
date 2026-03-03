@@ -1521,6 +1521,38 @@ h1, h2, h3, h4, h5, h6,
     box-shadow: 0 0 0 1px rgba(255, 111, 32, 0.4);
 }
 
+.password-input-wrap {
+    position: relative;
+}
+
+.password-input-wrap input {
+    padding-right: 48px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 8px;
+    font-size: 16px;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.password-toggle:hover {
+    color: var(--primary-color);
+}
+
+.password-toggle:focus {
+    outline: none;
+    color: var(--accent-color);
+}
+
 /* Auth primary button – glass, capsule, site colors */
 .auth-box .btn-primary {
     display: inline-block;

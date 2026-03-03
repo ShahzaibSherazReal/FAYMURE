@@ -117,9 +117,9 @@ $conn->close();
 <body>
     <?php include 'includes/admin-header.php'; ?>
 
-    <main class="admin-main">
+    <main class="admin-main dashboard-page">
         <div class="admin-container">
-            <h1>Dashboard</h1>
+            <h1 class="dashboard-title">Dashboard</h1>
             <p class="dashboard-welcome">Overview of your store and recent activity.</p>
 
             <?php if (isset($_GET['blog_updated'])): ?>
@@ -241,11 +241,11 @@ $conn->close();
                                 <?php else: ?>
                                     <?php foreach ($recent_shop_orders as $o): ?>
                                         <tr>
-                                            <td><?php echo htmlspecialchars($o['order_number'] ?? (isset($o['id']) ? '#' . $o['id'] : '—')); ?></td>
-                                            <td><?php echo htmlspecialchars($o['customer_name'] ?? ''); ?></td>
-                                            <td><?php echo isset($o['total_amount']) ? '$' . number_format((float)$o['total_amount'], 2) : '—'; ?></td>
-                                            <td><span class="status-badge status-<?php echo $o['status'] ?? 'pending'; ?>"><?php echo ucfirst($o['status'] ?? 'pending'); ?></span></td>
-                                            <td><?php echo !empty($o['created_at']) ? date('M d, Y', strtotime($o['created_at'])) : '—'; ?></td>
+                                            <td data-label="Order"><?php echo htmlspecialchars($o['order_number'] ?? (isset($o['id']) ? '#' . $o['id'] : '—')); ?></td>
+                                            <td data-label="Customer"><?php echo htmlspecialchars($o['customer_name'] ?? ''); ?></td>
+                                            <td data-label="Total"><?php echo isset($o['total_amount']) ? '$' . number_format((float)$o['total_amount'], 2) : '—'; ?></td>
+                                            <td data-label="Status"><span class="status-badge status-<?php echo $o['status'] ?? 'pending'; ?>"><?php echo ucfirst($o['status'] ?? 'pending'); ?></span></td>
+                                            <td data-label="Date"><?php echo !empty($o['created_at']) ? date('M d, Y', strtotime($o['created_at'])) : '—'; ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
@@ -274,10 +274,10 @@ $conn->close();
                                 <?php else: ?>
                                     <?php foreach ($recent_quote_requests as $q): ?>
                                         <tr>
-                                            <td><?php echo htmlspecialchars($q['product_name'] ?? 'N/A'); ?></td>
-                                            <td><?php echo htmlspecialchars($q['customer_name'] ?? ''); ?></td>
-                                            <td><span class="status-badge status-<?php echo $q['status'] ?? 'pending'; ?>"><?php echo ucfirst($q['status'] ?? 'pending'); ?></span></td>
-                                            <td><?php echo !empty($q['created_at']) ? date('M d, Y', strtotime($q['created_at'])) : '—'; ?></td>
+                                            <td data-label="Product"><?php echo htmlspecialchars($q['product_name'] ?? 'N/A'); ?></td>
+                                            <td data-label="Customer"><?php echo htmlspecialchars($q['customer_name'] ?? ''); ?></td>
+                                            <td data-label="Status"><span class="status-badge status-<?php echo $q['status'] ?? 'pending'; ?>"><?php echo ucfirst($q['status'] ?? 'pending'); ?></span></td>
+                                            <td data-label="Date"><?php echo !empty($q['created_at']) ? date('M d, Y', strtotime($q['created_at'])) : '—'; ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>

@@ -400,6 +400,31 @@ $conn->close();
     </main>
     <script>
         (function() {
+            var nameEl = document.getElementById('name');
+            var slugEl = document.getElementById('slug');
+            if (nameEl && slugEl) {
+                function slugify(text) {
+                    if (!text || typeof text !== 'string') return '';
+                    return text.toLowerCase().trim()
+                        .replace(/[^a-z0-9\s-]/g, '')
+                        .replace(/\s+/g, '-')
+                        .replace(/-+/g, '-')
+                        .replace(/^-|-$/g, '');
+                }
+                var lastAutoSlug = slugify(nameEl.value);
+                slugEl.addEventListener('input', function() { lastAutoSlug = null; });
+                nameEl.addEventListener('input', function() {
+                    var newSlug = slugify(nameEl.value);
+                    if (slugEl.value === '' || slugEl.value === lastAutoSlug) {
+                        slugEl.value = newSlug;
+                        lastAutoSlug = newSlug;
+                    } else {
+                        lastAutoSlug = null;
+                    }
+                });
+            }
+        })();
+        (function() {
             var container = document.getElementById('colorSwatchesContainer');
             var addBtn = document.getElementById('addColorSwatch');
             var imageListJson = document.getElementById('productImageListJson');

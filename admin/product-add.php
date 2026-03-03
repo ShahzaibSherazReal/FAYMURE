@@ -357,13 +357,31 @@ $conn->close();
     </main>
     
     <script>
-        // Auto-generate slug from name
-        document.getElementById('name').addEventListener('input', function() {
-            const slug = this.value.toLowerCase()
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/^-+|-+$/g, '');
-            document.getElementById('slug').value = slug;
-        });
+        (function() {
+            var nameEl = document.getElementById('name');
+            var slugEl = document.getElementById('slug');
+            if (nameEl && slugEl) {
+                function slugify(text) {
+                    if (!text || typeof text !== 'string') return '';
+                    return text.toLowerCase().trim()
+                        .replace(/[^a-z0-9\s-]/g, '')
+                        .replace(/\s+/g, '-')
+                        .replace(/-+/g, '-')
+                        .replace(/^-|-$/g, '');
+                }
+                var lastAutoSlug = slugify(nameEl.value);
+                slugEl.addEventListener('input', function() { lastAutoSlug = null; });
+                nameEl.addEventListener('input', function() {
+                    var newSlug = slugify(nameEl.value);
+                    if (slugEl.value === '' || slugEl.value === lastAutoSlug) {
+                        slugEl.value = newSlug;
+                        lastAutoSlug = newSlug;
+                    } else {
+                        lastAutoSlug = null;
+                    }
+                });
+            }
+        })();
         // Color swatches (add product: image options are indices 0 = Main, 1 = Additional 1, ... 10 = Additional 10)
         (function() {
             var container = document.getElementById('colorSwatchesContainer');

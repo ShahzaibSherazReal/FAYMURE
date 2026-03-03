@@ -89,11 +89,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     </div>
                     <div class="form-group">
                         <label for="password">Password</label>
-                        <input type="password" id="password" name="password" required minlength="6">
+                        <div class="password-input-wrap">
+                            <input type="password" id="password" name="password" required minlength="6">
+                            <button type="button" class="password-toggle" id="togglePassword" aria-label="Show password" title="Show password">
+                                <i class="far fa-eye" aria-hidden="true"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="confirm_password">Confirm Password</label>
-                        <input type="password" id="confirm_password" name="confirm_password" required>
+                        <div class="password-input-wrap">
+                            <input type="password" id="confirm_password" name="confirm_password" required>
+                            <button type="button" class="password-toggle" id="toggleConfirmPassword" aria-label="Show password" title="Show password">
+                                <i class="far fa-eye" aria-hidden="true"></i>
+                            </button>
+                        </div>
                     </div>
                     <button type="submit" class="btn-primary">Sign Up</button>
                 </form>
@@ -102,6 +112,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <p class="auth-link"><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/">Back to Home</a></p>
         </div>
     </div>
+    <script>
+    (function() {
+        function setupToggle(btnId, inputId) {
+            var btn = document.getElementById(btnId);
+            var input = document.getElementById(inputId);
+            if (!btn || !input) return;
+            btn.addEventListener('click', function() {
+                var icon = btn.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    btn.setAttribute('aria-label', 'Hide password');
+                    btn.setAttribute('title', 'Hide password');
+                    if (icon) { icon.classList.remove('fa-eye'); icon.classList.add('fa-eye-slash'); }
+                } else {
+                    input.type = 'password';
+                    btn.setAttribute('aria-label', 'Show password');
+                    btn.setAttribute('title', 'Show password');
+                    if (icon) { icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye'); }
+                }
+            });
+        }
+        setupToggle('togglePassword', 'password');
+        setupToggle('toggleConfirmPassword', 'confirm_password');
+    })();
+    </script>
 </body>
 </html>
 

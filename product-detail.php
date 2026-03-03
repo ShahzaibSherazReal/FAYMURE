@@ -419,7 +419,6 @@ if ($avg_rating > 0) {
                 <li><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/">Home</a></li>
                 <li><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/explore">Catalog</a></li>
                 <li><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/products?category=<?php echo urlencode($product['category_name'] ?? ''); ?>"><?php echo htmlspecialchars($product['category_name'] ?? 'Products'); ?></a></li>
-                <li class="active"><?php echo htmlspecialchars($product['name']); ?></li>
             </ol>
         </nav>
 
@@ -2465,6 +2464,15 @@ if ($avg_rating > 0) {
             }
         }
         @media (max-width: 768px) {
+            .image-badges .badge {
+                padding: 4px 8px;
+                border-radius: 14px;
+                font-size: 10px;
+                gap: 4px;
+            }
+            .image-badges .badge i {
+                font-size: 10px;
+            }
             .action-buttons-three {
                 grid-template-columns: repeat(3, 1fr);
                 gap: 10px;
