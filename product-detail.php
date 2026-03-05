@@ -487,23 +487,17 @@ if ($avg_rating > 0) {
                             </button>
                         </div>
                     <?php endif; ?>
+                    <?php if (!empty($color_swatches_display)): ?>
+                    <div class="product-color-dropdown-wrap product-color-dropdown-mobile">
+                        <label for="product-color-select-mobile" class="product-color-label">Color</label>
+                        <select id="product-color-select-mobile" class="product-color-select product-color-select-mobile" onchange="syncColorSelect(this, true);">
+                            <?php foreach ($color_swatches_display as $idx => $sw): ?>
+                            <option value="<?php echo $sw['image_index']; ?>" data-image-url="<?php echo htmlspecialchars($sw['image_url'], ENT_QUOTES, 'UTF-8'); ?>" <?php echo $idx === 0 ? 'selected' : ''; ?>><?php echo htmlspecialchars($sw['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php endif; ?>
                 </div>
-                <?php if (!empty($color_swatches_display)): ?>
-                <div class="product-color-swatches product-color-swatches-mobile">
-                    <?php foreach ($color_swatches_display as $idx => $sw): ?>
-                        <div class="product-color-swatch-wrap" data-color-index="<?php echo $idx; ?>" data-image-index="<?php echo $sw['image_index']; ?>">
-                            <button type="button" class="product-color-swatch<?php echo !empty($sw['hex']) ? '' : ' product-color-swatch-name'; ?> <?php echo $idx === 0 ? 'active' : ''; ?>"
-                                style="<?php echo !empty($sw['hex']) ? 'background-color:' . htmlspecialchars($sw['hex']) . ';' : ''; ?>"
-                                onclick="changeImage('<?php echo htmlspecialchars($sw['image_url'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $sw['image_index']; ?>);"
-                                title="<?php echo htmlspecialchars($sw['name']); ?>"
-                                aria-pressed="<?php echo $idx === 0 ? 'true' : 'false'; ?>">
-                                <?php if (empty($sw['hex'])): ?><span><?php echo htmlspecialchars($sw['name']); ?></span><?php endif; ?>
-                            </button>
-                            <span class="product-color-swatch-name-label"><?php echo htmlspecialchars($sw['name']); ?></span>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-                <?php endif; ?>
             </div>
 
             <!-- Product Information -->
@@ -560,19 +554,13 @@ if ($avg_rating > 0) {
                     </div>
 
                     <?php if (!empty($color_swatches_display)): ?>
-                        <div class="product-color-swatches">
-                            <?php foreach ($color_swatches_display as $idx => $sw): ?>
-                                <div class="product-color-swatch-wrap" data-color-index="<?php echo $idx; ?>" data-image-index="<?php echo $sw['image_index']; ?>">
-                                    <button type="button" class="product-color-swatch<?php echo !empty($sw['hex']) ? '' : ' product-color-swatch-name'; ?> <?php echo $idx === 0 ? 'active' : ''; ?>"
-                                        style="<?php echo !empty($sw['hex']) ? 'background-color:' . htmlspecialchars($sw['hex']) . ';' : ''; ?>"
-                                        onclick="changeImage('<?php echo htmlspecialchars($sw['image_url'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $sw['image_index']; ?>);"
-                                        title="<?php echo htmlspecialchars($sw['name']); ?>"
-                                        aria-pressed="<?php echo $idx === 0 ? 'true' : 'false'; ?>">
-                                        <?php if (empty($sw['hex'])): ?><span><?php echo htmlspecialchars($sw['name']); ?></span><?php endif; ?>
-                                    </button>
-                                    <span class="product-color-swatch-name-label"><?php echo htmlspecialchars($sw['name']); ?></span>
-                                </div>
-                            <?php endforeach; ?>
+                        <div class="product-color-dropdown-wrap">
+                            <label for="product-color-select" class="product-color-label">Color</label>
+                            <select id="product-color-select" class="product-color-select" onchange="syncColorSelect(this, false);">
+                                <?php foreach ($color_swatches_display as $idx => $sw): ?>
+                                <option value="<?php echo $sw['image_index']; ?>" data-image-url="<?php echo htmlspecialchars($sw['image_url'], ENT_QUOTES, 'UTF-8'); ?>" <?php echo $idx === 0 ? 'selected' : ''; ?>><?php echo htmlspecialchars($sw['name']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                     <?php endif; ?>
 
@@ -1440,6 +1428,37 @@ if ($avg_rating > 0) {
             text-align: center;
             max-width: 72px;
             line-height: 1.2;
+        }
+        .product-color-dropdown-wrap {
+            margin-bottom: 20px;
+        }
+        .product-color-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 8px;
+        }
+        .product-color-select {
+            width: 100%;
+            max-width: 280px;
+            padding: 12px 16px;
+            font-size: 15px;
+            border: 1px solid rgba(123, 91, 58, 0.3);
+            border-radius: 10px;
+            background: #fff;
+            color: var(--text-color);
+            cursor: pointer;
+            appearance: auto;
+            -webkit-appearance: menulist;
+        }
+        .product-color-select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(255, 111, 32, 0.2);
+        }
+        .product-color-dropdown-mobile {
+            display: none;
         }
 
         /* Product Info */
@@ -2464,6 +2483,11 @@ if ($avg_rating > 0) {
             }
         }
         @media (max-width: 768px) {
+            .product-gallery-section {
+                max-width: 100%;
+                min-width: 0;
+                overflow-x: hidden;
+            }
             .image-badges .badge {
                 padding: 4px 8px;
                 border-radius: 14px;
@@ -2488,13 +2512,42 @@ if ($avg_rating > 0) {
             .action-buttons-three .btn-action i {
                 font-size: 20px;
             }
-            .product-info-section .product-color-swatches {
+            .product-info-section .product-color-dropdown-wrap:not(.product-color-dropdown-mobile) {
                 display: none !important;
             }
-            .product-color-swatches-mobile {
-                display: flex !important;
+            .product-color-dropdown-mobile {
+                display: block !important;
                 margin-top: 16px;
-                padding: 0 4px;
+                padding: 0;
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
+                box-sizing: border-box;
+                overflow: hidden;
+            }
+            .product-color-dropdown-mobile .product-color-label {
+                font-size: 15px;
+                font-weight: 600;
+                margin-bottom: 10px;
+                color: var(--primary-color);
+            }
+            .product-color-select-mobile {
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
+                min-height: 48px;
+                padding: 14px 16px;
+                font-size: 16px;
+                border-radius: 12px;
+                border: 2px solid rgba(123, 91, 58, 0.35);
+                background: #fff;
+                box-sizing: border-box;
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+            }
+            .product-color-select-mobile:focus {
+                border-color: var(--accent-color);
+                box-shadow: 0 0 0 3px rgba(255, 111, 32, 0.2);
             }
             .product-title {
                 font-size: 28px;
@@ -2550,6 +2603,14 @@ if ($avg_rating > 0) {
         let currentImageIndex = 0;
         const images = <?php echo json_encode($image_urls); ?>;
 
+        function syncColorSelect(selectEl, fromMobile) {
+            var o = selectEl.options[selectEl.selectedIndex];
+            if (!o || !o.dataset.imageUrl) return;
+            changeImage(o.dataset.imageUrl, parseInt(o.value, 10));
+            var other = document.getElementById(fromMobile ? 'product-color-select' : 'product-color-select-mobile');
+            if (other) other.value = selectEl.value;
+        }
+
         function changeImage(src, index) {
             document.getElementById('mainImage').src = src;
             currentImageIndex = index >= 0 ? index : 0;
@@ -2562,12 +2623,10 @@ if ($avg_rating > 0) {
                     item.classList.remove('active');
                 }
             });
-            document.querySelectorAll('.product-color-swatch-wrap').forEach(function(wrap) {
-                var btn = wrap.querySelector('.product-color-swatch');
-                if (!btn) return;
-                var imgIdx = parseInt(wrap.getAttribute('data-image-index'), 10);
-                if (imgIdx === currentImageIndex) btn.classList.add('active'); else btn.classList.remove('active');
-            });
+            var colorSelect = document.getElementById('product-color-select');
+            var colorSelectMobile = document.getElementById('product-color-select-mobile');
+            if (colorSelect) colorSelect.value = currentImageIndex;
+            if (colorSelectMobile) colorSelectMobile.value = currentImageIndex;
         }
 
         function prevMainImage() {
