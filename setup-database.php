@@ -376,28 +376,60 @@ if ($result->num_rows == 0) {
 // Optional: insert one sample blog author/category/tag/post if blog is empty
 $check = $conn->query("SELECT 1 FROM blog_posts LIMIT 1");
 if ($check && $check->num_rows == 0) {
-    $conn->query("INSERT INTO blog_authors (name, slug, bio) VALUES ('FAYMURE Team', 'faymure-team', 'The FAYMURE editorial team.')");
-    $aid = $conn->insert_id;
-    $conn->query("INSERT INTO blog_categories (slug, name, description) VALUES ('leather-care', 'Leather Care', 'Tips and guides for caring for leather goods.')");
-    $cid = $conn->insert_id;
-    $conn->query("INSERT INTO blog_tags (slug, name) VALUES ('aniline', 'Aniline')");
-    $tid = $conn->insert_id;
-    $blocks = '[{"type":"paragraph","content":"Leather is a durable material that lasts for years when cared for properly. Here are essential tips to keep your leather goods looking their best."},{"type":"heading","level":2,"content":"Conditioning"},{"type":"paragraph","content":"Use a quality leather conditioner every few months. Apply in a circular motion and wipe off excess."},{"type":"quote","content":"A well-maintained leather piece ages beautifully."},{"type":"list","items":["Avoid direct sunlight","Keep away from moisture","Store in a cool, dry place"]}]';
-    $blocks_esc = $conn->real_escape_string($blocks);
-    $conn->query("INSERT INTO blog_posts (slug, title, excerpt, author_id, reading_time_minutes, is_featured, status, meta_title, meta_description, content_blocks, published_at) VALUES (
-        'how-to-care-for-leather',
-        'How to Care for Leather',
-        'Essential tips to maintain and protect your leather goods.',
-        $aid, 3, 1, 'published',
-        'How to Care for Leather | FAYMURE Blog',
-        'Essential tips to maintain and protect your leather goods. Conditioning, storage, and daily care.',
-        '" . $blocks_esc . "',
-        NOW()
-    )");
-    $pid = $conn->insert_id;
-    $conn->query("INSERT INTO blog_post_categories (post_id, category_id) VALUES ($pid, $cid)");
-    $conn->query("INSERT INTO blog_post_tags (post_id, tag_id) VALUES ($pid, $tid)");
-    echo "<p>✓ Inserted sample blog author, category, tag, and one post</p>";
+    $conn->query("INSERT IGNORE INTO blog_authors (name, slug, bio) VALUES ('FAYMURE Team', 'faymure-team', 'The FAYMURE editorial team.')");
+    $r = $conn->query("SELECT id FROM blog_authors WHERE slug = 'faymure-team' LIMIT 1");
+    $aid = ($r && $row = $r->fetch_assoc()) ? (int)$row['id'] : 0;
+    $conn->query("INSERT IGNORE INTO blog_categories (slug, name, description) VALUES ('leather-care', 'Leather Care', 'Tips and guides for caring for leather goods.')");
+    $r = $conn->query("SELECT id FROM blog_categories WHERE slug = 'leather-care' LIMIT 1");
+    $cid = ($r && $row = $r->fetch_assoc()) ? (int)$row['id'] : 0;
+    $conn->query("INSERT IGNORE INTO blog_tags (slug, name) VALUES ('aniline', 'Aniline')");
+    $r = $conn->query("SELECT id FROM blog_tags WHERE slug = 'aniline' LIMIT 1");
+    $tid = ($r && $row = $r->fetch_assoc()) ? (int)$row['id'] : 0;
+    if ($aid && $cid && $tid) {
+        $blocks = '[{"type":"paragraph","content":"Leather is a durable material that lasts for years when cared for properly. Here are essential tips to keep your leather goods looking their best."},{"type":"heading","level":2,"content":"Conditioning"},{"type":"paragraph","content":"Use a quality leather conditioner every few months. Apply in a circular motion and wipe off excess."},{"type":"quote","content":"A well-maintained leather piece ages beautifully."},{"type":"list","items":["Avoid direct sunlight","Keep away from moisture","Store in a cool, dry place"]}]';
+        $blocks_esc = $conn->real_escape_string($blocks);
+        $conn->query("INSERT IGNORE INTO blog_posts (slug, title, excerpt, author_id, reading_time_minutes, is_featured, status, meta_title, meta_description, content_blocks, published_at) VALUES (
+            'how-to-care-for-leather',
+            'How to Care for Leather',
+            'Essential tips to maintain and protect your leather goods.',
+            $aid, 3, 1, 'published',
+            'How to Care for Leather | FAYMURE Blog',
+            'Essential tips to maintain and protect your leather goods. Conditioning, storage, and daily care.',
+            '" . $blocks_esc . "',
+            NOW()
+        )");
+        $r = $conn->query("SELECT id FROM blog_posts WHERE slug = 'how-to-care-for-leather' LIMIT 1");
+        $pid = ($r && $row = $r->fetch_assoc()) ? (int)$row['id'] : 0;
+        if ($pid) {
+            $conn->query("INSERT IGNORE INTO blog_post_categories (post_id, category_id) VALUES ($pid, $cid)");
+            $conn->query("INSERT IGNORE INTO blog_post_tags (post_id, tag_id) VALUES ($pid, $tid)");
+        }
+    }
+    echo "<p>✓ Checked sample blog data (author, category, tag, post)</p>";
+}
+
+// Visitor logs (for user activity in admin)
+$result = $conn->query("SHOW TABLES LIKE 'visitor_logs'");
+if ($result->num_rows == 0) {
+    $conn->query("CREATE TABLE visitor_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        visitor_code VARCHAR(64) NOT NULL,
+        user_id INT NULL,
+        user_name VARCHAR(100) NULL,
+        country VARCHAR(100) DEFAULT NULL,
+        page_path VARCHAR(500) NOT NULL,
+        visit_count INT NOT NULL DEFAULT 0,
+        total_time_seconds INT NOT NULL DEFAULT 0,
+        last_duration_seconds INT NOT NULL DEFAULT 0,
+        first_visited_at DATETIME DEFAULT NULL,
+        last_visited_at DATETIME DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_visitor_page (visitor_code, page_path(191)),
+        KEY idx_user_id (user_id),
+        CONSTRAINT fk_visitor_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    echo "<p>✓ Created 'visitor_logs' table</p>";
 }
 
 $conn->close();

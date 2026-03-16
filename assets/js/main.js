@@ -125,3 +125,44 @@ forms.forEach(form => {
     });
 });
 
+// Visitor tracking (time on page) — URL from server (TRACK_VISIT_URL) so it works on live
+(function () {
+    if (!navigator.sendBeacon && !window.fetch) return;
+    var start = Date.now();
+    var path = window.location.pathname + (window.location.search || '');
+    var url = (typeof window.TRACK_VISIT_URL !== 'undefined' && window.TRACK_VISIT_URL)
+        ? window.TRACK_VISIT_URL
+        : ((typeof window.BASE_PATH !== 'undefined' ? window.BASE_PATH : '') || '') + '/track-visit';
+    var lastSent = start;
+
+    function send(durationSec, useBeacon) {
+        var fd = new FormData();
+        fd.append('page', path);
+        fd.append('duration', String(durationSec));
+        if (useBeacon !== false && navigator.sendBeacon) {
+            navigator.sendBeacon(url, fd);
+        } else if (window.fetch) {
+            try { fetch(url, { method: 'POST', body: fd, credentials: 'same-origin' }); } catch (e) {}
+        }
+    }
+
+    function flush() {
+        var now = Date.now();
+        var sec = Math.round((now - lastSent) / 1000);
+        if (sec > 0) {
+            lastSent = now;
+            send(sec, true);
+        }
+    }
+
+    window.addEventListener('beforeunload', flush);
+    window.addEventListener('pagehide', flush);
+    setInterval(function () {
+        var now = Date.now();
+        var sec = Math.round((now - lastSent) / 1000);
+        if (sec >= 25) {
+            lastSent = now;
+            send(sec, false);
+        }
+    }, 25000);
+})();

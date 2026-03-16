@@ -477,6 +477,16 @@ body:has(.admin-header) {
     background: rgba(0, 31, 63, 0.18);
 }
 
+.btn-icon-small {
+    padding: 4px 8px;
+    font-size: 12px;
+    min-width: 28px;
+}
+
+.btn-icon-small i {
+    font-size: 12px;
+}
+
 .btn-danger {
     background: #b54a4a;
     color: #fff;

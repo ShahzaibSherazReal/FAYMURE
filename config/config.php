@@ -71,5 +71,65 @@ function slugify($text) {
     $slug = trim($slug, '-');
     return $slug === '' ? 'product' : $slug;
 }
+
+/**
+ * Visitor tracking: get or set anonymous visitor code (cookie).
+ */
+function get_or_create_visitor_code() {
+    if (!empty($_COOKIE['visitor_code'])) {
+        return $_COOKIE['visitor_code'];
+    }
+    $code = bin2hex(random_bytes(16));
+    $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+    setcookie('visitor_code', $code, time() + 365 * 24 * 60 * 60, '/', '', $secure, true);
+    $_COOKIE['visitor_code'] = $code;
+    return $code;
+}
+
+/**
+ * Get country from IP (Cloudflare header or ipapi.co).
+ */
+function get_country_from_ip($ip) {
+    if (!empty($_SERVER['HTTP_CF_IPCOUNTRY'])) {
+        return $_SERVER['HTTP_CF_IPCOUNTRY'];
+    }
+    $country = 'Unknown';
+    $ip = ($ip === '::1' || $ip === '') ? '127.0.0.1' : $ip;
+    if (filter_var($ip, FILTER_VALIDATE_IP)) {
+        $ch = @curl_init();
+        if ($ch) {
+            curl_setopt($ch, CURLOPT_URL, 'https://ipapi.co/' . $ip . '/country_name/');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 2);
+            $res = @curl_exec($ch);
+            if ($res && !curl_errno($ch)) {
+                $country = trim($res) ?: 'Unknown';
+            }
+            curl_close($ch);
+        }
+    }
+    return $country;
+}
+
+/**
+ * Link all visitor_logs for current visitor_code to this user (after login/signup).
+ */
+function associate_current_visitor_with_user($user_id, $username) {
+    if (!$user_id) return;
+    $code = get_or_create_visitor_code();
+    $conn = getDBConnection();
+    $t = $conn->query("SHOW TABLES LIKE 'visitor_logs'");
+    if (!$t || $t->num_rows === 0) {
+        $conn->close();
+        return;
+    }
+    $stmt = $conn->prepare("UPDATE visitor_logs SET user_id = ?, user_name = ? WHERE visitor_code = ?");
+    if ($stmt) {
+        $stmt->bind_param('iss', $user_id, $username, $code);
+        $stmt->execute();
+        $stmt->close();
+    }
+    $conn->close();
+}
 ?>
 

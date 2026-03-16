@@ -56,6 +56,13 @@ $conn->close();
                                     <td><?php echo $user['is_admin'] ? '<span class="badge">Yes</span>' : 'No'; ?></td>
                                     <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
                                     <td class="actions">
+                                        <button type="button"
+                                            class="btn-view btn-icon-small js-user-activity"
+                                            data-user-id="<?php echo $user['id']; ?>"
+                                            data-username="<?php echo htmlspecialchars($user['username']); ?>"
+                                            title="View user activity">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
                                         <?php if ($user['id'] != $_SESSION['user_id']): ?>
                                             <form method="POST" style="display:inline;" onsubmit="return confirm('Delete this user?');">
                                                 <input type="hidden" name="id" value="<?php echo $user['id']; ?>">
@@ -71,6 +78,83 @@ $conn->close();
             </div>
         </div>
     </main>
+
+    <div id="userActivityModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="userActivityClose">&times;</span>
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+                <h2 id="userActivityTitle" style="margin:0;">User Activity</h2>
+                <button type="button" id="userActivityRefresh" class="btn-secondary" style="display:none;"><i class="fas fa-sync-alt"></i> Refresh</button>
+            </div>
+            <iframe id="userActivityFrame" src="" style="width:100%; height:70vh; border:none; border-radius:12px; background:#f6f5f3;"></iframe>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modal = document.getElementById('userActivityModal');
+        var closeBtn = document.getElementById('userActivityClose');
+        var frame = document.getElementById('userActivityFrame');
+        var titleEl = document.getElementById('userActivityTitle');
+        var refreshBtn = document.getElementById('userActivityRefresh');
+        var buttons = document.querySelectorAll('.js-user-activity');
+        var currentUserId = null;
+
+        function openModal(userId, username) {
+            if (!modal || !frame) return;
+            currentUserId = userId;
+            titleEl.textContent = 'User Activity - ' + (username || ('User #' + userId));
+            frame.src = '';
+            frame.src = 'user-logs.php?user_id=' + encodeURIComponent(userId) + '&_=' + Date.now();
+            modal.style.display = 'block';
+            if (refreshBtn) refreshBtn.style.display = 'inline-flex';
+        }
+
+        function refreshFrame() {
+            if (frame && currentUserId) {
+                frame.src = 'user-logs.php?user_id=' + encodeURIComponent(currentUserId) + '&_=' + Date.now();
+            }
+        }
+
+        function closeModal() {
+            if (!modal || !frame) return;
+            modal.style.display = 'none';
+            frame.src = '';
+            currentUserId = null;
+            if (refreshBtn) refreshBtn.style.display = 'none';
+        }
+
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', refreshFrame);
+        }
+
+        buttons.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var userId = this.getAttribute('data-user-id');
+                var username = this.getAttribute('data-username');
+                openModal(userId, username);
+            });
+        });
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeModal);
+        }
+
+        if (modal) {
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && modal && modal.style.display === 'block') {
+                closeModal();
+            }
+        });
+    });
+    </script>
 </body>
 </html>
 

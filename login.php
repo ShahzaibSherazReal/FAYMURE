@@ -23,7 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['is_admin'] = $user['is_admin'];
-                
+                if (function_exists('associate_current_visitor_with_user')) {
+                    associate_current_visitor_with_user($user['id'], $user['username']);
+                }
                 if ($user['is_admin']) {
                     redirect('admin/dashboard.php');
                 } else {

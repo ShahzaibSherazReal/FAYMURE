@@ -116,6 +116,10 @@ if (empty($page_canonical) && defined('CANONICAL_BASE_URL')) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script defer src="<?php echo $base; ?>/assets/js/faymure-font.js"></script>
     <script defer src="<?php echo $base; ?>/assets/js/nav-effects.js"></script>
+    <script>
+    window.BASE_PATH = <?php echo json_encode($base); ?>;
+    window.TRACK_VISIT_URL = <?php echo json_encode(rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . $base . '/track-visit'); ?>;
+    </script>
 </head>
 <body>
     <?php

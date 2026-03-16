@@ -1,4 +1,4 @@
-a:8:{s:10:"page_title";s:14:"Blog | FAYMURE";s:21:"page_meta_description";s:87:"Tips, guides, and stories about leather care, craftsmanship, and premium leather goods.";s:14:"page_canonical";s:37:"http://localhost/FAYMURE/FAYMURE/blog";s:13:"page_og_title";s:14:"Blog | FAYMURE";s:19:"page_og_description";s:87:"Tips, guides, and stories about leather care, craftsmanship, and premium leather goods.";s:15:"page_extra_head";s:308:"<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"http://localhost/FAYMURE/FAYMURE/"},{"@type":"ListItem","position":2,"name":"Blog","item":"http://localhost/FAYMURE/FAYMURE/blog"}]}</script>";s:14:"page_extra_css";s:19:"assets/css/blog.css";s:4:"html";s:1265:"    <main class="blog-main page-content">
+a:8:{s:10:"page_title";s:14:"Blog | FAYMURE";s:21:"page_meta_description";s:87:"Tips, guides, and stories about leather care, craftsmanship, and premium leather goods.";s:14:"page_canonical";s:37:"http://localhost/FAYMURE/FAYMURE/blog";s:13:"page_og_title";s:14:"Blog | FAYMURE";s:19:"page_og_description";s:87:"Tips, guides, and stories about leather care, craftsmanship, and premium leather goods.";s:15:"page_extra_head";s:308:"<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"http://localhost/FAYMURE/FAYMURE/"},{"@type":"ListItem","position":2,"name":"Blog","item":"http://localhost/FAYMURE/FAYMURE/blog"}]}</script>";s:14:"page_extra_css";s:19:"assets/css/blog.css";s:4:"html";s:3597:"    <main class="blog-main page-content">
         <div class="container">
             <nav class="blog-breadcrumb" aria-label="Breadcrumb">
                 <a href="/FAYMURE/">FAYMURE</a>
@@ -8,12 +8,42 @@ a:8:{s:10:"page_title";s:14:"Blog | FAYMURE";s:21:"page_meta_description";s:87:"
             <h1 class="blog-page-title">Blog</h1>
             <p class="blog-intro">Tips, guides, and stories about leather care and premium leather goods.</p>
 
+                        <section class="blog-featured">
+                <h2 class="blog-section-title">Featured</h2>
+                <div class="blog-featured-grid">
+                                        <article class="blog-card blog-card-featured">
+                        <a href="/FAYMURE/blog/post/how-to-care-for-leather" class="blog-card-link">
+                                                        <div class="blog-card-body">
+                                <h3 class="blog-card-title">How to Care for Leather</h3>
+                                                                <p class="blog-card-excerpt">Essential tips to maintain and protect your leather goods.</p>
+                                                                <div class="blog-card-meta">
+                                                                        <span>FAYMURE Team</span>
+                                                                        <span>Mar 10, 2026</span>
+                                                                        <span>3 min read</span>
+                                                                    </div>
+                            </div>
+                        </a>
+                    </article>
+                                    </div>
+            </section>
             
             <section class="blog-latest">
                 <h2 class="blog-section-title">Latest posts</h2>
                 <div class="blog-grid">
-                                        <p class="blog-empty">No posts yet. Check back soon.</p>
-                                    </div>
+                                                            <article class="blog-card">
+                        <a href="/FAYMURE/blog/post/how-to-care-for-leather" class="blog-card-link">
+                                                        <div class="blog-card-body">
+                                <h3 class="blog-card-title">How to Care for Leather</h3>
+                                                                <p class="blog-card-excerpt">Essential tips to maintain and protect your leather goods.</p>
+                                                                <div class="blog-card-meta">
+                                                                        <span>FAYMURE Team</span>
+                                                                        <span>Mar 10, 2026</span>
+                                                                        <span>3 min read</span>
+                                                                    </div>
+                            </div>
+                        </a>
+                    </article>
+                                                        </div>
 
                             </section>
 
