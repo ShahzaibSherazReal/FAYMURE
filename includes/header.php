@@ -118,7 +118,9 @@ if (empty($page_canonical) && defined('CANONICAL_BASE_URL')) {
     <script defer src="<?php echo $base; ?>/assets/js/nav-effects.js"></script>
     <script>
     window.BASE_PATH = <?php echo json_encode($base); ?>;
-    window.TRACK_VISIT_URL = <?php echo json_encode(rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . $base . '/track-visit'); ?>;
+    // Use relative URLs so live SITE_URL mismatches don't break tracking
+    window.TRACK_VISIT_URL = <?php echo json_encode(($base !== '' ? $base : '') . '/track-visit'); ?>;
+    window.TRACK_EVENT_URL = <?php echo json_encode(($base !== '' ? $base : '') . '/track-event'); ?>;
     </script>
 </head>
 <body>

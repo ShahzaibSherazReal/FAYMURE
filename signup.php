@@ -44,8 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     if ($stmt->execute()) {
                         $success = true;
                         $new_id = $conn->insert_id;
-                        if ($new_id && function_exists('associate_current_visitor_with_user')) {
-                            associate_current_visitor_with_user($new_id, $username);
+                        if ($new_id && function_exists('vt_link_guest_to_user')) {
+                            vt_link_guest_to_user($new_id);
                         }
                     } else {
                         $error = "Failed to create account. Please try again.";

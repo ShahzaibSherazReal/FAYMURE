@@ -122,6 +122,111 @@ if ($result->num_rows > 0) {
     echo "<p>✓ Created 'products' table</p>";
 }
 
+// ----- Visitor activity tracking -----
+$result = $conn->query("SHOW TABLES LIKE 'visitor_profiles'");
+if ($result->num_rows == 0) {
+    $conn->query("CREATE TABLE visitor_profiles (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        guest_id VARCHAR(64) NOT NULL UNIQUE,
+        user_id INT NULL,
+        first_seen_at DATETIME NULL,
+        last_seen_at DATETIME NULL,
+        first_ip VARCHAR(45) NULL,
+        last_ip VARCHAR(45) NULL,
+        first_user_agent VARCHAR(500) NULL,
+        last_user_agent VARCHAR(500) NULL,
+        device_type VARCHAR(20) NULL,
+        browser VARCHAR(50) NULL,
+        os VARCHAR(50) NULL,
+        referrer VARCHAR(500) NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        KEY idx_user_id (user_id),
+        CONSTRAINT fk_visitor_profiles_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    echo "<p>✓ Created 'visitor_profiles' table</p>";
+}
+
+$result = $conn->query("SHOW TABLES LIKE 'visitor_sessions'");
+if ($result->num_rows == 0) {
+    $conn->query("CREATE TABLE visitor_sessions (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        session_id CHAR(36) NOT NULL UNIQUE,
+        guest_id VARCHAR(64) NOT NULL,
+        user_id INT NULL,
+        started_at DATETIME NOT NULL,
+        last_seen_at DATETIME NOT NULL,
+        referrer VARCHAR(500) NULL,
+        landing_url VARCHAR(500) NULL,
+        ip_address VARCHAR(45) NULL,
+        user_agent VARCHAR(500) NULL,
+        device_type VARCHAR(20) NULL,
+        browser VARCHAR(50) NULL,
+        os VARCHAR(50) NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        KEY idx_guest (guest_id),
+        KEY idx_user (user_id),
+        KEY idx_last_seen (last_seen_at),
+        CONSTRAINT fk_visitor_sessions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    echo "<p>✓ Created 'visitor_sessions' table</p>";
+}
+
+$result = $conn->query("SHOW TABLES LIKE 'visitor_events'");
+if ($result->num_rows == 0) {
+    $conn->query("CREATE TABLE visitor_events (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        guest_id VARCHAR(64) NOT NULL,
+        user_id INT NULL,
+        session_id CHAR(36) NULL,
+        event_type VARCHAR(50) NOT NULL,
+        page_url VARCHAR(500) NULL,
+        page_path VARCHAR(500) NULL,
+        product_id INT NULL,
+        category_id INT NULL,
+        search_term VARCHAR(255) NULL,
+        button_name VARCHAR(100) NULL,
+        referrer VARCHAR(500) NULL,
+        ip_address VARCHAR(45) NULL,
+        user_agent VARCHAR(500) NULL,
+        device_type VARCHAR(20) NULL,
+        browser VARCHAR(50) NULL,
+        os VARCHAR(50) NULL,
+        duration_seconds INT NOT NULL DEFAULT 0,
+        metadata_json JSON NULL,
+        created_at DATETIME NOT NULL,
+        KEY idx_created_at (created_at),
+        KEY idx_event_type (event_type),
+        KEY idx_guest_id (guest_id),
+        KEY idx_user_id (user_id),
+        KEY idx_session_id (session_id),
+        KEY idx_product_id (product_id),
+        KEY idx_category_id (category_id),
+        CONSTRAINT fk_visitor_events_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    echo "<p>✓ Created 'visitor_events' table</p>";
+}
+
+$result = $conn->query("SHOW TABLES LIKE 'daily_analytics_summary'");
+if ($result->num_rows == 0) {
+    $conn->query("CREATE TABLE daily_analytics_summary (
+        day DATE NOT NULL PRIMARY KEY,
+        total_visitors INT NOT NULL DEFAULT 0,
+        anonymous_visitors INT NOT NULL DEFAULT 0,
+        logged_in_visitors INT NOT NULL DEFAULT 0,
+        page_views INT NOT NULL DEFAULT 0,
+        product_views INT NOT NULL DEFAULT 0,
+        add_to_cart INT NOT NULL DEFAULT 0,
+        searches INT NOT NULL DEFAULT 0,
+        checkout_started INT NOT NULL DEFAULT 0,
+        checkout_completed INT NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    echo "<p>✓ Created 'daily_analytics_summary' table</p>";
+}
+
 // Check orders/quote_requests table
 $result = $conn->query("SHOW TABLES LIKE 'quote_requests'");
 if ($result->num_rows > 0) {

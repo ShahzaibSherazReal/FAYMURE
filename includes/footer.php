@@ -78,6 +78,7 @@
     </footer>
 
     <script src="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/assets/js/main.js"></script>
+    <script defer src="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/assets/js/visitor-tracker.js?v=<?php echo time(); ?>"></script>
     <script defer src="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/assets/js/motion.js"></script>
 </body>
 </html>

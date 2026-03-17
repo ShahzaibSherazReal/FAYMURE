@@ -131,5 +131,63 @@ function associate_current_visitor_with_user($user_id, $username) {
     }
     $conn->close();
 }
+
+// ---- Visitor analytics helpers ----
+function vt_get_cookie_value($name) {
+    return isset($_COOKIE[$name]) ? (string)$_COOKIE[$name] : '';
+}
+
+function vt_set_cookie($name, $value, $days = 365) {
+    $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+    setcookie($name, $value, time() + ($days * 24 * 60 * 60), '/', '', $secure, true);
+    $_COOKIE[$name] = $value;
+}
+
+function vt_get_or_create_guest_id() {
+    $gid = vt_get_cookie_value('guest_id');
+    if ($gid !== '' && preg_match('/^[a-zA-Z0-9_-]{10,64}$/', $gid)) {
+        return $gid;
+    }
+    $gid = 'g_' . bin2hex(random_bytes(16));
+    vt_set_cookie('guest_id', $gid, 365);
+    return $gid;
+}
+
+function vt_get_session_id() {
+    // JS supplies a UUID session_id; server-side fallback if needed
+    if (!empty($_SESSION['vt_session_id'])) return $_SESSION['vt_session_id'];
+    $sid = bin2hex(random_bytes(16));
+    $_SESSION['vt_session_id'] = $sid;
+    return $sid;
+}
+
+function vt_link_guest_to_user($user_id) {
+    if (!$user_id) return;
+    $guest_id = vt_get_or_create_guest_id();
+    try {
+        $conn = getDBConnection();
+        $t = $conn->query("SHOW TABLES LIKE 'visitor_profiles'");
+        if (!$t || $t->num_rows === 0) { $conn->close(); return; }
+        $stmt = $conn->prepare("UPDATE visitor_profiles SET user_id = ? WHERE guest_id = ?");
+        if ($stmt) {
+            $stmt->bind_param('is', $user_id, $guest_id);
+            $stmt->execute();
+            $stmt->close();
+        }
+        $stmt = $conn->prepare("UPDATE visitor_sessions SET user_id = ? WHERE guest_id = ?");
+        if ($stmt) {
+            $stmt->bind_param('is', $user_id, $guest_id);
+            $stmt->execute();
+            $stmt->close();
+        }
+        $stmt = $conn->prepare("UPDATE visitor_events SET user_id = ? WHERE guest_id = ? AND user_id IS NULL");
+        if ($stmt) {
+            $stmt->bind_param('is', $user_id, $guest_id);
+            $stmt->execute();
+            $stmt->close();
+        }
+        $conn->close();
+    } catch (Throwable $e) {}
+}
 ?>
 

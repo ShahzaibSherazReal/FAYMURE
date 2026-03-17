@@ -15,6 +15,7 @@
             <a href="<?php echo $base; ?>/admin/orders" class="nav-link"><i class="fas fa-shopping-cart"></i> Orders</a>
             <a href="<?php echo $base; ?>/admin/form-submissions" class="nav-link"><i class="fas fa-file-alt"></i> Form Submissions</a>
             <a href="<?php echo $base; ?>/admin/users" class="nav-link"><i class="fas fa-users"></i> Users</a>
+            <a href="<?php echo $base; ?>/admin/visitor-analytics" class="nav-link"><i class="fas fa-chart-line"></i> Visitor Analytics</a>
             <a href="<?php echo $base; ?>/admin/site-content" class="nav-link"><i class="fas fa-edit"></i> Site Content</a>
             <a href="<?php echo $base; ?>/admin/catalog" class="nav-link"><i class="fas fa-th-large"></i> Catalog</a>
             <a href="<?php echo $base; ?>/" class="nav-link" target="_blank"><i class="fas fa-external-link-alt"></i> View Site</a>
@@ -38,6 +39,7 @@
         <a href="<?php echo $base; ?>/admin/orders" class="sidebar-link"><i class="fas fa-shopping-cart"></i> Orders</a>
         <a href="<?php echo $base; ?>/admin/form-submissions" class="sidebar-link"><i class="fas fa-file-alt"></i> Form Submissions</a>
         <a href="<?php echo $base; ?>/admin/users" class="sidebar-link"><i class="fas fa-users"></i> Users</a>
+        <a href="<?php echo $base; ?>/admin/visitor-analytics" class="sidebar-link"><i class="fas fa-chart-line"></i> Visitor Analytics</a>
         <a href="<?php echo $base; ?>/admin/site-content" class="sidebar-link"><i class="fas fa-edit"></i> Site Content</a>
         <a href="<?php echo $base; ?>/admin/catalog" class="sidebar-link"><i class="fas fa-th-large"></i> Catalog</a>
         <a href="<?php echo $base; ?>/" class="sidebar-link" target="_blank"><i class="fas fa-external-link-alt"></i> View Site</a>
