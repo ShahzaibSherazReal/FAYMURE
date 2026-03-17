@@ -14,8 +14,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = trim($_POST['name'] ?? '');
     $slug = trim($_POST['slug'] ?? '');
     $sku = trim($_POST['sku'] ?? '');
-    $description = sanitize($_POST['description'] ?? '');
-    $product_details = sanitize($_POST['product_details'] ?? '');
+    $description = trim($_POST['description'] ?? '');
+    $product_details = trim($_POST['product_details'] ?? '');
     $key_features = ''; // Not editable in add form; use default on product page if needed
     // Build specifications from table fields
     $spec_keys = ['Material', 'Dimensions', 'Weight', 'Lining', 'Hardware', 'Origin', 'Category', 'SKU'];

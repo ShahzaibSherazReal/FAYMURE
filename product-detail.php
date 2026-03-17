@@ -622,9 +622,9 @@ if ($avg_rating > 0) {
                     Product Description
                 </h2>
                 <div class="section-content premium-content">
-                    <?php if ($product['description']): ?>
+                    <?php if (!empty($product['description'])): ?>
                         <div class="product-description-text">
-                            <?php echo nl2br(htmlspecialchars($product['description'])); ?>
+                            <?php echo nl2br(htmlspecialchars_decode($product['description'], ENT_QUOTES)); ?>
                         </div>
                     <?php else: ?>
                         <p class="no-content">No description available.</p>
@@ -633,7 +633,7 @@ if ($avg_rating > 0) {
                     <?php if (!empty(trim($product['product_details'] ?? ''))): ?>
                         <div class="product-details-text" style="margin-top: 1.25rem;">
                             <h3 class="product-details-heading" style="font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--primary-color);">Product Details</h3>
-                            <div class="product-details-content"><?php echo nl2br(htmlspecialchars($product['product_details'])); ?></div>
+                            <div class="product-details-content"><?php echo nl2br(htmlspecialchars_decode($product['product_details'], ENT_QUOTES)); ?></div>
                         </div>
                     <?php endif; ?>
                     

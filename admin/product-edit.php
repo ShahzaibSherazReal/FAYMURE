@@ -21,11 +21,11 @@ $success = false;
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $name = sanitize($_POST['name'] ?? '');
-    $slug = sanitize($_POST['slug'] ?? '');
+    $name = trim($_POST['name'] ?? '');
+    $slug = trim($_POST['slug'] ?? '');
     $sku = trim($_POST['sku'] ?? '');
-    $description = sanitize($_POST['description'] ?? '');
-    $product_details = sanitize($_POST['product_details'] ?? '');
+    $description = trim($_POST['description'] ?? '');
+    $product_details = trim($_POST['product_details'] ?? '');
     $key_features = $product['key_features'] ?? ''; // Keep existing; field removed from form
     // Build specifications from table fields
     $spec_keys = ['Material', 'Dimensions', 'Weight', 'Lining', 'Hardware', 'Origin', 'Category', 'SKU'];
