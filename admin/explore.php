@@ -11,6 +11,35 @@ if (!file_exists($upload_dir)) {
     mkdir($upload_dir, 0777, true);
 }
 
+// Ensure categories.images exists for multi-thumbnails
+$col = $conn->query("SHOW COLUMNS FROM categories LIKE 'images'");
+if (!$col || $col->num_rows == 0) {
+    $conn->query("ALTER TABLE categories ADD COLUMN images TEXT NULL AFTER image");
+}
+
+function upload_category_images_explore($upload_dir, $field = 'images') {
+    $saved = [];
+    if (!isset($_FILES[$field]) || empty($_FILES[$field]['name'])) return $saved;
+    $names = $_FILES[$field]['name'];
+    $tmp = $_FILES[$field]['tmp_name'];
+    $errs = $_FILES[$field]['error'];
+    if (!is_array($names)) {
+        $names = [$names];
+        $tmp = [$tmp];
+        $errs = [$errs];
+    }
+    foreach ($names as $i => $n) {
+        if (!isset($errs[$i]) || $errs[$i] !== UPLOAD_ERR_OK) continue;
+        $ext = pathinfo($n, PATHINFO_EXTENSION);
+        $fname = uniqid() . '.' . $ext;
+        if (move_uploaded_file($tmp[$i], $upload_dir . $fname)) {
+            $webp = convert_file_to_webp($upload_dir . $fname);
+            $saved[] = $webp ? str_replace('../', '', $webp) : ('assets/images/categories/' . $fname);
+        }
+    }
+    return $saved;
+}
+
 function ensureSiteContent($conn, $key, $default) {
     $esc = $conn->real_escape_string($key);
     $r = $conn->query("SELECT id FROM site_content WHERE content_key='$esc'");
@@ -51,18 +80,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['category_action']) && 
         $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($name)));
         $slug = trim($slug, '-');
     }
-    $image = '';
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
-        $fname = uniqid() . '.' . $ext;
-        if (move_uploaded_file($_FILES['image']['tmp_name'], $upload_dir . $fname)) {
-            $webp = convert_file_to_webp($upload_dir . $fname);
-            $image = $webp ? str_replace('../', '', $webp) : ('assets/images/categories/' . $fname);
-        }
+    // Support both legacy single image field and new multiple images[]
+    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK && (!isset($_FILES['images']) || empty($_FILES['images']['name']))) {
+        $_FILES['images'] = [
+            'name' => [$_FILES['image']['name']],
+            'type' => [$_FILES['image']['type']],
+            'tmp_name' => [$_FILES['image']['tmp_name']],
+            'error' => [$_FILES['image']['error']],
+            'size' => [$_FILES['image']['size']],
+        ];
     }
+    $imgs = upload_category_images_explore($upload_dir, 'images');
+    $imgs = array_values(array_unique(array_filter($imgs)));
+    $image = $imgs[0] ?? '';
+    $images_json = json_encode($imgs);
     if ($name !== '' && $slug !== '') {
-        $stmt = $conn->prepare("INSERT INTO categories (name, slug, description, image) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("ssss", $name, $slug, $tagline, $image);
+        $stmt = $conn->prepare("INSERT INTO categories (name, slug, description, image, images) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssss", $name, $slug, $tagline, $image, $images_json);
         if ($stmt->execute()) {
             $success = true;
         } else {
@@ -85,28 +119,51 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['category_action']) && 
     $tagline = sanitize($_POST['tagline'] ?? '');
     $slug = sanitize($_POST['slug'] ?? '');
     if ($id > 0 && $name !== '' && $slug !== '') {
-        $current = $conn->query("SELECT image FROM categories WHERE id = $id");
+        $current = $conn->query("SELECT image, images FROM categories WHERE id = $id");
         $current = $current ? $current->fetch_assoc() : null;
         $image = $current['image'] ?? '';
+        $imgs = json_decode($current['images'] ?? '[]', true);
+        if (!is_array($imgs)) $imgs = [];
+        if ($image && !in_array($image, $imgs, true)) array_unshift($imgs, $image);
+
+        // Remove selected images
+        $remove_list = json_decode($_POST['remove_images'] ?? '[]', true);
+        if (!is_array($remove_list)) $remove_list = [];
+        if (!empty($remove_list)) {
+            $imgs = array_values(array_filter($imgs, function($p) use ($remove_list) { return !in_array($p, $remove_list, true); }));
+            foreach ($remove_list as $p) {
+                if ($p !== '' && file_exists('../' . $p)) @unlink('../' . $p);
+            }
+        }
+
+        // Remove all (legacy checkbox)
         if (isset($_POST['remove_image']) && $_POST['remove_image'] === '1') {
-            if ($image !== '' && file_exists('../' . $image)) {
-                @unlink('../' . $image);
+            foreach ($imgs as $p) {
+                if ($p !== '' && file_exists('../' . $p)) @unlink('../' . $p);
             }
-            $image = '';
+            $imgs = [];
         }
-        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-            if ($image !== '' && file_exists('../' . $image)) {
-                @unlink('../' . $image);
-            }
-            $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
-            $fname = uniqid() . '.' . $ext;
-            if (move_uploaded_file($_FILES['image']['tmp_name'], $upload_dir . $fname)) {
-                $webp = convert_file_to_webp($upload_dir . $fname);
-                $image = $webp ? str_replace('../', '', $webp) : ('assets/images/categories/' . $fname);
-            }
+
+        // Upload new images (append)
+        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK && (!isset($_FILES['images']) || empty($_FILES['images']['name']))) {
+            $_FILES['images'] = [
+                'name' => [$_FILES['image']['name']],
+                'type' => [$_FILES['image']['type']],
+                'tmp_name' => [$_FILES['image']['tmp_name']],
+                'error' => [$_FILES['image']['error']],
+                'size' => [$_FILES['image']['size']],
+            ];
         }
-        $stmt = $conn->prepare("UPDATE categories SET name = ?, slug = ?, description = ?, image = ? WHERE id = ?");
-        $stmt->bind_param("ssssi", $name, $slug, $tagline, $image, $id);
+        $uploaded = upload_category_images_explore($upload_dir, 'images');
+        if (!empty($uploaded)) {
+            $imgs = array_values(array_unique(array_merge($imgs, $uploaded)));
+        }
+
+        $image = $imgs[0] ?? '';
+        $images_json = json_encode(array_values(array_filter($imgs)));
+
+        $stmt = $conn->prepare("UPDATE categories SET name = ?, slug = ?, description = ?, image = ?, images = ? WHERE id = ?");
+        $stmt->bind_param("sssssi", $name, $slug, $tagline, $image, $images_json, $id);
         if ($stmt->execute()) {
             $success = true;
         } else {
@@ -339,12 +396,14 @@ $conn->close();
                     <textarea id="cat_tagline" name="tagline" rows="2"></textarea>
                 </div>
                 <div class="form-group" id="catImageGroup">
-                    <label for="cat_image">Image</label>
-                    <div id="currentCatImageWrap" style="margin-bottom: 10px; display: none;">
-                        <img id="currentCatImage" src="" alt="" style="max-width: 200px; max-height: 150px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px;">
-                        <label style="display: block; margin-top: 8px;"><input type="checkbox" name="remove_image" value="1"> Remove image</label>
+                    <label for="cat_images">Thumbnails</label>
+                    <div id="currentCatImagesWrap" style="margin-bottom: 10px; display: none;">
+                        <div id="currentCatImagesGrid" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px;"></div>
+                        <input type="hidden" name="remove_images" id="removeCatImagesInput" value="[]">
+                        <label style="display: block; margin-top: 8px;"><input type="checkbox" name="remove_image" value="1"> Remove all thumbnails</label>
                     </div>
-                    <input type="file" id="cat_image" name="image" accept="image/*">
+                    <input type="file" id="cat_images" name="images[]" accept="image/*" multiple>
+                    <small>Add multiple thumbnails. The first image will be the cover and the website will show them as a carousel.</small>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn-primary">Save</button>
@@ -360,7 +419,7 @@ $conn->close();
             document.getElementById('categoryAction').value = 'add';
             document.getElementById('categoryId').value = '';
             document.getElementById('categoryForm').reset();
-            document.getElementById('currentCatImageWrap').style.display = 'none';
+            document.getElementById('currentCatImagesWrap').style.display = 'none';
             document.getElementById('categoryModal').style.display = 'block';
         }
         function openEditModal(cat) {
@@ -370,11 +429,54 @@ $conn->close();
             document.getElementById('cat_name').value = cat.name || '';
             document.getElementById('cat_slug').value = cat.slug || '';
             document.getElementById('cat_tagline').value = cat.description || '';
-            var wrap = document.getElementById('currentCatImageWrap');
-            var img = document.getElementById('currentCatImage');
-            if (cat.image) {
-                img.src = '../' + cat.image;
+            var wrap = document.getElementById('currentCatImagesWrap');
+            var grid = document.getElementById('currentCatImagesGrid');
+            var removeInput = document.getElementById('removeCatImagesInput');
+            if (grid) grid.innerHTML = '';
+            if (removeInput) removeInput.value = '[]';
+            var removeList = [];
+            var imgs = [];
+            try { imgs = JSON.parse(cat.images || '[]'); } catch (e) { imgs = []; }
+            if (!Array.isArray(imgs)) imgs = [];
+            if (cat.image && imgs.indexOf(cat.image) === -1) imgs.unshift(cat.image);
+            imgs = imgs.filter(Boolean);
+            if (imgs.length) {
                 wrap.style.display = 'block';
+                imgs.forEach(function(p) {
+                    var item = document.createElement('div');
+                    item.style.position = 'relative';
+                    item.style.width = '88px';
+                    item.style.height = '66px';
+                    var im = document.createElement('img');
+                    im.src = '../' + p;
+                    im.style.width = '100%';
+                    im.style.height = '100%';
+                    im.style.objectFit = 'cover';
+                    im.style.borderRadius = '6px';
+                    im.style.border = '1px solid #ddd';
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.textContent = '×';
+                    btn.title = 'Remove';
+                    btn.style.position = 'absolute';
+                    btn.style.top = '-8px';
+                    btn.style.right = '-8px';
+                    btn.style.width = '24px';
+                    btn.style.height = '24px';
+                    btn.style.borderRadius = '999px';
+                    btn.style.border = 'none';
+                    btn.style.cursor = 'pointer';
+                    btn.style.background = 'rgba(0,0,0,0.75)';
+                    btn.style.color = '#fff';
+                    btn.addEventListener('click', function() {
+                        if (removeList.indexOf(p) === -1) removeList.push(p);
+                        if (removeInput) removeInput.value = JSON.stringify(removeList);
+                        item.style.display = 'none';
+                    });
+                    item.appendChild(im);
+                    item.appendChild(btn);
+                    grid.appendChild(item);
+                });
             } else {
                 wrap.style.display = 'none';
             }
