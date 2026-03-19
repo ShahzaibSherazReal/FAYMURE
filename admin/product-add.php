@@ -97,8 +97,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $suffix = 0;
             while (true) {
                 $slug_check->execute();
-                $res = $slug_check->get_result();
-                if (!$res || $res->num_rows === 0) {
+                $slug_check->store_result();
+                $nr = $slug_check->num_rows;
+                $slug_check->free_result();
+                if ($nr === 0) {
                     break;
                 }
                 $suffix++;
@@ -119,13 +121,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (!$check_cs || $check_cs->num_rows === 0) {
             $conn->query("ALTER TABLE products ADD COLUMN color_swatches TEXT DEFAULT NULL");
         }
+        $check_sub = $conn->query("SHOW COLUMNS FROM products LIKE 'subcategory_id'");
+        if (!$check_sub || $check_sub->num_rows === 0) {
+            $conn->query("ALTER TABLE products ADD COLUMN subcategory_id INT NULL DEFAULT NULL AFTER category_id");
+        }
 
         $product_image_list = array_merge([$image], $images);
         $color_swatches = [];
         if (!empty($_POST['color_swatch_name']) && is_array($_POST['color_swatch_name'])) {
-            foreach ($_POST['color_swatch_name'] as $i => $name) {
-                $name = trim($name ?? '');
-                if ($name === '') continue;
+            foreach ($_POST['color_swatch_name'] as $i => $swatch_name) {
+                $swatch_name = trim($swatch_name ?? '');
+                if ($swatch_name === '') continue;
                 $hex = isset($_POST['color_swatch_hex'][$i]) ? trim($_POST['color_swatch_hex'][$i]) : '';
                 $imgVal = isset($_POST['color_swatch_image'][$i]) ? trim($_POST['color_swatch_image'][$i]) : '';
                 $imgPath = '';
@@ -135,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $imgPath = $product_image_list[$idx];
                     }
                 }
-                $color_swatches[] = ['name' => $name, 'hex' => $hex, 'image' => $imgPath];
+                $color_swatches[] = ['name' => $swatch_name, 'hex' => $hex, 'image' => $imgPath];
             }
         }
         $color_swatches_json = json_encode($color_swatches);
@@ -183,8 +189,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-$categories = $conn->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")->fetch_all(MYSQLI_ASSOC);
-$subcategories = $conn->query("SELECT id, category_id, name FROM subcategories WHERE deleted_at IS NULL ORDER BY sort_order, name")->fetch_all(MYSQLI_ASSOC);
+$categories = [];
+if ($__r = $conn->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")) {
+    while ($__row = $__r->fetch_assoc()) {
+        $categories[] = $__row;
+    }
+}
+$subcategories = [];
+if ($__r = $conn->query("SELECT id, category_id, name FROM subcategories WHERE deleted_at IS NULL ORDER BY sort_order, name")) {
+    while ($__row = $__r->fetch_assoc()) {
+        $subcategories[] = $__row;
+    }
+}
 $preselect_category_id = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
 if (!empty($sticky['category_id'])) {
     $preselect_category_id = (int)$sticky['category_id'];
