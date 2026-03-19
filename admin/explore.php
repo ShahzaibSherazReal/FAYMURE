@@ -17,6 +17,20 @@ if (!$col || $col->num_rows == 0) {
     $conn->query("ALTER TABLE categories ADD COLUMN images TEXT NULL AFTER image");
 }
 
+// Ensure subcategories table exists
+$conn->query("CREATE TABLE IF NOT EXISTS subcategories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    category_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    slug VARCHAR(120) NOT NULL,
+    sort_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
+    UNIQUE KEY uniq_cat_slug (category_id, slug),
+    KEY idx_cat (category_id),
+    CONSTRAINT fk_subcategories_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
 function upload_category_images_explore($upload_dir, $field = 'images') {
     $saved = [];
     if (!isset($_FILES[$field]) || empty($_FILES[$field]['name'])) return $saved;
@@ -214,6 +228,57 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_all'])) {
     exit;
 }
 
+// 7. Subcategories CRUD (add/edit/delete)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['subcat_action'])) {
+    $action = $_POST['subcat_action'];
+    $id = (int)($_POST['subcat_id'] ?? 0);
+    $category_id = (int)($_POST['subcat_category_id'] ?? 0);
+    $name = sanitize($_POST['subcat_name'] ?? '');
+    $slug = sanitize($_POST['subcat_slug'] ?? '');
+    $sort_order = (int)($_POST['subcat_sort_order'] ?? 0);
+
+    if ($slug === '' && $name !== '') {
+        $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($name)));
+        $slug = trim($slug, '-');
+    }
+
+    if ($action === 'add') {
+        if ($category_id > 0 && $name !== '' && $slug !== '') {
+            $stmt = $conn->prepare("INSERT INTO subcategories (category_id, name, slug, sort_order) VALUES (?, ?, ?, ?)");
+            $stmt->bind_param("issi", $category_id, $name, $slug, $sort_order);
+            if ($stmt->execute()) {
+                header('Location: explore?saved=1');
+                exit;
+            }
+            $error = 'Failed to add subcategory. Slug may already exist for this category.';
+            $stmt->close();
+        } else {
+            $error = 'Please select a category and enter a subcategory name.';
+        }
+    }
+    if ($action === 'edit') {
+        if ($id > 0 && $category_id > 0 && $name !== '' && $slug !== '') {
+            $stmt = $conn->prepare("UPDATE subcategories SET category_id = ?, name = ?, slug = ?, sort_order = ? WHERE id = ?");
+            $stmt->bind_param("issii", $category_id, $name, $slug, $sort_order, $id);
+            if ($stmt->execute()) {
+                header('Location: explore?saved=1');
+                exit;
+            }
+            $error = 'Failed to update subcategory.';
+            $stmt->close();
+        } else {
+            $error = 'Invalid subcategory data.';
+        }
+    }
+    if ($action === 'delete') {
+        if ($id > 0) {
+            $conn->query("UPDATE subcategories SET deleted_at = NOW() WHERE id = $id");
+            header('Location: explore?saved=1');
+            exit;
+        }
+    }
+}
+
 // Load catalog heading
 $catalog_title = 'Catalog';
 $catalog_tagline = 'Browse our product categories';
@@ -230,6 +295,13 @@ $categories = [];
 $res = $conn->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY sort_order, name");
 if ($res) {
     $categories = $res->fetch_all(MYSQLI_ASSOC);
+}
+
+// Load subcategories
+$subcategories = [];
+$res = $conn->query("SELECT sc.*, c.name AS category_name FROM subcategories sc JOIN categories c ON c.id = sc.category_id WHERE sc.deleted_at IS NULL AND c.deleted_at IS NULL ORDER BY c.sort_order, c.name, sc.sort_order, sc.name");
+if ($res) {
+    $subcategories = $res->fetch_all(MYSQLI_ASSOC);
 }
 
 if (isset($_GET['saved'])) {
@@ -359,9 +431,57 @@ $conn->close();
                                         <td><?php echo htmlspecialchars(substr($cat['description'] ?? '', 0, 60)); ?><?php echo strlen($cat['description'] ?? '') > 60 ? '…' : ''; ?></td>
                                         <td>
                                             <button type="button" class="btn-icon" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($cat)); ?>)" title="Edit"><i class="fas fa-edit"></i></button>
+                                            <button type="button" class="btn-icon" onclick="openAddSubcatModal(<?php echo (int)$cat['id']; ?>)" title="Add subcategory"><i class="fas fa-plus"></i></button>
                                             <form method="POST" style="display: inline;" onsubmit="return confirm('Delete this category?');">
                                                 <input type="hidden" name="delete_one" value="1">
                                                 <input type="hidden" name="id" value="<?php echo (int)$cat['id']; ?>">
+                                                <button type="submit" class="btn-icon btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Subcategories -->
+            <section class="form-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+                    <h2 class="section-title" style="margin: 0;">Subcategories</h2>
+                    <button type="button" onclick="openAddSubcatModal()" class="btn-primary"><i class="fas fa-plus"></i> Add subcategory</button>
+                </div>
+                <p style="margin-top: 0; color: #666;">Click a category’s <strong>+</strong> icon to add a subcategory inside that category.</p>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Category</th>
+                                <th>Name</th>
+                                <th>Slug</th>
+                                <th>Sort</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($subcategories)): ?>
+                                <tr><td colspan="6">No subcategories yet.</td></tr>
+                            <?php else: ?>
+                                <?php foreach ($subcategories as $sc): ?>
+                                    <tr>
+                                        <td><?php echo (int)$sc['id']; ?></td>
+                                        <td><?php echo htmlspecialchars($sc['category_name'] ?? ''); ?></td>
+                                        <td><?php echo htmlspecialchars($sc['name']); ?></td>
+                                        <td><?php echo htmlspecialchars($sc['slug']); ?></td>
+                                        <td><?php echo (int)($sc['sort_order'] ?? 0); ?></td>
+                                        <td>
+                                            <button type="button" class="btn-icon" onclick="openEditSubcatModal(<?php echo htmlspecialchars(json_encode($sc)); ?>)" title="Edit"><i class="fas fa-edit"></i></button>
+                                            <form method="POST" style="display: inline;" onsubmit="return confirm('Delete this subcategory?');">
+                                                <input type="hidden" name="subcat_action" value="delete">
+                                                <input type="hidden" name="subcat_id" value="<?php echo (int)$sc['id']; ?>">
                                                 <button type="submit" class="btn-icon btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
                                             </form>
                                         </td>
@@ -407,28 +527,73 @@ $conn->close();
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn-primary">Save</button>
+                    <button type="button" id="btnAddSubcatFromCategory" onclick="openAddSubcatModalFromCurrentCategory()" class="btn-secondary" style="display:none;"><i class="fas fa-plus"></i> Add subcategory</button>
                     <button type="button" onclick="closeCategoryModal()" class="btn-secondary">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Add/Edit Subcategory Modal -->
+    <div id="subcatModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSubcatModal()">&times;</span>
+            <h2 id="subcatModalTitle">Add subcategory</h2>
+            <form method="POST" id="subcatForm">
+                <input type="hidden" name="subcat_action" id="subcatAction" value="add">
+                <input type="hidden" name="subcat_id" id="subcatId" value="">
+                <div class="form-group">
+                    <label for="subcat_category_id">Category *</label>
+                    <select id="subcat_category_id" name="subcat_category_id" required style="width: 100%; max-width: 500px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">Select category</option>
+                        <?php foreach ($categories as $cat): ?>
+                            <option value="<?php echo (int)$cat['id']; ?>"><?php echo htmlspecialchars($cat['name']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="subcat_name">Name *</label>
+                    <input type="text" id="subcat_name" name="subcat_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="subcat_slug">Slug *</label>
+                    <input type="text" id="subcat_slug" name="subcat_slug" required>
+                </div>
+                <div class="form-group">
+                    <label for="subcat_sort_order">Sort order</label>
+                    <input type="text" id="subcat_sort_order" name="subcat_sort_order" value="0">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Save</button>
+                    <button type="button" onclick="closeSubcatModal()" class="btn-secondary">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        var currentEditingCategoryId = 0;
         function openAddModal() {
             document.getElementById('categoryModalTitle').textContent = 'Add category';
             document.getElementById('categoryAction').value = 'add';
             document.getElementById('categoryId').value = '';
+            currentEditingCategoryId = 0;
             document.getElementById('categoryForm').reset();
             document.getElementById('currentCatImagesWrap').style.display = 'none';
+            var btn = document.getElementById('btnAddSubcatFromCategory');
+            if (btn) btn.style.display = 'none';
             document.getElementById('categoryModal').style.display = 'block';
         }
         function openEditModal(cat) {
             document.getElementById('categoryModalTitle').textContent = 'Edit category';
             document.getElementById('categoryAction').value = 'edit';
             document.getElementById('categoryId').value = cat.id;
+            currentEditingCategoryId = parseInt(cat.id || '0', 10) || 0;
             document.getElementById('cat_name').value = cat.name || '';
             document.getElementById('cat_slug').value = cat.slug || '';
             document.getElementById('cat_tagline').value = cat.description || '';
+            var btn = document.getElementById('btnAddSubcatFromCategory');
+            if (btn) btn.style.display = currentEditingCategoryId ? 'inline-block' : 'none';
             var wrap = document.getElementById('currentCatImagesWrap');
             var grid = document.getElementById('currentCatImagesGrid');
             var removeInput = document.getElementById('removeCatImagesInput');
@@ -485,6 +650,34 @@ $conn->close();
         function closeCategoryModal() {
             document.getElementById('categoryModal').style.display = 'none';
         }
+        function openAddSubcatModal(categoryId) {
+            document.getElementById('subcatModalTitle').textContent = 'Add subcategory';
+            document.getElementById('subcatAction').value = 'add';
+            document.getElementById('subcatId').value = '';
+            document.getElementById('subcatForm').reset();
+            if (categoryId) {
+                document.getElementById('subcat_category_id').value = categoryId;
+            }
+            document.getElementById('subcatModal').style.display = 'block';
+        }
+        function openAddSubcatModalFromCurrentCategory() {
+            if (!currentEditingCategoryId) return;
+            closeCategoryModal();
+            openAddSubcatModal(currentEditingCategoryId);
+        }
+        function openEditSubcatModal(sc) {
+            document.getElementById('subcatModalTitle').textContent = 'Edit subcategory';
+            document.getElementById('subcatAction').value = 'edit';
+            document.getElementById('subcatId').value = sc.id || '';
+            document.getElementById('subcat_category_id').value = sc.category_id || '';
+            document.getElementById('subcat_name').value = sc.name || '';
+            document.getElementById('subcat_slug').value = sc.slug || '';
+            document.getElementById('subcat_sort_order').value = sc.sort_order || 0;
+            document.getElementById('subcatModal').style.display = 'block';
+        }
+        function closeSubcatModal() {
+            document.getElementById('subcatModal').style.display = 'none';
+        }
         document.getElementById('cat_name').addEventListener('input', function() {
             var slug = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
             if (document.getElementById('categoryAction').value === 'add') {
@@ -509,7 +702,17 @@ $conn->close();
         });
         window.onclick = function(e) {
             if (e.target.id === 'categoryModal') closeCategoryModal();
+            if (e.target.id === 'subcatModal') closeSubcatModal();
         };
+    </script>
+
+    <script>
+        document.getElementById('subcat_name').addEventListener('input', function() {
+            var slug = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            if (document.getElementById('subcatAction').value === 'add') {
+                document.getElementById('subcat_slug').value = slug;
+            }
+        });
     </script>
 </body>
 </html>

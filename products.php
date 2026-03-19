@@ -5,6 +5,7 @@ require_once 'includes/header.php';
 $conn = getDBConnection();
 $category_slug = trim($_GET['category'] ?? '');
 $filter_gender = $_GET['gender'] ?? 'all';
+$filter_subcat = trim($_GET['subcat'] ?? '');
 
 // Get category by slug
 $category = null;
@@ -20,10 +21,40 @@ if (!$category) {
     redirect('categories.php');
 }
 
+// Load subcategories for this category
+$subcategories = [];
+$stmt = $conn->prepare("SELECT id, name, slug FROM subcategories WHERE category_id = ? AND deleted_at IS NULL ORDER BY sort_order, name");
+$stmt->bind_param("i", $category['id']);
+$stmt->execute();
+$subcategories = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+
+// Resolve selected subcategory slug to id (must belong to this category)
+$selected_subcat = null;
+$selected_subcat_id = null;
+if ($filter_subcat !== '') {
+    foreach ($subcategories as $sc) {
+        if (($sc['slug'] ?? '') === $filter_subcat) {
+            $selected_subcat = $sc;
+            $selected_subcat_id = (int)$sc['id'];
+            break;
+        }
+    }
+    if (!$selected_subcat) {
+        $filter_subcat = '';
+    }
+}
+
 // Build query: show active products (or status IS NULL for older rows without status column set)
 $query = "SELECT * FROM products WHERE category_id = ? AND deleted_at IS NULL AND (status = 'active' OR status IS NULL)";
 $params = [$category['id']];
 $types = "i";
+
+if ($selected_subcat_id) {
+    $query .= " AND subcategory_id = ?";
+    $params[] = $selected_subcat_id;
+    $types .= "i";
+}
 
 if ($filter_gender != 'all') {
     $query .= " AND subcategory = ?";
@@ -71,18 +102,31 @@ $conn->close();
                 </button>
             </div>
             <div class="sidebar-content">
+                <?php if (!empty($subcategories)): ?>
+                    <div class="filter-group">
+                        <h4>Subcategories</h4>
+                        <a href="?category=<?php echo urlencode($category_slug); ?><?php echo ($filter_gender !== 'all') ? '&gender=' . urlencode($filter_gender) : ''; ?>" class="filter-link <?php echo $filter_subcat === '' ? 'active' : ''; ?>">
+                            All
+                        </a>
+                        <?php foreach ($subcategories as $sc): ?>
+                            <a href="?category=<?php echo urlencode($category_slug); ?>&subcat=<?php echo urlencode($sc['slug']); ?><?php echo ($filter_gender !== 'all') ? '&gender=' . urlencode($filter_gender) : ''; ?>" class="filter-link <?php echo $filter_subcat === ($sc['slug'] ?? '') ? 'active' : ''; ?>">
+                                <?php echo htmlspecialchars($sc['name']); ?>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
                 <div class="filter-group">
                     <h4>Gender</h4>
-                    <a href="?category=<?php echo $category_slug; ?>&gender=all" class="filter-link <?php echo $filter_gender == 'all' ? 'active' : ''; ?>">
+                    <a href="?category=<?php echo urlencode($category_slug); ?><?php echo ($filter_subcat !== '') ? '&subcat=' . urlencode($filter_subcat) : ''; ?>&gender=all" class="filter-link <?php echo $filter_gender == 'all' ? 'active' : ''; ?>">
                         All
                     </a>
-                    <a href="?category=<?php echo $category_slug; ?>&gender=male" class="filter-link <?php echo $filter_gender == 'male' ? 'active' : ''; ?>">
+                    <a href="?category=<?php echo urlencode($category_slug); ?><?php echo ($filter_subcat !== '') ? '&subcat=' . urlencode($filter_subcat) : ''; ?>&gender=male" class="filter-link <?php echo $filter_gender == 'male' ? 'active' : ''; ?>">
                         Male
                     </a>
-                    <a href="?category=<?php echo $category_slug; ?>&gender=female" class="filter-link <?php echo $filter_gender == 'female' ? 'active' : ''; ?>">
+                    <a href="?category=<?php echo urlencode($category_slug); ?><?php echo ($filter_subcat !== '') ? '&subcat=' . urlencode($filter_subcat) : ''; ?>&gender=female" class="filter-link <?php echo $filter_gender == 'female' ? 'active' : ''; ?>">
                         Female
                     </a>
-                    <a href="?category=<?php echo $category_slug; ?>&gender=unisex" class="filter-link <?php echo $filter_gender == 'unisex' ? 'active' : ''; ?>">
+                    <a href="?category=<?php echo urlencode($category_slug); ?><?php echo ($filter_subcat !== '') ? '&subcat=' . urlencode($filter_subcat) : ''; ?>&gender=unisex" class="filter-link <?php echo $filter_gender == 'unisex' ? 'active' : ''; ?>">
                         Unisex
                     </a>
                 </div>
@@ -97,12 +141,29 @@ $conn->close();
                 <div class="products-main">
                     <div class="products-header">
                         <div class="products-header-top">
-                            <h1 class="reveal"><?php echo htmlspecialchars($category['name']); ?></h1>
+                            <h1 class="reveal">
+                                <?php echo htmlspecialchars($category['name']); ?>
+                                <?php if ($selected_subcat): ?>
+                                    <span style="font-weight: 400; opacity: 0.85;"> / <?php echo htmlspecialchars($selected_subcat['name']); ?></span>
+                                <?php endif; ?>
+                            </h1>
                             <button class="filter-toggle-btn" id="filterToggleBtn" aria-label="Toggle filters">
                                 <i class="fas fa-filter"></i>
                                 <span>Filters</span>
                             </button>
                         </div>
+                        <?php if (!empty($subcategories)): ?>
+                            <div class="reveal" data-delay="60" style="display:flex; flex-wrap:wrap; gap:10px; margin-top: 14px;">
+                                <a class="filter-link <?php echo $filter_subcat === '' ? 'active' : ''; ?>" style="display:inline-flex; padding: 8px 12px; border-radius: 999px; border: 1px solid #e6e6e6; text-decoration:none;"
+                                   href="?category=<?php echo urlencode($category_slug); ?><?php echo ($filter_gender !== 'all') ? '&gender=' . urlencode($filter_gender) : ''; ?>">All</a>
+                                <?php foreach ($subcategories as $sc): ?>
+                                    <a class="filter-link <?php echo $filter_subcat === ($sc['slug'] ?? '') ? 'active' : ''; ?>" style="display:inline-flex; padding: 8px 12px; border-radius: 999px; border: 1px solid #e6e6e6; text-decoration:none;"
+                                       href="?category=<?php echo urlencode($category_slug); ?>&subcat=<?php echo urlencode($sc['slug']); ?><?php echo ($filter_gender !== 'all') ? '&gender=' . urlencode($filter_gender) : ''; ?>">
+                                        <?php echo htmlspecialchars($sc['name']); ?>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
                         <p class="products-count reveal" data-delay="100"><?php echo count($products); ?> products found</p>
                     </div>
                     <div class="products-grid-modern stagger">

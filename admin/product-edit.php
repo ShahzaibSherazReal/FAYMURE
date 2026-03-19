@@ -36,6 +36,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     $specifications = implode("\n", $spec_lines);
     $category_id = intval($_POST['category_id'] ?? 0);
+    $enable_subcategory = isset($_POST['enable_subcategory']) && $_POST['enable_subcategory'] === '1';
+    $subcategory_id = null;
+    if ($enable_subcategory && isset($_POST['subcategory_id']) && $_POST['subcategory_id'] !== '') {
+        $subcategory_id = (int)$_POST['subcategory_id'];
+        if ($subcategory_id <= 0) $subcategory_id = null;
+    }
     $subcategory = sanitize($_POST['subcategory'] ?? 'unisex');
     $moq = intval($_POST['moq'] ?? 1);
     $price = floatval($_POST['price'] ?? 0);
@@ -125,9 +131,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         $color_swatches_json = json_encode($color_swatches);
         $images_json = json_encode($images);
-        $stmt = $conn->prepare("UPDATE products SET name=?, slug=?, sku=?, description=?, product_details=?, key_features=?, specifications=?, category_id=?, subcategory=?, moq=?, price=?, image=?, images=?, status=?, color_swatches=? WHERE id=?");
-        $bind_types = str_repeat('s', 7) . 'i' . 's' . 'i' . 'd' . str_repeat('s', 4) . 'i';
-        $stmt->bind_param($bind_types, $name, $slug, $sku, $description, $product_details, $key_features, $specifications, $category_id, $subcategory, $moq, $price, $image, $images_json, $status, $color_swatches_json, $product_id);
+        $stmt = $conn->prepare("UPDATE products SET name=?, slug=?, sku=?, description=?, product_details=?, key_features=?, specifications=?, category_id=?, subcategory_id=?, subcategory=?, moq=?, price=?, image=?, images=?, status=?, color_swatches=? WHERE id=?");
+        $subcategory_id_for_bind = $subcategory_id === null ? null : (int)$subcategory_id;
+        $bind_types = str_repeat('s', 7) . 'i' . 'i' . 's' . 'i' . 'd' . str_repeat('s', 4) . 'i';
+        $stmt->bind_param($bind_types, $name, $slug, $sku, $description, $product_details, $key_features, $specifications, $category_id, $subcategory_id_for_bind, $subcategory, $moq, $price, $image, $images_json, $status, $color_swatches_json, $product_id);
         
         if ($stmt->execute()) {
             $success = true;
@@ -142,6 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 
 $categories = $conn->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")->fetch_all(MYSQLI_ASSOC);
+$subcategories = $conn->query("SELECT id, category_id, name FROM subcategories WHERE deleted_at IS NULL ORDER BY sort_order, name")->fetch_all(MYSQLI_ASSOC);
 $images = json_decode($product['images'] ?? '[]', true) ?: [];
 $product_image_list = [];
 if (!empty($product['image'])) $product_image_list[] = $product['image'];
@@ -329,12 +337,33 @@ $conn->close();
                 
                 <div class="form-row">
                     <div class="form-group">
+                        <label style="display:flex; align-items:center; gap:10px;">
+                            <input type="checkbox" id="enable_subcategory" name="enable_subcategory" value="1" <?php echo (!empty($product['subcategory_id'])) ? 'checked' : ''; ?>>
+                            Add this product to a subcategory
+                        </label>
+                        <div id="subcategoryWrap" style="margin-top: 10px;">
+                            <label for="subcategory_id">Subcategory</label>
+                            <select id="subcategory_id" name="subcategory_id">
+                                <option value="">— Select —</option>
+                                <?php foreach ($subcategories as $sc): ?>
+                                    <option value="<?php echo (int)$sc['id']; ?>"
+                                        data-category-id="<?php echo (int)$sc['category_id']; ?>"
+                                        <?php echo (!empty($product['subcategory_id']) && (int)$product['subcategory_id'] === (int)$sc['id']) ? ' selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($sc['name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <small>Optional: visible on the user category page as a filter.</small>
+                        </div>
+                    </div>
+                    <div class="form-group">
                         <label for="subcategory">Subcategory</label>
                         <select id="subcategory" name="subcategory">
                             <option value="unisex" <?php echo ($product['subcategory'] ?? 'unisex') == 'unisex' ? 'selected' : ''; ?>>Unisex</option>
                             <option value="male" <?php echo ($product['subcategory'] ?? '') == 'male' ? 'selected' : ''; ?>>Male</option>
                             <option value="female" <?php echo ($product['subcategory'] ?? '') == 'female' ? 'selected' : ''; ?>>Female</option>
                         </select>
+                        <small>This field is actually <strong>Gender</strong> (legacy name).</small>
                     </div>
                     
                     <div class="form-group">
@@ -477,6 +506,39 @@ $conn->close();
             }
             container.querySelectorAll('.color-swatch-row').forEach(bindRow);
         })();
+
+        // Subcategory checkbox + filter options by chosen category
+        (function() {
+            var enable = document.getElementById('enable_subcategory');
+            var wrap = document.getElementById('subcategoryWrap');
+            var catSel = document.getElementById('category_id');
+            var subSel = document.getElementById('subcategory_id');
+            if (!enable || !wrap || !catSel || !subSel) return;
+
+            var allOpts = Array.from(subSel.querySelectorAll('option'));
+            function applyCategoryFilter() {
+                var catId = parseInt(catSel.value || '0', 10);
+                var current = subSel.value;
+                allOpts.forEach(function(opt) {
+                    var dc = opt.getAttribute('data-category-id');
+                    if (!dc) return;
+                    opt.hidden = !(catId > 0 && parseInt(dc || '0', 10) === catId);
+                });
+                var selectedOpt = subSel.querySelector('option[value="' + (current || '') + '"]');
+                if (selectedOpt && selectedOpt.hidden) subSel.value = '';
+            }
+
+            function applyEnabled() {
+                wrap.style.display = enable.checked ? 'block' : 'none';
+                if (!enable.checked) subSel.value = '';
+            }
+
+            enable.addEventListener('change', applyEnabled);
+            catSel.addEventListener('change', applyCategoryFilter);
+            applyCategoryFilter();
+            applyEnabled();
+        })();
+
         function submitRemoveMainImage() {
             if (confirm('Remove main image?')) {
                 var form = document.createElement('form');
