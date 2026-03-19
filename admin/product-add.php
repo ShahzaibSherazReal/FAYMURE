@@ -400,7 +400,24 @@ $conn->close();
                 { value: '9', label: 'Additional 9' },
                 { value: '10', label: 'Additional 10' }
             ];
-            var presetOpts = '<option value="">— Choose color —</option><option value="Black|#000000">Black</option><option value="White|#FFFFFF">White</option><option value="Brown|#5D4037">Brown</option><option value="Navy|#001F3F">Navy</option><option value="Tan|#D2B48C">Tan</option><option value="Red|#B71C1C">Red</option><option value="Burgundy|#722F37">Burgundy</option><option value="Grey|#616161">Grey</option><option value="__custom__">Add custom color</option>';
+            // color_swatch_name[] preset options (also prefill the hex input)
+            var presetOpts = '<option value="">— Choose color —</option>' +
+                '<option value="Black|#000000">Black</option>' +
+                '<option value="White|#FFFFFF">White</option>' +
+                '<option value="Brown|#5D4037">Brown</option>' +
+                '<option value="Navy|#001F3F">Navy</option>' +
+                '<option value="Tan|#D2B48C">Tan</option>' +
+                '<option value="Red|#B71C1C">Red</option>' +
+                '<option value="Burgundy|#722F37">Burgundy</option>' +
+                '<option value="Grey|#616161">Grey</option>' +
+                '<option value="Oxblood|#4A0000">Oxblood</option>' +
+                '<option value="Espresso|#4B2E2A">Espresso</option>' +
+                '<option value="Whiskey|#7A4A2B">Whiskey</option>' +
+                '<option value="Beige|#F5F5DC">Beige</option>' +
+                '<option value="Camel|#C69C6D">Camel</option>' +
+                '<option value="Rust|#B7410E">Rust</option>' +
+                '<option value="Olive green|#6B8E23">Olive green</option>' +
+                '<option value="__custom__">Add custom color</option>';
             addBtn.addEventListener('click', function() {
                 var row = document.createElement('div');
                 row.className = 'color-swatch-row';

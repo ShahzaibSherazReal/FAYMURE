@@ -156,6 +156,13 @@ $common_colors = [
     'Red' => '#B71C1C',
     'Burgundy' => '#722F37',
     'Grey' => '#616161',
+    'Oxblood' => '#4A0000',
+    'Espresso' => '#4B2E2A',
+    'Whiskey' => '#7A4A2B',
+    'Beige' => '#F5F5DC',
+    'Camel' => '#C69C6D',
+    'Rust' => '#B7410E',
+    'Olive green' => '#6B8E23',
 ];
 $return_catalog = isset($_GET['return']) && $_GET['return'] === 'catalog' && isset($_GET['category']);
 $return_category_id = $return_catalog ? (int)$_GET['category'] : 0;
@@ -433,7 +440,25 @@ $conn->close();
             addBtn.addEventListener('click', function() {
                 var row = document.createElement('div');
                 row.className = 'color-swatch-row';
-                var presetOpts = '<option value="">— Choose color —</option><option value="Black|#000000">Black</option><option value="White|#FFFFFF">White</option><option value="Brown|#5D4037">Brown</option><option value="Navy|#001F3F">Navy</option><option value="Tan|#D2B48C">Tan</option><option value="Red|#B71C1C">Red</option><option value="Burgundy|#722F37">Burgundy</option><option value="Grey|#616161">Grey</option><option value="__custom__">Add custom color</option>';
+                // This list is used when adding additional color rows dynamically.
+                // Keep it in sync with $common_colors so existing swatches can be edited.
+                var presetOpts = '<option value="">— Choose color —</option>' +
+                    '<option value="Black|#000000">Black</option>' +
+                    '<option value="White|#FFFFFF">White</option>' +
+                    '<option value="Brown|#5D4037">Brown</option>' +
+                    '<option value="Navy|#001F3F">Navy</option>' +
+                    '<option value="Tan|#D2B48C">Tan</option>' +
+                    '<option value="Red|#B71C1C">Red</option>' +
+                    '<option value="Burgundy|#722F37">Burgundy</option>' +
+                    '<option value="Grey|#616161">Grey</option>' +
+                    '<option value="Oxblood|#4A0000">Oxblood</option>' +
+                    '<option value="Espresso|#4B2E2A">Espresso</option>' +
+                    '<option value="Whiskey|#7A4A2B">Whiskey</option>' +
+                    '<option value="Beige|#F5F5DC">Beige</option>' +
+                    '<option value="Camel|#C69C6D">Camel</option>' +
+                    '<option value="Rust|#B7410E">Rust</option>' +
+                    '<option value="Olive green|#6B8E23">Olive green</option>' +
+                    '<option value="__custom__">Add custom color</option>';
                 row.innerHTML = '<select class="color-preset" title="Quick fill">' + presetOpts + '</select><input type="text" name="color_swatch_name[]" placeholder="Color name"><input type="text" name="color_swatch_hex[]" placeholder="#hex" class="color-hex-inp"><select name="color_swatch_image[]"><option value="">— Link to image —</option>' + imageOpts.map(function(o) { return '<option value="' + (o.path || '').replace(/"/g, '&quot;') + '">' + (o.label || '').replace(/</g, '&lt;') + '</option>'; }).join('') + '</select><button type="button" class="btn-delete remove-color-swatch">Remove</button>';
                 container.appendChild(row);
                 bindRow(row);
