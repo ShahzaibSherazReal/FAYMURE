@@ -106,7 +106,7 @@ if ($columns_check && $columns_check->num_rows > 0) {
 
 // Homepage catalog categories (same source as explore/catalog)
 $homepage_categories = [];
-$categories_result = $conn->query("SELECT id, name, slug, description, image FROM categories WHERE deleted_at IS NULL ORDER BY sort_order, name");
+$categories_result = $conn->query("SELECT id, name, slug, description, image, images FROM categories WHERE deleted_at IS NULL ORDER BY sort_order, name");
 if ($categories_result) {
     $homepage_categories = $categories_result->fetch_all(MYSQLI_ASSOC);
 }
@@ -186,8 +186,25 @@ endif; ?>
                         <?php foreach ($homepage_categories as $category): ?>
                             <a href="<?php echo $base; ?>/products?category=<?php echo urlencode($category['slug']); ?>" class="homepage-slide-card">
                                 <div class="homepage-slide-image">
-                                    <?php if (!empty($category['image'])): ?>
-                                        <img src="<?php echo htmlspecialchars((isset($base) && $base !== '') ? rtrim($base, '/') . '/' . ltrim($category['image'], '/') : '/' . ltrim($category['image'], '/')); ?>" alt="<?php echo htmlspecialchars($category['name']); ?>">
+                                    <?php
+                                    $cat_imgs = [];
+                                    if (!empty($category['images'])) {
+                                        $tmp = json_decode($category['images'], true);
+                                        if (is_array($tmp)) {
+                                            $cat_imgs = $tmp;
+                                        }
+                                    }
+                                    if (!empty($category['image']) && !in_array($category['image'], $cat_imgs, true)) {
+                                        array_unshift($cat_imgs, $category['image']);
+                                    }
+                                    $cat_imgs = array_values(array_filter($cat_imgs));
+                                    ?>
+                                    <?php if (!empty($cat_imgs)): ?>
+                                        <div class="homepage-cat-carousel" data-interval="1760">
+                                            <?php foreach ($cat_imgs as $i => $path): ?>
+                                                <img class="<?php echo $i === 0 ? 'is-active' : ''; ?>" src="<?php echo htmlspecialchars((isset($base) && $base !== '') ? rtrim($base, '/') . '/' . ltrim($path, '/') : '/' . ltrim($path, '/')); ?>" alt="<?php echo htmlspecialchars($category['name']); ?>">
+                                            <?php endforeach; ?>
+                                        </div>
                                     <?php else: ?>
                                         <div class="homepage-slide-placeholder"><i class="fas fa-image"></i></div>
                                     <?php endif; ?>
@@ -218,7 +235,7 @@ endif; ?>
                     </button>
                     <div id="latestCreationSlider" class="homepage-slider-track">
                         <?php foreach ($latest_products as $product): ?>
-                            <a href="<?php echo $base; ?>/product-detail/<?php echo rawurlencode(!empty($product['slug']) ? $product['slug'] : slugify($product['name'] ?? 'product')); ?>" class="homepage-slide-card">
+                            <a href="<?php echo $base; ?>/product-detail/<?php echo rawurlencode(!empty($product['slug']) ? $product['slug'] : slugify($product['name'] ?? 'product')); ?>" class="homepage-slide-card latest-creation-card">
                                 <div class="homepage-slide-image">
                                     <?php if (!empty($product['image'])): ?>
                                         <img src="<?php echo htmlspecialchars((isset($base) && $base !== '') ? rtrim($base, '/') . '/' . ltrim($product['image'], '/') : '/' . ltrim($product['image'], '/')); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
@@ -443,8 +460,10 @@ endforeach; ?>
         }
 
         .homepage-slide-image {
-            height: 230px;
+            height: 210px;
             background: #f2f2f2;
+            position: relative;
+            overflow: hidden;
         }
 
         .homepage-slide-image img,
@@ -456,6 +475,35 @@ endforeach; ?>
         .homepage-slide-image img {
             object-fit: cover;
             display: block;
+        }
+
+        .homepage-cat-carousel {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+        }
+
+        .homepage-cat-carousel img {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 450ms ease, transform 0.5s ease;
+        }
+
+        .homepage-cat-carousel img.is-active {
+            opacity: 1;
+        }
+
+        .latest-creation-card .homepage-slide-image {
+            height: 200px;
+            background: #f7f7f7;
+        }
+
+        .latest-creation-card .homepage-slide-image img {
+            object-fit: contain;
+            object-position: center;
+            padding: 8px;
+            background: #fff;
         }
 
         .homepage-slide-placeholder {
@@ -500,6 +548,7 @@ endforeach; ?>
             justify-content: center;
             transition: all 0.2s ease;
             flex-shrink: 0;
+            z-index: 2;
         }
 
         .homepage-slider-btn:hover {
@@ -688,16 +737,22 @@ endforeach; ?>
             }
 
             .homepage-slider-btn {
-                display: none;
+                display: inline-flex;
+                width: 34px;
+                height: 34px;
             }
 
             .homepage-slider-track {
-                grid-auto-columns: 100%;
+                grid-auto-columns: calc((100% - 14px) / 2);
                 gap: 14px;
             }
 
             .homepage-slide-image {
-                height: 220px;
+                height: 180px;
+            }
+
+            .latest-creation-card .homepage-slide-image {
+                height: 165px;
             }
             
             .section-title {
@@ -752,9 +807,22 @@ endforeach; ?>
                 var card = track.querySelector('.homepage-slide-card');
                 if (!card) return;
                 var cardWidth = card.getBoundingClientRect().width;
-                var gap = 20;
+                var styles = window.getComputedStyle(track);
+                var gap = parseFloat(styles.columnGap || styles.gap || '20') || 20;
                 var scrollAmount = cardWidth + gap;
                 track.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+            }
+
+            function initCategoryCarousel(el) {
+                var imgs = el.querySelectorAll('img');
+                if (!imgs || imgs.length <= 1) return;
+                var idx = 0;
+                var interval = parseInt(el.getAttribute('data-interval') || '1760', 10);
+                setInterval(function() {
+                    imgs[idx].classList.remove('is-active');
+                    idx = (idx + 1) % imgs.length;
+                    imgs[idx].classList.add('is-active');
+                }, interval);
             }
 
             document.addEventListener('DOMContentLoaded', function() {
@@ -766,6 +834,7 @@ endforeach; ?>
                         slideTrack(track, dir);
                     });
                 });
+                document.querySelectorAll('.homepage-cat-carousel').forEach(initCategoryCarousel);
             });
         })();
     </script>
