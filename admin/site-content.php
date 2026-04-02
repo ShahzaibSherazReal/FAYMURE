@@ -45,7 +45,7 @@ if (isset($_POST['remove_image'])) {
         }
     }
     $stmt->close();
-    
+
     $stmt = $conn->prepare("DELETE FROM site_content WHERE content_key=?");
     $stmt->bind_param("s", $image_key);
     $stmt->execute();
@@ -160,9 +160,9 @@ if (isset($_FILES['services_image']) && $_FILES['services_image']['error'] == 0)
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit'])) {
     foreach ($_POST as $key => $value) {
-        if ($key != 'submit' && $key != 'hero_video' && $key != 'hero_image' && 
-            $key != 'vision_image' && $key != 'mission_image' && $key != 'services_image' &&
-            $key != 'remove_image') {
+        if ($key != 'submit' && $key != 'hero_video' && $key != 'hero_image' &&
+        $key != 'vision_image' && $key != 'mission_image' && $key != 'services_image' &&
+        $key != 'remove_image') {
             $stmt = $conn->prepare("INSERT INTO site_content (content_key, content_value) VALUES (?, ?) 
                                     ON DUPLICATE KEY UPDATE content_value = ?");
             $stmt->bind_param("sss", $key, $value, $value);
@@ -285,7 +285,8 @@ $conn->close();
             
             <?php if (isset($success) || isset($upload_success)): ?>
                 <div class="success-message">Content updated successfully!</div>
-            <?php endif; ?>
+            <?php
+endif; ?>
             
             <form method="POST" enctype="multipart/form-data" class="admin-form">
                 <!-- ========== HOME ========== -->
@@ -312,7 +313,8 @@ $conn->close();
                             <div style="margin-top: 10px;">
                                 <button type="button" onclick="removeHeroVideo()" class="btn-danger">Remove Video</button>
                             </div>
-                        <?php endif; ?>
+                        <?php
+endif; ?>
                     </div>
                     
                     <div class="form-group">
@@ -323,7 +325,8 @@ $conn->close();
                             <div style="margin-top: 10px;">
                                 <button type="button" onclick="removeHeroImage()" class="btn-danger">Remove Image</button>
                             </div>
-                        <?php endif; ?>
+                        <?php
+endif; ?>
                     </div>
                     </div>
                 </div>
@@ -394,15 +397,18 @@ $conn->close();
                     <h3 style="margin-bottom: 15px;">Existing FAQs</h3>
                     <?php if (empty($faqs)): ?>
                         <p>No FAQs added yet.</p>
-                    <?php else: ?>
+                    <?php
+else: ?>
                         <?php foreach ($faqs as $index => $faq): ?>
                             <div style="background: #fff; padding: 15px; margin-bottom: 15px; border: 1px solid var(--border-color);">
                                 <strong>Q: <?php echo htmlspecialchars($faq['question']); ?></strong>
                                 <p style="margin-top: 8px;">A: <?php echo htmlspecialchars($faq['answer']); ?></p>
                                 <button type="button" class="btn-delete" onclick="submitDeleteFaq(<?php echo $index; ?>)">Delete</button>
                             </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                        <?php
+    endforeach; ?>
+                    <?php
+endif; ?>
                     </div>
                 </div>
                 
@@ -456,7 +462,8 @@ $conn->close();
                                 <img src="<?php echo htmlspecialchars($site_base_url . '/' . ltrim($content_map['vision_image'], '/')); ?>" alt="Vision" style="max-width: 200px; display: block; margin-bottom: 10px;">
                                 <button type="button" class="btn-delete" onclick="submitRemoveImage('vision_image')">Remove Image</button>
                             </div>
-                        <?php endif; ?>
+                        <?php
+endif; ?>
                         <input type="file" id="vision_image" name="vision_image" accept="image/*">
                         <small>Upload a new image to replace the current one</small>
                     </div>
@@ -484,7 +491,8 @@ $conn->close();
                                 <img src="<?php echo htmlspecialchars($site_base_url . '/' . ltrim($content_map['mission_image'], '/')); ?>" alt="Mission" style="max-width: 200px; display: block; margin-bottom: 10px;">
                                 <button type="button" class="btn-delete" onclick="submitRemoveImage('mission_image')">Remove Image</button>
                             </div>
-                        <?php endif; ?>
+                        <?php
+endif; ?>
                         <input type="file" id="mission_image" name="mission_image" accept="image/*">
                         <small>Upload a new image to replace the current one</small>
                     </div>
@@ -512,7 +520,8 @@ $conn->close();
                                 <img src="<?php echo htmlspecialchars($site_base_url . '/' . ltrim($content_map['services_image'], '/')); ?>" alt="Services" style="max-width: 200px; display: block; margin-bottom: 10px;">
                                 <button type="button" class="btn-delete" onclick="submitRemoveImage('services_image')">Remove Image</button>
                             </div>
-                        <?php endif; ?>
+                        <?php
+endif; ?>
                         <input type="file" id="services_image" name="services_image" accept="image/*">
                         <small>Upload a new image to replace the current one</small>
                     </div>
@@ -546,7 +555,8 @@ $conn->close();
                     <h3 style="margin-bottom: 15px;">Existing Reviews</h3>
                     <?php if (empty($reviews_list)): ?>
                         <p>No reviews yet. Add one above.</p>
-                    <?php else: ?>
+                    <?php
+else: ?>
                         <div class="reviews-admin-list">
                         <?php foreach ($reviews_list as $rev): ?>
                             <div class="review-admin-item" style="background: #fff; padding: 15px; margin-bottom: 15px; border: 1px solid var(--border-color);">
@@ -556,11 +566,14 @@ $conn->close();
                                 <p style="margin: 4px 0; color: #666;">Rating: <?php echo (int)$rev['rating']; ?> / 5</p>
                                 <?php if (($rev['status'] ?? '') !== 'inactive'): ?>
                                 <button type="button" class="btn-delete" onclick="submitDeleteReview(<?php echo (int)$rev['id']; ?>)">Remove</button>
-                                <?php endif; ?>
+                                <?php
+        endif; ?>
                             </div>
-                        <?php endforeach; ?>
+                        <?php
+    endforeach; ?>
                         </div>
-                    <?php endif; ?>
+                    <?php
+endif; ?>
                     </div>
                 </div>
                 

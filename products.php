@@ -67,7 +67,8 @@ $query .= " ORDER BY created_at DESC";
 $stmt = $conn->prepare($query);
 if (count($params) > 1) {
     $stmt->bind_param($types, ...$params);
-} else {
+}
+else {
     $stmt->bind_param($types, $params[0]);
 }
 $stmt->execute();
@@ -105,28 +106,30 @@ $conn->close();
                 <?php if (!empty($subcategories)): ?>
                     <div class="filter-group">
                         <h4>Subcategories</h4>
-                        <a href="?category=<?php echo urlencode($category_slug); ?><?php echo ($filter_gender !== 'all') ? '&gender=' . urlencode($filter_gender) : ''; ?>" class="filter-link <?php echo $filter_subcat === '' ? 'active' : ''; ?>">
+                        <a href="?category=<?php echo urlencode($category_slug); ?><?php echo($filter_gender !== 'all') ? '&gender=' . urlencode($filter_gender) : ''; ?>" class="filter-link <?php echo $filter_subcat === '' ? 'active' : ''; ?>">
                             All
                         </a>
                         <?php foreach ($subcategories as $sc): ?>
-                            <a href="?category=<?php echo urlencode($category_slug); ?>&subcat=<?php echo urlencode($sc['slug']); ?><?php echo ($filter_gender !== 'all') ? '&gender=' . urlencode($filter_gender) : ''; ?>" class="filter-link <?php echo $filter_subcat === ($sc['slug'] ?? '') ? 'active' : ''; ?>">
+                            <a href="?category=<?php echo urlencode($category_slug); ?>&subcat=<?php echo urlencode($sc['slug']); ?><?php echo($filter_gender !== 'all') ? '&gender=' . urlencode($filter_gender) : ''; ?>" class="filter-link <?php echo $filter_subcat === ($sc['slug'] ?? '') ? 'active' : ''; ?>">
                                 <?php echo htmlspecialchars($sc['name']); ?>
                             </a>
-                        <?php endforeach; ?>
+                        <?php
+    endforeach; ?>
                     </div>
-                <?php endif; ?>
+                <?php
+endif; ?>
                 <div class="filter-group">
                     <h4>Gender</h4>
-                    <a href="?category=<?php echo urlencode($category_slug); ?><?php echo ($filter_subcat !== '') ? '&subcat=' . urlencode($filter_subcat) : ''; ?>&gender=all" class="filter-link <?php echo $filter_gender == 'all' ? 'active' : ''; ?>">
+                    <a href="?category=<?php echo urlencode($category_slug); ?><?php echo($filter_subcat !== '') ? '&subcat=' . urlencode($filter_subcat) : ''; ?>&gender=all" class="filter-link <?php echo $filter_gender == 'all' ? 'active' : ''; ?>">
                         All
                     </a>
-                    <a href="?category=<?php echo urlencode($category_slug); ?><?php echo ($filter_subcat !== '') ? '&subcat=' . urlencode($filter_subcat) : ''; ?>&gender=male" class="filter-link <?php echo $filter_gender == 'male' ? 'active' : ''; ?>">
+                    <a href="?category=<?php echo urlencode($category_slug); ?><?php echo($filter_subcat !== '') ? '&subcat=' . urlencode($filter_subcat) : ''; ?>&gender=male" class="filter-link <?php echo $filter_gender == 'male' ? 'active' : ''; ?>">
                         Male
                     </a>
-                    <a href="?category=<?php echo urlencode($category_slug); ?><?php echo ($filter_subcat !== '') ? '&subcat=' . urlencode($filter_subcat) : ''; ?>&gender=female" class="filter-link <?php echo $filter_gender == 'female' ? 'active' : ''; ?>">
+                    <a href="?category=<?php echo urlencode($category_slug); ?><?php echo($filter_subcat !== '') ? '&subcat=' . urlencode($filter_subcat) : ''; ?>&gender=female" class="filter-link <?php echo $filter_gender == 'female' ? 'active' : ''; ?>">
                         Female
                     </a>
-                    <a href="?category=<?php echo urlencode($category_slug); ?><?php echo ($filter_subcat !== '') ? '&subcat=' . urlencode($filter_subcat) : ''; ?>&gender=unisex" class="filter-link <?php echo $filter_gender == 'unisex' ? 'active' : ''; ?>">
+                    <a href="?category=<?php echo urlencode($category_slug); ?><?php echo($filter_subcat !== '') ? '&subcat=' . urlencode($filter_subcat) : ''; ?>&gender=unisex" class="filter-link <?php echo $filter_gender == 'unisex' ? 'active' : ''; ?>">
                         Unisex
                     </a>
                 </div>
@@ -145,7 +148,8 @@ $conn->close();
                                 <?php echo htmlspecialchars($category['name']); ?>
                                 <?php if ($selected_subcat): ?>
                                     <span style="font-weight: 400; opacity: 0.85;"> / <?php echo htmlspecialchars($selected_subcat['name']); ?></span>
-                                <?php endif; ?>
+                                <?php
+endif; ?>
                             </h1>
                             <button class="filter-toggle-btn" id="filterToggleBtn" aria-label="Toggle filters">
                                 <i class="fas fa-filter"></i>
@@ -155,33 +159,38 @@ $conn->close();
                         <?php if (!empty($subcategories)): ?>
                             <div class="reveal" data-delay="60" style="display:flex; flex-wrap:wrap; gap:10px; margin-top: 14px;">
                                 <a class="filter-link <?php echo $filter_subcat === '' ? 'active' : ''; ?>" style="display:inline-flex; padding: 8px 12px; border-radius: 999px; border: 1px solid #e6e6e6; text-decoration:none;"
-                                   href="?category=<?php echo urlencode($category_slug); ?><?php echo ($filter_gender !== 'all') ? '&gender=' . urlencode($filter_gender) : ''; ?>">All</a>
+                                   href="?category=<?php echo urlencode($category_slug); ?><?php echo($filter_gender !== 'all') ? '&gender=' . urlencode($filter_gender) : ''; ?>">All</a>
                                 <?php foreach ($subcategories as $sc): ?>
                                     <a class="filter-link <?php echo $filter_subcat === ($sc['slug'] ?? '') ? 'active' : ''; ?>" style="display:inline-flex; padding: 8px 12px; border-radius: 999px; border: 1px solid #e6e6e6; text-decoration:none;"
-                                       href="?category=<?php echo urlencode($category_slug); ?>&subcat=<?php echo urlencode($sc['slug']); ?><?php echo ($filter_gender !== 'all') ? '&gender=' . urlencode($filter_gender) : ''; ?>">
+                                       href="?category=<?php echo urlencode($category_slug); ?>&subcat=<?php echo urlencode($sc['slug']); ?><?php echo($filter_gender !== 'all') ? '&gender=' . urlencode($filter_gender) : ''; ?>">
                                         <?php echo htmlspecialchars($sc['name']); ?>
                                     </a>
-                                <?php endforeach; ?>
+                                <?php
+    endforeach; ?>
                             </div>
-                        <?php endif; ?>
+                        <?php
+endif; ?>
                         <p class="products-count reveal" data-delay="100"><?php echo count($products); ?> products found</p>
                     </div>
                     <div class="products-grid-modern stagger">
                         <?php if (empty($products)): ?>
                             <p class="no-products reveal">No products found in this category.</p>
-                        <?php else: ?>
+                        <?php
+else: ?>
                             <?php foreach ($products as $product): ?>
                                 <div class="product-card-modern reveal">
-                                    <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/product-detail/<?php echo rawurlencode(!empty($product['slug']) ? $product['slug'] : slugify($product['name'] ?? 'product')); ?>" class="product-card-link">
+                                    <a href="<?php echo(defined('BASE_PATH') ? BASE_PATH : ''); ?>/product-detail/<?php echo rawurlencode(!empty($product['slug']) ? $product['slug'] : slugify($product['name'] ?? 'product')); ?>" class="product-card-link">
                                         <div class="product-image-wrapper">
                                             <?php if ($product['image']): ?>
                                                 <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="product-image-main">
-                                            <?php else: ?>
+                                            <?php
+        else: ?>
                                                 <div class="product-image-placeholder">
                                                     <i class="fas fa-image"></i>
                                                 </div>
-                                            <?php endif; ?>
-                                            <div class="quick-view-icon" onclick="event.preventDefault(); window.location.href='<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/product-detail/<?php echo rawurlencode(!empty($product['slug']) ? $product['slug'] : slugify($product['name'] ?? 'product')); ?>'">
+                                            <?php
+        endif; ?>
+                                            <div class="quick-view-icon" onclick="event.preventDefault(); window.location.href='<?php echo(defined('BASE_PATH') ? BASE_PATH : ''); ?>/product-detail/<?php echo rawurlencode(!empty($product['slug']) ? $product['slug'] : slugify($product['name'] ?? 'product')); ?>'">
                                                 <i class="fas fa-search"></i>
                                             </div>
                                         </div>
@@ -192,14 +201,16 @@ $conn->close();
                                             <div class="product-price-section">
                                                 <?php if ($product['price'] && $product['price'] > 0): ?>
                                                     <span class="product-price">$<?php echo number_format($product['price'], 2); ?></span>
-                                                <?php else: ?>
+                                                <?php
+        else: ?>
                                                     <span class="product-price">Contact for Price</span>
-                                                <?php endif; ?>
+                                                <?php
+        endif; ?>
                                             </div>
                                             
                                             <div class="product-moq">
                                                 <span class="moq-label">Min. order:</span>
-                                                <span class="moq-value"><?php echo number_format($product['moq'] ?? 1); ?> <?php echo ($product['moq'] ?? 1) > 1 ? 'pieces' : 'piece'; ?></span>
+                                                <span class="moq-value"><?php echo number_format($product['moq'] ?? 1); ?> <?php echo($product['moq'] ?? 1) > 1 ? 'pieces' : 'piece'; ?></span>
                                             </div>
                                             
                                             <div class="product-seller-info">
@@ -219,19 +230,19 @@ $conn->close();
                                             <div class="product-rating">
                                                 <div class="stars">
                                                     <?php
-                                                    $rating = 4.5; // Default rating, can be fetched from reviews table if available
-                                                    $fullStars = floor($rating);
-                                                    $hasHalfStar = ($rating - $fullStars) >= 0.5;
-                                                    for ($i = 0; $i < $fullStars; $i++) {
-                                                        echo '<i class="fas fa-star"></i>';
-                                                    }
-                                                    if ($hasHalfStar) {
-                                                        echo '<i class="fas fa-star-half-alt"></i>';
-                                                    }
-                                                    for ($i = $fullStars + ($hasHalfStar ? 1 : 0); $i < 5; $i++) {
-                                                        echo '<i class="far fa-star"></i>';
-                                                    }
-                                                    ?>
+        $rating = 4.5; // Default rating, can be fetched from reviews table if available
+        $fullStars = floor($rating);
+        $hasHalfStar = ($rating - $fullStars) >= 0.5;
+        for ($i = 0; $i < $fullStars; $i++) {
+            echo '<i class="fas fa-star"></i>';
+        }
+        if ($hasHalfStar) {
+            echo '<i class="fas fa-star-half-alt"></i>';
+        }
+        for ($i = $fullStars + ($hasHalfStar ? 1 : 0); $i < 5; $i++) {
+            echo '<i class="far fa-star"></i>';
+        }
+?>
                                                 </div>
                                                 <span class="rating-value"><?php echo number_format($rating, 1); ?>/5.0</span>
                                                 <span class="rating-count">(<?php echo rand(5, 50); ?>)</span>
@@ -239,8 +250,10 @@ $conn->close();
                                         </div>
                                     </a>
                                 </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+                            <?php
+    endforeach; ?>
+                        <?php
+endif; ?>
                     </div>
                 </div>
             </div>

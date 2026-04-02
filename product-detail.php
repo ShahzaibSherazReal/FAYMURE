@@ -28,10 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['form_type']) && $_POST
     $quantity = intval($_POST['quantity'] ?? 1);
     $message = sanitize($_POST['message'] ?? '');
     $product_id = intval($_POST['product_id'] ?? 0);
-    
+
     if ($name && $email && $product_id && $quantity >= 100) {
         $conn = getDBConnection();
-        
+
         // Check if quote_requests table exists, create it if it doesn't
         $table_check = $conn->query("SHOW TABLES LIKE 'quote_requests'");
         if (!$table_check || $table_check->num_rows == 0) {
@@ -53,28 +53,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['form_type']) && $_POST
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci";
             $conn->query($create_table_sql);
         }
-        
+
         // Check if company_name column exists, add if not
         $column_check = $conn->query("SHOW COLUMNS FROM quote_requests LIKE 'company_name'");
         if (!$column_check || $column_check->num_rows == 0) {
             $conn->query("ALTER TABLE quote_requests ADD COLUMN company_name VARCHAR(255) AFTER customer_phone");
         }
-        
+
         $stmt = $conn->prepare("INSERT INTO quote_requests (product_id, customer_name, customer_email, customer_phone, company_name, message, quantity, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
         $stmt->bind_param("isssssii", $product_id, $name, $email, $phone, $company, $message, $quantity, $user_id);
-        
+
         if ($stmt->execute()) {
             $quote_success = true;
             $product_result = $conn->query("SELECT name FROM products WHERE id = $product_id");
             $product_name = $product_result && $product_result->num_rows > 0 ? $product_result->fetch_assoc()['name'] : 'Product';
             @mail(ADMIN_EMAIL, "New Quote Request - " . $product_name, "New quote request received for: " . $product_name . "\n\nCustomer: $name\nEmail: $email\nPhone: $phone\nCompany: $company\nQuantity: $quantity\nMessage: $message", "From: $email");
-        } else {
+        }
+        else {
             $quote_error = "Failed to submit request. Please try again.";
         }
         $stmt->close();
         $conn->close();
-    } else {
+    }
+    else {
         $quote_error = $name && $email && $product_id && $quantity > 0 && $quantity < 100
             ? "Minimum quantity for wholesale is 100."
             : "Please fill in all required fields.";
@@ -94,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['form_type']) && $_POST
     $customization_options = isset($_POST['customization_options']) ? $_POST['customization_options'] : [];
     $customization_ability = sanitize($_POST['customization_ability'] ?? '');
     $product_id = intval($_POST['product_id'] ?? 0);
-    
+
     // Handle file uploads
     $uploaded_images = [];
     if (isset($_FILES['customization_images']) && !empty($_FILES['customization_images']['name'][0])) {
@@ -102,14 +104,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['form_type']) && $_POST
         if (!file_exists($upload_dir)) {
             mkdir($upload_dir, 0777, true);
         }
-        
+
         foreach ($_FILES['customization_images']['name'] as $key => $filename) {
             if ($_FILES['customization_images']['error'][$key] === UPLOAD_ERR_OK) {
                 $tmp_name = $_FILES['customization_images']['tmp_name'][$key];
                 $ext = pathinfo($filename, PATHINFO_EXTENSION);
                 $new_filename = uniqid() . '_' . time() . '.' . $ext;
                 $upload_path = $upload_dir . $new_filename;
-                
+
                 if (move_uploaded_file($tmp_name, $upload_path)) {
                     $webp = convert_file_to_webp(__DIR__ . '/' . $upload_path);
                     $uploaded_images[] = $webp ? ($upload_dir . basename($webp)) : $upload_path;
@@ -117,10 +119,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['form_type']) && $_POST
             }
         }
     }
-    
+
     if ($name && $email && $description && $product_id && $quantity >= 100) {
         $conn = getDBConnection();
-        
+
         // Check if product_customizations table exists, create it if it doesn't
         $table_check = $conn->query("SHOW TABLES LIKE 'product_customizations'");
         if (!$table_check || $table_check->num_rows == 0) {
@@ -146,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['form_type']) && $_POST
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci";
             $conn->query($create_table_sql);
         }
-        
+
         // Check and add missing columns (table may have been created by explore-browse with fewer columns)
         $columns_to_add = [
             'company_name' => "ALTER TABLE product_customizations ADD COLUMN company_name VARCHAR(255) AFTER customer_phone",
@@ -154,33 +156,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['form_type']) && $_POST
             'customization_ability' => "ALTER TABLE product_customizations ADD COLUMN customization_ability VARCHAR(100) AFTER customization_options",
             'images' => "ALTER TABLE product_customizations ADD COLUMN images TEXT AFTER description"
         ];
-        
+
         foreach ($columns_to_add as $col => $sql) {
             $col_check = $conn->query("SHOW COLUMNS FROM product_customizations LIKE '$col'");
             if (!$col_check || $col_check->num_rows == 0) {
                 $conn->query($sql);
             }
         }
-        
+
         $customizations_json = json_encode($customization_options);
         $images_json = json_encode($uploaded_images);
-        
+
         $stmt = $conn->prepare("INSERT INTO product_customizations (product_id, customer_name, customer_email, customer_phone, company_name, customizations, customization_options, customization_ability, description, images, quantity, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
         $customizations_text = $description; // Using description as customizations text
         $stmt->bind_param("isssssssssii", $product_id, $name, $email, $phone, $company, $customizations_text, $customizations_json, $customization_ability, $description, $images_json, $quantity, $user_id);
-        
+
         if ($stmt->execute()) {
             $customize_success = true;
             $product_result = $conn->query("SELECT name FROM products WHERE id = $product_id");
             $product_name = $product_result && $product_result->num_rows > 0 ? $product_result->fetch_assoc()['name'] : 'Product';
             @mail(ADMIN_EMAIL, "New Customization Request - " . $product_name, "New customization request received for: " . $product_name . "\n\nCustomer: $name\nEmail: $email\nPhone: $phone\nCompany: $company\nQuantity: $quantity\nDescription: $description", "From: $email");
-        } else {
+        }
+        else {
             $customize_error = "Failed to submit request. Please try again.";
         }
         $stmt->close();
         $conn->close();
-    } else {
+    }
+    else {
         $customize_error = ($name && $email && $description && $product_id && $quantity > 0 && $quantity < 100)
             ? "Minimum quantity for customization is 100."
             : "Please fill in all required fields.";
@@ -258,9 +262,11 @@ if ($product['image']) {
 }
 // Ensure image URLs work from any URL depth and on live (root-relative); normalize path slashes
 $base_prefix = (defined('BASE_PATH') && BASE_PATH !== '') ? rtrim(BASE_PATH, '/') . '/' : '/';
-$image_urls = array_map(function($path) use ($base_prefix) {
-    if ($path === '' || $path === null) return $base_prefix . 'assets/images/placeholder.jpg';
-    if (strpos($path, 'http') === 0 || strpos($path, '//') === 0) return $path;
+$image_urls = array_map(function ($path) use ($base_prefix) {
+    if ($path === '' || $path === null)
+        return $base_prefix . 'assets/images/placeholder.jpg';
+    if (strpos($path, 'http') === 0 || strpos($path, '//') === 0)
+        return $path;
     $path = str_replace('\\', '/', trim($path));
     $path = ltrim($path, '/');
     return $base_prefix . $path;
@@ -276,13 +282,17 @@ if (!empty($product['color_swatches'])) {
     if (is_array($color_swatches_raw)) {
         foreach ($color_swatches_raw as $s) {
             $path = trim($s['image'] ?? '');
-            if ($path === '') continue;
+            if ($path === '')
+                continue;
             $full = (strpos($path, 'http') === 0 || strpos($path, '//') === 0) ? $path : $base_prefix . ltrim(str_replace('\\', '/', $path), '/');
             $idx = array_search($full, $image_urls, true);
             if ($idx === false) {
                 $alt = $base_prefix . ltrim($path, '/');
                 foreach ($image_urls as $i => $u) {
-                    if ($u === $alt || strpos($u, $path) !== false) { $idx = $i; break; }
+                    if ($u === $alt || strpos($u, $path) !== false) {
+                        $idx = $i;
+                        break;
+                    }
                 }
             }
             if ($idx !== false) {
@@ -290,7 +300,7 @@ if (!empty($product['color_swatches'])) {
                     'name' => trim($s['name'] ?? ''),
                     'hex' => trim($s['hex'] ?? ''),
                     'image_url' => $full,
-                    'image_index' => (int) $idx,
+                    'image_index' => (int)$idx,
                 ];
             }
         }
@@ -367,11 +377,13 @@ $spec_rows = [];
 if (!empty(trim($product['specifications'] ?? ''))) {
     foreach (explode("\n", $product['specifications']) as $line) {
         $line = trim($line);
-        if ($line === '') continue;
+        if ($line === '')
+            continue;
         $pos = strpos($line, ':');
         if ($pos !== false) {
             $spec_rows[] = ['label' => trim(substr($line, 0, $pos)), 'value' => trim(substr($line, $pos + 1))];
-        } else {
+        }
+        else {
             $spec_rows[] = ['label' => $line, 'value' => ''];
         }
     }
@@ -416,9 +428,9 @@ if ($avg_rating > 0) {
         <!-- Breadcrumb -->
         <nav class="breadcrumb-nav" aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/">Home</a></li>
-                <li><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/explore">Catalog</a></li>
-                <li><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/products?category=<?php echo urlencode($product['category_name'] ?? ''); ?>"><?php echo htmlspecialchars($product['category_name'] ?? 'Products'); ?></a></li>
+                <li><a href="<?php echo(defined('BASE_PATH') ? BASE_PATH : ''); ?>/">Home</a></li>
+                <li><a href="<?php echo(defined('BASE_PATH') ? BASE_PATH : ''); ?>/explore">Catalog</a></li>
+                <li><a href="<?php echo(defined('BASE_PATH') ? BASE_PATH : ''); ?>/products?category=<?php echo urlencode($product['category_name'] ?? ''); ?>"><?php echo htmlspecialchars($product['category_name'] ?? 'Products'); ?></a></li>
             </ol>
         </nav>
 
@@ -427,17 +439,20 @@ if ($avg_rating > 0) {
             <div class="alert alert-success premium-alert">
                 <i class="fas fa-check-circle"></i> Product added to cart successfully!
             </div>
-        <?php endif; ?>
+        <?php
+endif; ?>
         <?php if (isset($_GET['review_submitted'])): ?>
             <div class="alert alert-success premium-alert">
                 <i class="fas fa-check-circle"></i> Thank you! Your review has been submitted and is pending approval.
             </div>
-        <?php endif; ?>
+        <?php
+endif; ?>
         <?php if (isset($_GET['error'])): ?>
             <div class="alert alert-error premium-alert">
                 <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($_GET['error']); ?>
             </div>
-        <?php endif; ?>
+        <?php
+endif; ?>
 
         <div class="product-detail-layout premium-layout">
             <!-- Product Images Gallery -->
@@ -462,7 +477,8 @@ if ($avg_rating > 0) {
                             <button type="button" class="gallery-arrow gallery-next" onclick="nextMainImage()" title="Next image" aria-label="Next image">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
-                            <?php endif; ?>
+                            <?php
+endif; ?>
                             <button class="zoom-btn" onclick="openFullscreen()" title="View Fullscreen">
                                 <i class="fas fa-expand"></i>
                             </button>
@@ -479,24 +495,28 @@ if ($avg_rating > 0) {
                                         <div class="thumbnail-item <?php echo $index === 0 ? 'active' : ''; ?>" onclick="changeImage('<?php echo htmlspecialchars($img_url, ENT_QUOTES, 'UTF-8'); ?>', <?php echo $index; ?>)">
                                             <img src="<?php echo htmlspecialchars($img_url); ?>" alt="Thumbnail <?php echo $index + 1; ?>" loading="lazy">
                                         </div>
-                                    <?php endforeach; ?>
+                                    <?php
+    endforeach; ?>
                                 </div>
                             </div>
                             <button type="button" class="thumbnail-arrow thumbnail-next" onclick="scrollThumbnails(1)" title="Next thumbnails" aria-label="Next thumbnails">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
-                    <?php endif; ?>
+                    <?php
+endif; ?>
                     <?php if (!empty($color_swatches_display)): ?>
                     <div class="product-color-dropdown-wrap product-color-dropdown-mobile">
                         <label for="product-color-select-mobile" class="product-color-label">Color</label>
                         <select id="product-color-select-mobile" class="product-color-select product-color-select-mobile" onchange="syncColorSelect(this, true);">
                             <?php foreach ($color_swatches_display as $idx => $sw): ?>
                             <option value="<?php echo $sw['image_index']; ?>" data-image-url="<?php echo htmlspecialchars($sw['image_url'], ENT_QUOTES, 'UTF-8'); ?>" <?php echo $idx === 0 ? 'selected' : ''; ?>><?php echo htmlspecialchars($sw['name']); ?></option>
-                            <?php endforeach; ?>
+                            <?php
+    endforeach; ?>
                         </select>
                     </div>
-                    <?php endif; ?>
+                    <?php
+endif; ?>
                 </div>
             </div>
 
@@ -511,22 +531,26 @@ if ($avg_rating > 0) {
                             <div class="stars-inline">
                                 <?php for ($i = 1; $i <= 5; $i++): ?>
                                     <i class="fas fa-star <?php echo $i <= round($avg_rating) ? 'active' : ''; ?>"></i>
-                                <?php endfor; ?>
+                                <?php
+    endfor; ?>
                             </div>
                             <span class="rating-value-header"><?php echo number_format($avg_rating, 1); ?></span>
                             <span class="review-count-header">(<?php echo $review_count; ?> <?php echo $review_count === 1 ? 'review' : 'reviews'; ?>)</span>
                             <a href="#reviews-section" class="review-link">View All</a>
                         </div>
-                    <?php endif; ?>
+                    <?php
+endif; ?>
 
                     <!-- Price Section -->
                     <div class="product-price-section premium-price">
                         <?php if ($product['price'] && $product['price'] > 0): ?>
                             <span class="price-main">$<?php echo number_format($product['price'], 2); ?></span>
                             <span class="price-per-piece">per piece</span>
-                        <?php else: ?>
+                        <?php
+else: ?>
                             <span class="price-main price-contact">Contact for Price</span>
-                        <?php endif; ?>
+                        <?php
+endif; ?>
                     </div>
 
                     <!-- Product Meta Info -->
@@ -549,7 +573,7 @@ if ($avg_rating > 0) {
                         </div>
                         <div class="meta-item">
                             <span class="meta-label">MOQ:</span>
-                            <span class="meta-value"><?php echo number_format($product['moq'] ?? 1); ?> <?php echo ($product['moq'] ?? 1) > 1 ? 'pieces' : 'piece'; ?></span>
+                            <span class="meta-value"><?php echo number_format($product['moq'] ?? 1); ?> <?php echo($product['moq'] ?? 1) > 1 ? 'pieces' : 'piece'; ?></span>
                         </div>
                     </div>
 
@@ -559,10 +583,12 @@ if ($avg_rating > 0) {
                             <select id="product-color-select" class="product-color-select" onchange="syncColorSelect(this, false);">
                                 <?php foreach ($color_swatches_display as $idx => $sw): ?>
                                 <option value="<?php echo $sw['image_index']; ?>" data-image-url="<?php echo htmlspecialchars($sw['image_url'], ENT_QUOTES, 'UTF-8'); ?>" <?php echo $idx === 0 ? 'selected' : ''; ?>><?php echo htmlspecialchars($sw['name']); ?></option>
-                                <?php endforeach; ?>
+                                <?php
+    endforeach; ?>
                             </select>
                         </div>
-                    <?php endif; ?>
+                    <?php
+endif; ?>
 
                     <!-- Product Actions Section (above Key Features) -->
                     <div class="product-actions-section premium-actions">
@@ -626,16 +652,19 @@ if ($avg_rating > 0) {
                         <div class="product-description-text">
                             <?php echo nl2br(htmlspecialchars_decode($product['description'], ENT_QUOTES)); ?>
                         </div>
-                    <?php else: ?>
+                    <?php
+else: ?>
                         <p class="no-content">No description available.</p>
-                    <?php endif; ?>
+                    <?php
+endif; ?>
                     
                     <?php if (!empty(trim($product['product_details'] ?? ''))): ?>
                         <div class="product-details-text" style="margin-top: 1.25rem;">
                             <h3 class="product-details-heading" style="font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--primary-color);">Product Details</h3>
                             <div class="product-details-content"><?php echo nl2br(htmlspecialchars_decode($product['product_details'], ENT_QUOTES)); ?></div>
                         </div>
-                    <?php endif; ?>
+                    <?php
+endif; ?>
                     
                     <!-- Craftsmanship Story -->
                     <div class="craftsmanship-story">
@@ -656,11 +685,13 @@ if ($avg_rating > 0) {
                     <ul class="key-features-list">
                         <?php foreach ($key_features_lines as $feature): ?>
                             <li><?php echo htmlspecialchars($feature); ?></li>
-                        <?php endforeach; ?>
+                        <?php
+    endforeach; ?>
                     </ul>
                 </div>
             </section>
-            <?php endif; ?>
+            <?php
+endif; ?>
 
             <!-- Specifications Table -->
             <section class="detail-section" id="specifications-section">
@@ -677,8 +708,10 @@ if ($avg_rating > 0) {
                                         <td class="spec-label"><?php echo htmlspecialchars($row['label']); ?></td>
                                         <td class="spec-value"><?php echo htmlspecialchars($row['value']); ?></td>
                                     </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
+                                <?php
+    endforeach; ?>
+                            <?php
+else: ?>
                                 <tr>
                                     <td class="spec-label">Material</td>
                                     <td class="spec-value">Premium Genuine Leather</td>
@@ -711,7 +744,8 @@ if ($avg_rating > 0) {
                                     <td class="spec-label">SKU</td>
                                     <td class="spec-value"><?php echo htmlspecialchars($product_sku); ?></td>
                                 </tr>
-                            <?php endif; ?>
+                            <?php
+endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -805,7 +839,7 @@ if ($avg_rating > 0) {
                                 <i class="fas fa-chevron-down"></i>
                             </h3>
                             <div class="faq-answer">
-                                <p>The minimum order quantity (MOQ) for this product is <?php echo number_format($product['moq'] ?? 1); ?> <?php echo ($product['moq'] ?? 1) > 1 ? 'pieces' : 'piece'; ?>. For bulk orders, please contact us for custom pricing.</p>
+                                <p>The minimum order quantity (MOQ) for this product is <?php echo number_format($product['moq'] ?? 1); ?> <?php echo($product['moq'] ?? 1) > 1 ? 'pieces' : 'piece'; ?>. For bulk orders, please contact us for custom pricing.</p>
                             </div>
                         </div>
                         <div class="faq-item">
@@ -863,7 +897,8 @@ if ($avg_rating > 0) {
                                 <div class="rating-stars-large">
                                     <?php for ($i = 1; $i <= 5; $i++): ?>
                                         <i class="fas fa-star <?php echo $i <= round($avg_rating) ? 'active' : ''; ?>"></i>
-                                    <?php endfor; ?>
+                                    <?php
+    endfor; ?>
                                 </div>
                                 <div class="rating-text">Based on <?php echo $review_count; ?> <?php echo $review_count === 1 ? 'review' : 'reviews'; ?></div>
                             </div>
@@ -882,7 +917,8 @@ if ($avg_rating > 0) {
                                                 <div class="review-rating-premium">
                                                     <?php for ($i = 1; $i <= 5; $i++): ?>
                                                         <i class="fas fa-star <?php echo $i <= $review['rating'] ? 'active' : ''; ?>"></i>
-                                                    <?php endfor; ?>
+                                                    <?php
+        endfor; ?>
                                                 </div>
                                             </div>
                                         </div>
@@ -890,19 +926,22 @@ if ($avg_rating > 0) {
                                     </div>
                                     <p class="review-text-premium"><?php echo nl2br(htmlspecialchars($review['review_text'])); ?></p>
                                 </div>
-                            <?php endforeach; ?>
+                            <?php
+    endforeach; ?>
                         </div>
-                    <?php else: ?>
+                    <?php
+else: ?>
                         <div class="no-reviews">
                             <i class="fas fa-comment-alt"></i>
                             <p>No reviews yet. Be the first to review this product!</p>
                         </div>
-                    <?php endif; ?>
+                    <?php
+endif; ?>
 
                     <!-- Add Review Form -->
                     <div class="add-review-section">
                         <h3 class="add-review-title">Write a Review</h3>
-                        <form method="POST" action="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/add-review" class="review-form-premium">
+                        <form method="POST" action="<?php echo(defined('BASE_PATH') ? BASE_PATH : ''); ?>/add-review" class="review-form-premium">
                             <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
                             <div class="form-row">
                                 <div class="form-group">
@@ -922,7 +961,8 @@ if ($avg_rating > 0) {
                                         <label for="rating<?php echo $i; ?>" class="star-label-premium">
                                             <i class="fas fa-star"></i>
                                         </label>
-                                    <?php endfor; ?>
+                                    <?php
+endfor; ?>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -961,12 +1001,14 @@ if ($avg_rating > 0) {
                         <p>Your wholesale request has been submitted successfully. We'll get back to you soon.</p>
                         <button onclick="closeQuoteModal()" class="btn-primary">Close</button>
                     </div>
-                <?php else: ?>
+                <?php
+else: ?>
                     <?php if ($quote_error): ?>
                         <div class="modal-error">
                             <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($quote_error); ?>
                         </div>
-                    <?php endif; ?>
+                    <?php
+    endif; ?>
                     <form method="POST" enctype="multipart/form-data" class="premium-form-modal">
                         <input type="hidden" name="form_type" value="quote">
                         <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
@@ -1008,7 +1050,8 @@ if ($avg_rating > 0) {
                             <button type="button" onclick="closeQuoteModal()" class="btn-secondary btn-cancel-modal">Cancel</button>
                         </div>
                     </form>
-                <?php endif; ?>
+                <?php
+endif; ?>
             </div>
         </div>
     </div>
@@ -1029,12 +1072,14 @@ if ($avg_rating > 0) {
                         <p>Your customization request has been submitted successfully. We'll get back to you soon.</p>
                         <button onclick="closeCustomizeModal()" class="btn-primary">Close</button>
                     </div>
-                <?php else: ?>
+                <?php
+else: ?>
                     <?php if ($customize_error): ?>
                         <div class="modal-error">
                             <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($customize_error); ?>
                         </div>
-                    <?php endif; ?>
+                    <?php
+    endif; ?>
                     <form method="POST" enctype="multipart/form-data" class="premium-form-modal">
                         <input type="hidden" name="form_type" value="customize">
                         <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
@@ -1114,7 +1159,8 @@ if ($avg_rating > 0) {
                             <button type="button" onclick="closeCustomizeModal()" class="btn-secondary btn-cancel-modal">Cancel</button>
                         </div>
                     </form>
-                <?php endif; ?>
+                <?php
+endif; ?>
             </div>
         </div>
     </div>
@@ -2796,10 +2842,12 @@ if ($avg_rating > 0) {
             // Auto-open modals if there's a success/error message
             <?php if ($quote_success || $quote_error): ?>
                 openQuoteModal();
-            <?php endif; ?>
+            <?php
+endif; ?>
             <?php if ($customize_success || $customize_error): ?>
                 openCustomizeModal();
-            <?php endif; ?>
+            <?php
+endif; ?>
         });
     </script>
 

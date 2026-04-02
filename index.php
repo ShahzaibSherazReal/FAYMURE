@@ -17,7 +17,7 @@ if ($columns_check && $columns_check->num_rows > 0) {
     if ($result && $row = $result->fetch_assoc()) {
         $hero_tagline = $row['content_value'] ?? $hero_tagline;
     }
-    
+
     $vision = $conn->query("SELECT * FROM site_content WHERE content_key LIKE 'vision_%'")->fetch_all(MYSQLI_ASSOC);
     $mission = $conn->query("SELECT * FROM site_content WHERE content_key LIKE 'mission_%'")->fetch_all(MYSQLI_ASSOC);
     $services = $conn->query("SELECT * FROM site_content WHERE content_key LIKE 'services_%'")->fetch_all(MYSQLI_ASSOC);
@@ -110,36 +110,39 @@ $conn->close();
         <!-- Hero Section -->
         <section class="hero-section">
             <?php
-            $video_path = $hero_video !== '' ? __DIR__ . '/' . $hero_video : '';
-            $hero_poster_src = (isset($base) && $base !== '') ? rtrim($base, '/') . '/' . $hero_poster : '/' . ltrim($hero_poster, '/');
-            $hero_video_src = (isset($base) && $base !== '') ? rtrim($base, '/') . '/' . $hero_video : '/' . ltrim($hero_video, '/');
-            $hero_video_type = $hero_video !== '' ? 'video/' . (pathinfo($hero_video, PATHINFO_EXTENSION) ?: 'mp4') : 'video/mp4';
-            // Prefer video when we have a path and file exists, else image, else placeholder
-            if ($hero_image !== '') {
-                $image_path = __DIR__ . '/' . $hero_image;
-                if (!file_exists($image_path) && preg_match('/^(.+?)\.(webp|jpe?g|png|gif)$/i', $hero_image, $m)) {
-                    $hero_base = $m[1];
-                    foreach (['webp', 'jpg', 'jpeg', 'png'] as $ext) {
-                        $try = $hero_base . '.' . $ext;
-                        if (file_exists(__DIR__ . '/' . $try)) {
-                            $hero_image = $try;
-                            break;
-                        }
-                    }
-                }
-                $hero_src = (isset($base) && $base !== '') ? rtrim($base, '/') . '/' . $hero_image : '/' . ltrim($hero_image, '/');
+$video_path = $hero_video !== '' ? __DIR__ . '/' . $hero_video : '';
+$hero_poster_src = (isset($base) && $base !== '') ? rtrim($base, '/') . '/' . $hero_poster : '/' . ltrim($hero_poster, '/');
+$hero_video_src = (isset($base) && $base !== '') ? rtrim($base, '/') . '/' . $hero_video : '/' . ltrim($hero_video, '/');
+$hero_video_type = $hero_video !== '' ? 'video/' . (pathinfo($hero_video, PATHINFO_EXTENSION) ?: 'mp4') : 'video/mp4';
+// Prefer video when we have a path and file exists, else image, else placeholder
+if ($hero_image !== '') {
+    $image_path = __DIR__ . '/' . $hero_image;
+    if (!file_exists($image_path) && preg_match('/^(.+?)\.(webp|jpe?g|png|gif)$/i', $hero_image, $m)) {
+        $hero_base = $m[1];
+        foreach (['webp', 'jpg', 'jpeg', 'png'] as $ext) {
+            $try = $hero_base . '.' . $ext;
+            if (file_exists(__DIR__ . '/' . $try)) {
+                $hero_image = $try;
+                break;
             }
-            if ($hero_image !== ''): ?>
+        }
+    }
+    $hero_src = (isset($base) && $base !== '') ? rtrim($base, '/') . '/' . $hero_image : '/' . ltrim($hero_image, '/');
+}
+if ($hero_image !== ''): ?>
                 <img src="<?php echo htmlspecialchars($hero_src); ?>" alt="Hero" class="hero__image" style="position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                 <div class="hero-placeholder" style="position: absolute; width: 100%; height: 100%; background: var(--background-color); z-index: 1; display: none;"></div>
-            <?php elseif ($hero_video !== '' && $video_path !== '' && file_exists($video_path)): ?>
+            <?php
+elseif ($hero_video !== '' && $video_path !== '' && file_exists($video_path)): ?>
                 <video class="hero__video" autoplay muted loop playsinline preload="metadata" poster="<?php echo htmlspecialchars($hero_poster_src); ?>">
                     <source src="<?php echo htmlspecialchars($hero_video_src); ?>" type="<?php echo htmlspecialchars($hero_video_type); ?>">
                     Your browser does not support the video tag.
                 </video>
-            <?php else: ?>
+            <?php
+else: ?>
                 <div class="hero-placeholder" style="position: absolute; width: 100%; height: 100%; background: var(--background-color); z-index: 1;"></div>
-            <?php endif; ?>
+            <?php
+endif; ?>
             <div class="hero-overlay"></div>
             <div class="hero-content">
                 <div class="hero-logo reveal" data-delay="0">
@@ -264,24 +267,28 @@ $conn->close();
                                     <div class="review-stars">
                                         <?php for ($i = 0; $i < $review['rating']; $i++): ?>
                                             <i class="fas fa-star"></i>
-                                        <?php endfor; ?>
+                                        <?php
+    endfor; ?>
                                     </div>
                                     <p class="review-text">"<?php echo htmlspecialchars($review['review_text']); ?>"</p>
                                     <p class="review-author">- <?php echo htmlspecialchars($review['customer_name']); ?></p>
                                 </div>
-                            <?php endforeach; ?>
+                            <?php
+endforeach; ?>
                             <!-- Duplicate for seamless loop -->
                             <?php foreach ($reviews as $review): ?>
                                 <div class="review-card">
                                     <div class="review-stars">
                                         <?php for ($i = 0; $i < $review['rating']; $i++): ?>
                                             <i class="fas fa-star"></i>
-                                        <?php endfor; ?>
+                                        <?php
+    endfor; ?>
                                     </div>
                                     <p class="review-text">"<?php echo htmlspecialchars($review['review_text']); ?>"</p>
                                     <p class="review-author">- <?php echo htmlspecialchars($review['customer_name']); ?></p>
                                 </div>
-                            <?php endforeach; ?>
+                            <?php
+endforeach; ?>
                         </div>
                     </div>
                 </div>

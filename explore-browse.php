@@ -16,11 +16,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $phone = sanitize($_POST['phone'] ?? '');
     $product_id = intval($_POST['product_id'] ?? 0);
     $quantity = intval($_POST['quantity'] ?? 1);
-    
+
     if ($form_type == 'quote') {
         // Quote request form
         $message = sanitize($_POST['message'] ?? '');
-        
+
         if ($name && $email) {
             // Check if quote_requests table exists, create it if it doesn't
             $table_check = $conn->query("SHOW TABLES LIKE 'quote_requests'");
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci";
                 $conn->query($create_table_sql);
             }
-            
+
             $product_result = $conn->query("SELECT name FROM products WHERE id = $product_id");
             $product_name = 'N/A';
             if ($product_result) {
@@ -52,13 +52,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $product_name = $product['name'] ?? 'N/A';
                 }
             }
-            
+
             // Save to database - always use quote_requests table now
             $stmt = $conn->prepare("INSERT INTO quote_requests (product_id, customer_name, customer_email, customer_phone, message, quantity, user_id) 
                                     VALUES (?, ?, ?, ?, ?, ?, ?)");
             $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
             $stmt->bind_param("issssii", $product_id, $name, $email, $phone, $message, $quantity, $user_id);
-            
+
             if ($stmt->execute()) {
                 $to = ADMIN_EMAIL;
                 $subject = "New Quote Request";
@@ -69,26 +69,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $email_message .= "Product: " . $product_name . "\n";
                 $email_message .= "Quantity: " . $quantity . "\n";
                 $email_message .= "Message: " . $message . "\n";
-                
+
                 $headers = "From: " . $email . "\r\n";
                 $headers .= "Reply-To: " . $email . "\r\n";
-                
+
                 // Attempt to send email, but don't fail if mail server is not configured
                 @mail($to, $subject, $email_message, $headers);
-                
+
                 $success = true;
-            } else {
+            }
+            else {
                 $error = "Failed to submit request. Please try again.";
             }
             $stmt->close();
-        } else {
+        }
+        else {
             $error = "Please fill in all required fields.";
         }
-    } elseif ($form_type == 'customize') {
+    }
+    elseif ($form_type == 'customize') {
         // Customization form
         $customizations = sanitize($_POST['customizations'] ?? '');
         $description = sanitize($_POST['description'] ?? '');
-        
+
         if ($name && $email && $description) {
             // Check if product_customizations table exists, create it if it doesn't
             $table_check = $conn->query("SHOW TABLES LIKE 'product_customizations'");
@@ -112,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci";
                 $conn->query($create_table_sql);
             }
-            
+
             $product_result = $conn->query("SELECT name FROM products WHERE id = $product_id");
             $product_name = 'N/A';
             if ($product_result) {
@@ -121,13 +124,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $product_name = $product['name'] ?? 'N/A';
                 }
             }
-            
+
             // Save to database - always use product_customizations table now
             $stmt = $conn->prepare("INSERT INTO product_customizations (product_id, customer_name, customer_email, customer_phone, customizations, description, quantity, user_id) 
                                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
             $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
             $stmt->bind_param("isssssii", $product_id, $name, $email, $phone, $customizations, $description, $quantity, $user_id);
-            
+
             if ($stmt->execute()) {
                 $to = ADMIN_EMAIL;
                 $subject = "New Product Customization Request";
@@ -139,19 +142,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $email_message .= "Quantity: " . $quantity . "\n";
                 $email_message .= "Customizations: " . $customizations . "\n";
                 $email_message .= "Description: " . $description . "\n";
-                
+
                 $headers = "From: " . $email . "\r\n";
                 $headers .= "Reply-To: " . $email . "\r\n";
-                
+
                 // Attempt to send email, but don't fail if mail server is not configured
                 @mail($to, $subject, $email_message, $headers);
-                
+
                 $success = true;
-            } else {
+            }
+            else {
                 $error = "Failed to submit request. Please try again.";
             }
             $stmt->close();
-        } else {
+        }
+        else {
             $error = "Please fill in all required fields.";
         }
     }
@@ -175,7 +180,7 @@ if ($selected_category_id > 0) {
     if ($category_result) {
         $selected_category = $category_result->fetch_assoc();
     }
-    
+
     if ($selected_category) {
         $products_result = $conn->query("SELECT id, name, slug, description, product_details, moq, price, image FROM products WHERE category_id = $selected_category_id AND deleted_at IS NULL AND status = 'active' ORDER BY created_at DESC");
         if ($products_result) {
@@ -213,12 +218,14 @@ $conn->close();
                     <i class="fas fa-check-circle"></i>
                     <h2>Thank You!</h2>
                     <p>Your request has been submitted successfully. We'll get back to you soon.</p>
-                    <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/explore-browse" class="btn-primary">Browse More</a>
+                    <a href="<?php echo(defined('BASE_PATH') ? BASE_PATH : ''); ?>/explore-browse" class="btn-primary">Browse More</a>
                 </div>
-            <?php else: ?>
+            <?php
+else: ?>
                 <?php if ($error): ?>
                     <div class="error-message"><?php echo $error; ?></div>
-                <?php endif; ?>
+                <?php
+    endif; ?>
                 
                 <?php if ($selected_category_id > 0 && $selected_category): ?>
                     <!-- Products View -->
@@ -227,7 +234,8 @@ $conn->close();
                             <h2><?php echo htmlspecialchars($selected_category['name']); ?></h2>
                             <?php if ($selected_category['description']): ?>
                                 <p><?php echo htmlspecialchars($selected_category['description']); ?></p>
-                            <?php endif; ?>
+                            <?php
+        endif; ?>
                         </div>
                         
                         <?php if (!empty($products)): ?>
@@ -238,11 +246,13 @@ $conn->close();
                                             <div class="product-image-wrapper">
                                                 <?php if ($product['image']): ?>
                                                     <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="product-image-main">
-                                                <?php else: ?>
+                                                <?php
+                else: ?>
                                                     <div class="product-image-placeholder">
                                                         <i class="fas fa-image"></i>
                                                     </div>
-                                                <?php endif; ?>
+                                                <?php
+                endif; ?>
                                                 <div class="quick-view-icon" onclick="event.stopPropagation(); showProductDetail(<?php echo htmlspecialchars(json_encode($product)); ?>);">
                                                     <i class="fas fa-search"></i>
                                                 </div>
@@ -254,14 +264,16 @@ $conn->close();
                                                 <div class="product-price-section">
                                                     <?php if ($product['price'] && $product['price'] > 0): ?>
                                                         <span class="product-price">$<?php echo number_format($product['price'], 2); ?></span>
-                                                    <?php else: ?>
+                                                    <?php
+                else: ?>
                                                         <span class="product-price">Contact for Price</span>
-                                                    <?php endif; ?>
+                                                    <?php
+                endif; ?>
                                                 </div>
                                                 
                                                 <div class="product-moq">
                                                     <span class="moq-label">Min. order:</span>
-                                                    <span class="moq-value"><?php echo number_format($product['moq'] ?? 1); ?> <?php echo ($product['moq'] ?? 1) > 1 ? 'pieces' : 'piece'; ?></span>
+                                                    <span class="moq-value"><?php echo number_format($product['moq'] ?? 1); ?> <?php echo($product['moq'] ?? 1) > 1 ? 'pieces' : 'piece'; ?></span>
                                                 </div>
                                                 
                                                 <div class="product-seller-info">
@@ -281,19 +293,19 @@ $conn->close();
                                                 <div class="product-rating">
                                                     <div class="stars">
                                                         <?php
-                                                        $rating = 4.5; // Default rating, can be fetched from reviews table if available
-                                                        $fullStars = floor($rating);
-                                                        $hasHalfStar = ($rating - $fullStars) >= 0.5;
-                                                        for ($i = 0; $i < $fullStars; $i++) {
-                                                            echo '<i class="fas fa-star"></i>';
-                                                        }
-                                                        if ($hasHalfStar) {
-                                                            echo '<i class="fas fa-star-half-alt"></i>';
-                                                        }
-                                                        for ($i = $fullStars + ($hasHalfStar ? 1 : 0); $i < 5; $i++) {
-                                                            echo '<i class="far fa-star"></i>';
-                                                        }
-                                                        ?>
+                $rating = 4.5; // Default rating, can be fetched from reviews table if available
+                $fullStars = floor($rating);
+                $hasHalfStar = ($rating - $fullStars) >= 0.5;
+                for ($i = 0; $i < $fullStars; $i++) {
+                    echo '<i class="fas fa-star"></i>';
+                }
+                if ($hasHalfStar) {
+                    echo '<i class="fas fa-star-half-alt"></i>';
+                }
+                for ($i = $fullStars + ($hasHalfStar ? 1 : 0); $i < 5; $i++) {
+                    echo '<i class="far fa-star"></i>';
+                }
+?>
                                                     </div>
                                                     <span class="rating-value"><?php echo number_format($rating, 1); ?>/5.0</span>
                                                     <span class="rating-count">(<?php echo rand(5, 50); ?>)</span>
@@ -301,41 +313,51 @@ $conn->close();
                                             </div>
                                         </div>
                                     </div>
-                                <?php endforeach; ?>
+                                <?php
+            endforeach; ?>
                             </div>
-                        <?php else: ?>
+                        <?php
+        else: ?>
                             <div class="no-products">
                                 <p>No products available in this category yet.</p>
                             </div>
-                        <?php endif; ?>
+                        <?php
+        endif; ?>
                     </div>
-                <?php else: ?>
+                <?php
+    else: ?>
                     <!-- Categories View -->
                     <div class="categories-view">
                         <div class="categories-grid stagger">
                             <?php foreach ($categories as $category): ?>
-                                <a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/explore-browse?category=<?php echo $category['id']; ?>" class="category-card hover-lift reveal">
+                                <a href="<?php echo(defined('BASE_PATH') ? BASE_PATH : ''); ?>/explore-browse?category=<?php echo $category['id']; ?>" class="category-card hover-lift reveal">
                                     <div class="category-image">
                                         <?php if ($category['image']): ?>
                                             <img src="<?php echo htmlspecialchars($category['image']); ?>" alt="<?php echo htmlspecialchars($category['name']); ?>">
-                                        <?php else: ?>
+                                        <?php
+            else: ?>
                                             <div class="placeholder-image">
                                                 <i class="fas fa-image"></i>
                                             </div>
-                                        <?php endif; ?>
+                                        <?php
+            endif; ?>
                                     </div>
                                     <div class="category-info">
                                         <h3><?php echo htmlspecialchars($category['name']); ?></h3>
                                         <?php if ($category['description']): ?>
                                             <p><?php echo htmlspecialchars(substr($category['description'], 0, 100)); ?>...</p>
-                                        <?php endif; ?>
+                                        <?php
+            endif; ?>
                                     </div>
                                 </a>
-                            <?php endforeach; ?>
+                            <?php
+        endforeach; ?>
                         </div>
                     </div>
-                <?php endif; ?>
-            <?php endif; ?>
+                <?php
+    endif; ?>
+            <?php
+endif; ?>
         </div>
     </main>
     
