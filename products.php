@@ -199,13 +199,7 @@ else: ?>
                                             <h3 class="product-title"><?php echo htmlspecialchars($product['name']); ?></h3>
                                             
                                             <div class="product-price-section">
-                                                <?php if ($product['price'] && $product['price'] > 0): ?>
-                                                    <span class="product-price">$<?php echo number_format($product['price'], 2); ?></span>
-                                                <?php
-        else: ?>
-                                                    <span class="product-price">Contact for Price</span>
-                                                <?php
-        endif; ?>
+                                                <span class="product-price">Get Quote</span>
                                             </div>
                                             
                                             <div class="product-moq">

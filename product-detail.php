@@ -405,7 +405,6 @@ $product_schema = [
     ],
     'offers' => [
         '@type' => 'Offer',
-        'price' => $product['price'] ?? 0,
         'priceCurrency' => 'USD',
         'availability' => 'https://schema.org/InStock',
         'url' => rtrim(SITE_URL, '/') . '/product-detail/' . rawurlencode(!empty($product['slug']) ? $product['slug'] : slugify($product['name'] ?? 'product'))
@@ -543,14 +542,7 @@ endif; ?>
 
                     <!-- Price Section -->
                     <div class="product-price-section premium-price">
-                        <?php if ($product['price'] && $product['price'] > 0): ?>
-                            <span class="price-main">$<?php echo number_format($product['price'], 2); ?></span>
-                            <span class="price-per-piece">per piece</span>
-                        <?php
-else: ?>
-                            <span class="price-main price-contact">Contact for Price</span>
-                        <?php
-endif; ?>
+                        <span class="price-main price-contact">Get Quote</span>
                     </div>
 
                     <!-- Product Meta Info -->

@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS products (
     image VARCHAR(255),
     images TEXT,
     status ENUM('active', 'inactive') DEFAULT 'active',
+    is_latest_creation TINYINT(1) NOT NULL DEFAULT 0,
     sku VARCHAR(100) DEFAULT NULL,
     key_features TEXT,
     specifications TEXT,

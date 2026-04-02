@@ -104,6 +104,24 @@ if ($columns_check && $columns_check->num_rows > 0) {
     }
 }
 
+// Homepage catalog categories (same source as explore/catalog)
+$homepage_categories = [];
+$categories_result = $conn->query("SELECT id, name, slug, description, image FROM categories WHERE deleted_at IS NULL ORDER BY sort_order, name");
+if ($categories_result) {
+    $homepage_categories = $categories_result->fetch_all(MYSQLI_ASSOC);
+}
+
+// Ensure latest-creation toggle exists on products, then fetch marked products
+$latest_col_check = $conn->query("SHOW COLUMNS FROM products LIKE 'is_latest_creation'");
+if (!$latest_col_check || $latest_col_check->num_rows === 0) {
+    $conn->query("ALTER TABLE products ADD COLUMN is_latest_creation TINYINT(1) NOT NULL DEFAULT 0 AFTER status");
+}
+$latest_products = [];
+$latest_products_result = $conn->query("SELECT id, name, slug, description, image FROM products WHERE deleted_at IS NULL AND status = 'active' AND is_latest_creation = 1 ORDER BY updated_at DESC, created_at DESC LIMIT 20");
+if ($latest_products_result) {
+    $latest_products = $latest_products_result->fetch_all(MYSQLI_ASSOC);
+}
+
 $conn->close();
 ?>
     <main>
@@ -150,6 +168,75 @@ endif; ?>
                 </div>
                 <p class="hero-tagline reveal" data-delay="120"><?php echo str_replace('Vission', 'Vision', $hero_tagline); ?></p>
                 <a href="<?php echo $base; ?>/explore" class="btn-explore btn-press reveal" data-delay="240"><?php echo t('explore'); ?> <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </section>
+
+        <!-- Catalog Categories Slider -->
+        <section class="homepage-slider-section">
+            <div class="container">
+                <div class="section-header reveal">
+                    <h2 class="section-title">Catalog</h2>
+                    <p class="section-subtitle">Browse categories available in our catalog</p>
+                </div>
+                <div class="homepage-slider-wrap">
+                    <button class="homepage-slider-btn prev" data-target="catalogSlider" aria-label="Previous categories">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div id="catalogSlider" class="homepage-slider-track">
+                        <?php foreach ($homepage_categories as $category): ?>
+                            <a href="<?php echo $base; ?>/products?category=<?php echo urlencode($category['slug']); ?>" class="homepage-slide-card">
+                                <div class="homepage-slide-image">
+                                    <?php if (!empty($category['image'])): ?>
+                                        <img src="<?php echo htmlspecialchars((isset($base) && $base !== '') ? rtrim($base, '/') . '/' . ltrim($category['image'], '/') : '/' . ltrim($category['image'], '/')); ?>" alt="<?php echo htmlspecialchars($category['name']); ?>">
+                                    <?php else: ?>
+                                        <div class="homepage-slide-placeholder"><i class="fas fa-image"></i></div>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="homepage-slide-content">
+                                    <h3><?php echo htmlspecialchars($category['name']); ?></h3>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                    <button class="homepage-slider-btn next" data-target="catalogSlider" aria-label="Next categories">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Our Latest Creation Slider -->
+        <section class="homepage-slider-section homepage-latest-creation">
+            <div class="container">
+                <div class="section-header reveal">
+                    <h2 class="section-title">Our Latest Creation</h2>
+                    <p class="section-subtitle">Handpicked products added from admin panel</p>
+                </div>
+                <div class="homepage-slider-wrap">
+                    <button class="homepage-slider-btn prev" data-target="latestCreationSlider" aria-label="Previous latest creation">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div id="latestCreationSlider" class="homepage-slider-track">
+                        <?php foreach ($latest_products as $product): ?>
+                            <a href="<?php echo $base; ?>/product-detail/<?php echo rawurlencode(!empty($product['slug']) ? $product['slug'] : slugify($product['name'] ?? 'product')); ?>" class="homepage-slide-card">
+                                <div class="homepage-slide-image">
+                                    <?php if (!empty($product['image'])): ?>
+                                        <img src="<?php echo htmlspecialchars((isset($base) && $base !== '') ? rtrim($base, '/') . '/' . ltrim($product['image'], '/') : '/' . ltrim($product['image'], '/')); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                                    <?php else: ?>
+                                        <div class="homepage-slide-placeholder"><i class="fas fa-image"></i></div>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="homepage-slide-content">
+                                    <h3><?php echo htmlspecialchars($product['name']); ?></h3>
+                                    <span class="homepage-slide-cta">Get Quote</span>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                    <button class="homepage-slider-btn next" data-target="latestCreationSlider" aria-label="Next latest creation">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
             </div>
         </section>
 
@@ -302,6 +389,123 @@ endforeach; ?>
             background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
             position: relative;
             overflow: hidden;
+        }
+
+        .homepage-slider-section {
+            padding: 56px 0 30px;
+            background: #fff;
+        }
+
+        .homepage-latest-creation {
+            padding-top: 20px;
+        }
+
+        .homepage-slider-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .homepage-slider-track {
+            width: 100%;
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: calc((100% - 40px) / 3);
+            gap: 20px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            scroll-behavior: smooth;
+            padding-bottom: 6px;
+        }
+
+        .homepage-slider-track::-webkit-scrollbar {
+            display: none;
+        }
+
+        .homepage-slide-card {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid #ececec;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+            scroll-snap-align: start;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .homepage-slide-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .homepage-slide-image {
+            height: 230px;
+            background: #f2f2f2;
+        }
+
+        .homepage-slide-image img,
+        .homepage-slide-placeholder {
+            width: 100%;
+            height: 100%;
+        }
+
+        .homepage-slide-image img {
+            object-fit: cover;
+            display: block;
+        }
+
+        .homepage-slide-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 34px;
+        }
+
+        .homepage-slide-content {
+            padding: 14px;
+        }
+
+        .homepage-slide-content h3 {
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 18px;
+            font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
+        }
+
+        .homepage-slide-cta {
+            margin-top: 8px;
+            display: inline-block;
+            color: var(--primary-color);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .homepage-slider-btn {
+            width: 38px;
+            height: 38px;
+            border: 1px solid #e6e6e6;
+            border-radius: 50%;
+            background: #fff;
+            color: var(--primary-color);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .homepage-slider-btn:hover {
+            background: var(--primary-color);
+            color: #fff;
+            border-color: var(--primary-color);
         }
         
         .explore-options-section::before {
@@ -478,6 +682,23 @@ endforeach; ?>
             .explore-options-section {
                 padding: 44px 0;
             }
+
+            .homepage-slider-section {
+                padding: 42px 0 22px;
+            }
+
+            .homepage-slider-btn {
+                display: none;
+            }
+
+            .homepage-slider-track {
+                grid-auto-columns: 100%;
+                gap: 14px;
+            }
+
+            .homepage-slide-image {
+                height: 220px;
+            }
             
             .section-title {
                 font-size: 28px;
@@ -523,6 +744,31 @@ endforeach; ?>
             }
         }
     </style>
+
+    <script>
+        (function() {
+            function slideTrack(track, direction) {
+                if (!track) return;
+                var card = track.querySelector('.homepage-slide-card');
+                if (!card) return;
+                var cardWidth = card.getBoundingClientRect().width;
+                var gap = 20;
+                var scrollAmount = cardWidth + gap;
+                track.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                document.querySelectorAll('.homepage-slider-btn').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        var targetId = btn.getAttribute('data-target');
+                        var track = document.getElementById(targetId);
+                        var dir = btn.classList.contains('next') ? 1 : -1;
+                        slideTrack(track, dir);
+                    });
+                });
+            });
+        })();
+    </script>
 
 <?php require_once 'includes/footer.php'; ?>
 

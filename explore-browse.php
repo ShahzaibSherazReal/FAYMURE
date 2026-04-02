@@ -182,7 +182,7 @@ if ($selected_category_id > 0) {
     }
 
     if ($selected_category) {
-        $products_result = $conn->query("SELECT id, name, slug, description, product_details, moq, price, image FROM products WHERE category_id = $selected_category_id AND deleted_at IS NULL AND status = 'active' ORDER BY created_at DESC");
+        $products_result = $conn->query("SELECT id, name, slug, description, product_details, moq, image FROM products WHERE category_id = $selected_category_id AND deleted_at IS NULL AND status = 'active' ORDER BY created_at DESC");
         if ($products_result) {
             $products = $products_result->fetch_all(MYSQLI_ASSOC);
         }
@@ -262,13 +262,7 @@ else: ?>
                                                 <h3 class="product-title"><?php echo htmlspecialchars($product['name']); ?></h3>
                                                 
                                                 <div class="product-price-section">
-                                                    <?php if ($product['price'] && $product['price'] > 0): ?>
-                                                        <span class="product-price">$<?php echo number_format($product['price'], 2); ?></span>
-                                                    <?php
-                else: ?>
-                                                        <span class="product-price">Contact for Price</span>
-                                                    <?php
-                endif; ?>
+                                                    <span class="product-price">Get Quote</span>
                                                 </div>
                                                 
                                                 <div class="product-moq">
@@ -376,9 +370,9 @@ endif; ?>
                             <span class="spec-label">MOQ:</span>
                             <span class="spec-value" id="detailProductMOQ"></span>
                         </div>
-                        <div class="spec-item" id="detailProductPriceContainer" style="display: none;">
-                            <span class="spec-label">Price:</span>
-                            <span class="spec-value" id="detailProductPrice"></span>
+                        <div class="spec-item" id="detailProductPriceContainer" style="display: flex;">
+                            <span class="spec-label">Pricing:</span>
+                            <span class="spec-value" id="detailProductPrice">Get Quote</span>
                         </div>
                     </div>
                     <div class="product-detail-section">
@@ -1218,12 +1212,8 @@ endif; ?>
             document.getElementById('detailProductName').textContent = product.name || 'N/A';
             document.getElementById('detailProductMOQ').textContent = product.moq || '1';
             
-            if (product.price) {
-                document.getElementById('detailProductPrice').textContent = '$' + parseFloat(product.price).toFixed(2);
-                document.getElementById('detailProductPriceContainer').style.display = 'flex';
-            } else {
-                document.getElementById('detailProductPriceContainer').style.display = 'none';
-            }
+            document.getElementById('detailProductPrice').textContent = 'Get Quote';
+            document.getElementById('detailProductPriceContainer').style.display = 'flex';
             
             document.getElementById('detailProductDescription').textContent = product.description || 'No description available.';
             document.getElementById('detailProductDetails').textContent = product.product_details || 'No details available.';

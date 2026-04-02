@@ -46,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $moq = intval($_POST['moq'] ?? 1);
     $price = floatval($_POST['price'] ?? 0);
     $status = sanitize($_POST['status'] ?? 'active');
+    $is_latest_creation = isset($_POST['is_latest_creation']) ? 1 : 0;
     
     // Handle remove main image
     if (isset($_POST['remove_main_image'])) {
@@ -115,6 +116,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     
     if ($name && $slug && $category_id) {
+        $check_latest = $conn->query("SHOW COLUMNS FROM products LIKE 'is_latest_creation'");
+        if (!$check_latest || $check_latest->num_rows === 0) {
+            $conn->query("ALTER TABLE products ADD COLUMN is_latest_creation TINYINT(1) NOT NULL DEFAULT 0 AFTER status");
+        }
         $check_cs = $conn->query("SHOW COLUMNS FROM products LIKE 'color_swatches'");
         if (!$check_cs || $check_cs->num_rows === 0) {
             $conn->query("ALTER TABLE products ADD COLUMN color_swatches TEXT DEFAULT NULL");
@@ -131,10 +136,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         $color_swatches_json = json_encode($color_swatches);
         $images_json = json_encode($images);
-        $stmt = $conn->prepare("UPDATE products SET name=?, slug=?, sku=?, description=?, product_details=?, key_features=?, specifications=?, category_id=?, subcategory_id=?, subcategory=?, moq=?, price=?, image=?, images=?, status=?, color_swatches=? WHERE id=?");
+        $stmt = $conn->prepare("UPDATE products SET name=?, slug=?, sku=?, description=?, product_details=?, key_features=?, specifications=?, category_id=?, subcategory_id=?, subcategory=?, moq=?, price=?, image=?, images=?, status=?, is_latest_creation=?, color_swatches=? WHERE id=?");
         $subcategory_id_for_bind = $subcategory_id === null ? null : (int)$subcategory_id;
-        $bind_types = str_repeat('s', 7) . 'i' . 'i' . 's' . 'i' . 'd' . str_repeat('s', 4) . 'i';
-        $stmt->bind_param($bind_types, $name, $slug, $sku, $description, $product_details, $key_features, $specifications, $category_id, $subcategory_id_for_bind, $subcategory, $moq, $price, $image, $images_json, $status, $color_swatches_json, $product_id);
+        $bind_types = "sssssssiisidsssisi";
+        $stmt->bind_param($bind_types, $name, $slug, $sku, $description, $product_details, $key_features, $specifications, $category_id, $subcategory_id_for_bind, $subcategory, $moq, $price, $image, $images_json, $status, $is_latest_creation, $color_swatches_json, $product_id);
         
         if ($stmt->execute()) {
             $success = true;
@@ -382,6 +387,12 @@ $conn->close();
                             <option value="active" <?php echo ($product['status'] ?? 'active') == 'active' ? 'selected' : ''; ?>>Active</option>
                             <option value="inactive" <?php echo ($product['status'] ?? '') == 'inactive' ? 'selected' : ''; ?>>Inactive</option>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label style="display:flex; align-items:center; gap:10px; margin-top: 28px;">
+                            <input type="checkbox" name="is_latest_creation" value="1" <?php echo !empty($product['is_latest_creation']) ? 'checked' : ''; ?>>
+                            Show in "Our Latest Creation" section on homepage
+                        </label>
                     </div>
                 </div>
                 

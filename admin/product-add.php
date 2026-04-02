@@ -36,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $moq = intval($_POST['moq'] ?? 1);
     $price = floatval($_POST['price'] ?? 0);
     $status = sanitize($_POST['status'] ?? 'active');
+    $is_latest_creation = isset($_POST['is_latest_creation']) ? 1 : 0;
     if ($status !== 'active' && $status !== 'inactive') {
         $status = 'active';
     }
@@ -125,6 +126,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (!$check_sub || $check_sub->num_rows === 0) {
             $conn->query("ALTER TABLE products ADD COLUMN subcategory_id INT NULL DEFAULT NULL AFTER category_id");
         }
+        $check_latest = $conn->query("SHOW COLUMNS FROM products LIKE 'is_latest_creation'");
+        if (!$check_latest || $check_latest->num_rows === 0) {
+            $conn->query("ALTER TABLE products ADD COLUMN is_latest_creation TINYINT(1) NOT NULL DEFAULT 0 AFTER status");
+        }
 
         $product_image_list = array_merge([$image], $images);
         $color_swatches = [];
@@ -146,11 +151,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         $color_swatches_json = json_encode($color_swatches);
         $images_json = json_encode($images);
-        $stmt = $conn->prepare("INSERT INTO products (name, slug, sku, description, product_details, key_features, specifications, category_id, subcategory_id, subcategory, moq, price, image, images, status, color_swatches) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO products (name, slug, sku, description, product_details, key_features, specifications, category_id, subcategory_id, subcategory, moq, price, image, images, status, is_latest_creation, color_swatches) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         if ($stmt) {
             $subcategory_id_for_bind = $subcategory_id === null ? null : (int)$subcategory_id;
-            $bind_types = str_repeat('s', 7) . 'i' . 'i' . 's' . 'i' . 'd' . str_repeat('s', 4);
-            $stmt->bind_param($bind_types, $name, $slug, $sku, $description, $product_details, $key_features, $specifications, $category_id, $subcategory_id_for_bind, $subcategory, $moq, $price, $image, $images_json, $status, $color_swatches_json);
+            $bind_types = "sssssssiisidsssis";
+            $stmt->bind_param($bind_types, $name, $slug, $sku, $description, $product_details, $key_features, $specifications, $category_id, $subcategory_id_for_bind, $subcategory, $moq, $price, $image, $images_json, $status, $is_latest_creation, $color_swatches_json);
             if ($stmt->execute()) {
                 $success = true;
             } else {
@@ -176,6 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             'subcategory_id' => $subcategory_id,
             'subcategory' => $subcategory,
             'moq' => $moq, 'price' => $price, 'status' => $status,
+            'is_latest_creation' => $is_latest_creation,
             'spec_Material' => trim($_POST['spec_Material'] ?? ''),
             'spec_Dimensions' => trim($_POST['spec_Dimensions'] ?? ''),
             'spec_Weight' => trim($_POST['spec_Weight'] ?? ''),
@@ -351,6 +357,12 @@ $conn->close();
                             <option value="active"<?php echo ($sticky['status'] ?? '') === 'inactive' ? '' : ' selected'; ?>>Active</option>
                             <option value="inactive"<?php echo ($sticky['status'] ?? '') === 'inactive' ? ' selected' : ''; ?>>Inactive</option>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label style="display:flex; align-items:center; gap:10px; margin-top: 28px;">
+                            <input type="checkbox" name="is_latest_creation" value="1" <?php echo !empty($sticky['is_latest_creation']) ? 'checked' : ''; ?>>
+                            Show in "Our Latest Creation" section on homepage
+                        </label>
                     </div>
                 </div>
                 
