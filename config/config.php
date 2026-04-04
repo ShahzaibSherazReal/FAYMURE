@@ -8,6 +8,8 @@ if (!defined('BLOG_ADMIN_LOADING')) {
 define('SITE_NAME', 'FAYMURE');
 define('SITE_URL', 'http://localhost/FAYMURE');
 define('ADMIN_EMAIL', 'admin@faymure.com');
+/** Inbox for public form submissions (quotes, contact, custom design); also stored in admin panel */
+define('FORM_NOTIFICATION_EMAIL', 'info@faymure.com');
 
 // Canonical base URL for SEO (always https://www in production). Used for <link rel="canonical">.
 define('CANONICAL_BASE_URL', 'https://www.faymure.com');
@@ -188,6 +190,130 @@ function vt_link_guest_to_user($user_id) {
         }
         $conn->close();
     } catch (Throwable $e) {}
+}
+
+/**
+ * Where to send site form submission notifications (plain PHP mail()).
+ */
+function form_notification_recipient() {
+    return (defined('FORM_NOTIFICATION_EMAIL') && FORM_NOTIFICATION_EMAIL !== '')
+        ? FORM_NOTIFICATION_EMAIL
+        : ADMIN_EMAIL;
+}
+
+/**
+ * Build absolute path under project root from a stored relative path (blocks path traversal).
+ */
+function form_notification_attachment_path($relative_path) {
+    $relative_path = str_replace('\\', '/', (string) $relative_path);
+    if ($relative_path === '' || strpos($relative_path, '..') !== false) {
+        return null;
+    }
+    $relative_path = ltrim($relative_path, '/');
+    $root = dirname(__DIR__);
+    $full = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relative_path);
+    $real_root = realpath($root);
+    $real_file = is_file($full) ? realpath($full) : false;
+    if ($real_root === false || $real_file === false) {
+        return null;
+    }
+    if (strpos($real_file, $real_root) !== 0) {
+        return null;
+    }
+    return $real_file;
+}
+
+/**
+ * @param string      $subject      Email subject
+ * @param string      $body         Plain text body
+ * @param string|null $reply_to     Submitter email for Reply-To (optional)
+ * @param array       $attachments  List of ['path' => absolute path, 'name' => optional filename]
+ */
+function send_form_notification_email($subject, $body, $reply_to = null, array $attachments = []) {
+    $to = form_notification_recipient();
+    $from = $to;
+    $rt = $reply_to !== null && trim((string) $reply_to) !== '' ? trim((string) $reply_to) : null;
+
+    $valid_attachments = [];
+    $max_bytes = 8 * 1024 * 1024;
+    foreach ($attachments as $att) {
+        if (empty($att['path']) || !is_readable($att['path']) || !is_file($att['path'])) {
+            continue;
+        }
+        $size = filesize($att['path']);
+        if ($size === false || $size > $max_bytes) {
+            continue;
+        }
+        $name = isset($att['name']) ? (string) $att['name'] : basename($att['path']);
+        $name = preg_replace('/[^\x20-\x7E]/', '_', $name);
+        $name = str_replace(["\r", "\n", '"'], '', $name);
+        if ($name === '') {
+            $name = 'attachment';
+        }
+        $valid_attachments[] = ['path' => $att['path'], 'name' => $name];
+    }
+
+    if (empty($valid_attachments)) {
+        $headers = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+        $headers .= 'From: ' . SITE_NAME . ' <' . $from . ">\r\n";
+        if ($rt !== null && filter_var($rt, FILTER_VALIDATE_EMAIL)) {
+            $headers .= 'Reply-To: ' . $rt . "\r\n";
+        }
+        @mail($to, $subject, $body, $headers);
+        return;
+    }
+
+    $boundary = 'bnd_' . bin2hex(random_bytes(12));
+    $headers = "MIME-Version: 1.0\r\n";
+    $headers .= 'From: ' . SITE_NAME . ' <' . $from . ">\r\n";
+    if ($rt !== null && filter_var($rt, FILTER_VALIDATE_EMAIL)) {
+        $headers .= 'Reply-To: ' . $rt . "\r\n";
+    }
+    $headers .= "Content-Type: multipart/mixed; boundary=\"{$boundary}\"\r\n";
+
+    $body = str_replace(["\r\n", "\r"], "\n", $body);
+    $body = str_replace("\n", "\r\n", $body);
+
+    $msg = "--{$boundary}\r\n";
+    $msg .= "Content-Type: text/plain; charset=UTF-8\r\n";
+    $msg .= "Content-Transfer-Encoding: 8bit\r\n\r\n";
+    $msg .= $body . "\r\n";
+
+    foreach ($valid_attachments as $att) {
+        $path = $att['path'];
+        $filename = $att['name'];
+        $content = file_get_contents($path);
+        if ($content === false) {
+            continue;
+        }
+        $mime = 'application/octet-stream';
+        if (function_exists('mime_content_type')) {
+            $m = @mime_content_type($path);
+            if (is_string($m) && $m !== '') {
+                $mime = $m;
+            }
+        } elseif (function_exists('finfo_open')) {
+            $f = finfo_open(FILEINFO_MIME_TYPE);
+            if ($f) {
+                $m = finfo_file($f, $path);
+                finfo_close($f);
+                if (is_string($m) && $m !== '') {
+                    $mime = $m;
+                }
+            }
+        }
+        $mime = preg_replace('/[\r\n]/', '', $mime);
+
+        $msg .= "--{$boundary}\r\n";
+        $msg .= "Content-Type: {$mime}; name=\"{$filename}\"\r\n";
+        $msg .= "Content-Disposition: attachment; filename=\"{$filename}\"\r\n";
+        $msg .= "Content-Transfer-Encoding: base64\r\n\r\n";
+        $msg .= chunk_split(base64_encode($content)) . "\r\n";
+    }
+    $msg .= "--{$boundary}--\r\n";
+
+    @mail($to, $subject, $msg, $headers);
 }
 ?>
 

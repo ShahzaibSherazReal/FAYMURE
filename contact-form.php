@@ -59,7 +59,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Send email to admin
             $product_name = $conn->query("SELECT name FROM products WHERE id = $product_id")->fetch_assoc()['name'] ?? 'Product';
             
-            $to = ADMIN_EMAIL;
             $subject = "New Product Inquiry - " . $product_name;
             $email_message = "New inquiry received:\n\n";
             $email_message .= "Product: " . $product_name . "\n";
@@ -68,12 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $email_message .= "Phone: " . $phone . "\n";
             $email_message .= "Quantity: " . $quantity . "\n";
             $email_message .= "Message: " . $message . "\n";
-            
-            $headers = "From: " . $email . "\r\n";
-            $headers .= "Reply-To: " . $email . "\r\n";
-            
-            // Attempt to send email, but don't fail if mail server is not configured
-            @mail($to, $subject, $email_message, $headers);
+            send_form_notification_email($subject, $email_message, $email);
             
             $success = true;
         } else {

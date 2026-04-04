@@ -68,7 +68,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['form_type']) && $_POST
             $quote_success = true;
             $product_result = $conn->query("SELECT name FROM products WHERE id = $product_id");
             $product_name = $product_result && $product_result->num_rows > 0 ? $product_result->fetch_assoc()['name'] : 'Product';
-            @mail(ADMIN_EMAIL, "New Quote Request - " . $product_name, "New quote request received for: " . $product_name . "\n\nCustomer: $name\nEmail: $email\nPhone: $phone\nCompany: $company\nQuantity: $quantity\nMessage: $message", "From: $email");
+            send_form_notification_email(
+                "New Quote Request - " . $product_name,
+                "New quote request received for: " . $product_name . "\n\nCustomer: $name\nEmail: $email\nPhone: $phone\nCompany: $company\nQuantity: $quantity\nMessage: $message",
+                $email
+            );
         }
         else {
             $quote_error = "Failed to submit request. Please try again.";
@@ -176,7 +180,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['form_type']) && $_POST
             $customize_success = true;
             $product_result = $conn->query("SELECT name FROM products WHERE id = $product_id");
             $product_name = $product_result && $product_result->num_rows > 0 ? $product_result->fetch_assoc()['name'] : 'Product';
-            @mail(ADMIN_EMAIL, "New Customization Request - " . $product_name, "New customization request received for: " . $product_name . "\n\nCustomer: $name\nEmail: $email\nPhone: $phone\nCompany: $company\nQuantity: $quantity\nDescription: $description", "From: $email");
+            $customize_body = "New customization request received for: " . $product_name . "\n\nCustomer: $name\nEmail: $email\nPhone: $phone\nCompany: $company\nQuantity: $quantity\nDescription: $description";
+            $mail_attachments = [];
+            foreach ($uploaded_images as $rel) {
+                $abs = form_notification_attachment_path($rel);
+                if ($abs) {
+                    $mail_attachments[] = ['path' => $abs, 'name' => basename($rel)];
+                }
+            }
+            if (count($mail_attachments) > 0) {
+                $customize_body .= "\n\nImages: " . count($mail_attachments) . " attached to this email.";
+            } elseif (count($uploaded_images) > 0) {
+                $customize_body .= "\n\nImages were uploaded but could not be attached to email; check admin panel for files.";
+            }
+            send_form_notification_email(
+                "New Customization Request - " . $product_name,
+                $customize_body,
+                $email,
+                $mail_attachments
+            );
         }
         else {
             $customize_error = "Failed to submit request. Please try again.";

@@ -60,7 +60,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $stmt->bind_param("issssii", $product_id, $name, $email, $phone, $message, $quantity, $user_id);
 
             if ($stmt->execute()) {
-                $to = ADMIN_EMAIL;
                 $subject = "New Quote Request";
                 $email_message = "New quote request received:\n\n";
                 $email_message .= "Customer Name: " . $name . "\n";
@@ -69,12 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $email_message .= "Product: " . $product_name . "\n";
                 $email_message .= "Quantity: " . $quantity . "\n";
                 $email_message .= "Message: " . $message . "\n";
-
-                $headers = "From: " . $email . "\r\n";
-                $headers .= "Reply-To: " . $email . "\r\n";
-
-                // Attempt to send email, but don't fail if mail server is not configured
-                @mail($to, $subject, $email_message, $headers);
+                send_form_notification_email($subject, $email_message, $email);
 
                 $success = true;
             }
@@ -132,7 +126,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $stmt->bind_param("isssssii", $product_id, $name, $email, $phone, $customizations, $description, $quantity, $user_id);
 
             if ($stmt->execute()) {
-                $to = ADMIN_EMAIL;
                 $subject = "New Product Customization Request";
                 $email_message = "New customization request received:\n\n";
                 $email_message .= "Customer Name: " . $name . "\n";
@@ -142,12 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $email_message .= "Quantity: " . $quantity . "\n";
                 $email_message .= "Customizations: " . $customizations . "\n";
                 $email_message .= "Description: " . $description . "\n";
-
-                $headers = "From: " . $email . "\r\n";
-                $headers .= "Reply-To: " . $email . "\r\n";
-
-                // Attempt to send email, but don't fail if mail server is not configured
-                @mail($to, $subject, $email_message, $headers);
+                send_form_notification_email($subject, $email_message, $email);
 
                 $success = true;
             }

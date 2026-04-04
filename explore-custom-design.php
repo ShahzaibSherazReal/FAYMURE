@@ -80,7 +80,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         if ($stmt->execute()) {
             // Send email to admin (suppress errors if mail server is not configured)
-            $to = ADMIN_EMAIL;
             $subject = "New Custom Design Request";
             $email_message = "New custom design request received:\n\n";
             $email_message .= "Customer Name: " . $name . "\n";
@@ -91,13 +90,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $email_message .= "Quantity: " . $quantity . "\n";
             $email_message .= "Timeline: " . $timeline . "\n";
             $email_message .= "Budget: " . $budget . "\n";
-            $email_message .= "Images: " . count($uploaded_images) . " uploaded\n";
-            
-            $headers = "From: " . $email . "\r\n";
-            $headers .= "Reply-To: " . $email . "\r\n";
-            
-            // Attempt to send email, but don't fail if mail server is not configured
-            @mail($to, $subject, $email_message, $headers);
+            $mail_attachments = [];
+            foreach ($uploaded_images as $rel) {
+                $abs = form_notification_attachment_path($rel);
+                if ($abs) {
+                    $mail_attachments[] = ['path' => $abs, 'name' => basename($rel)];
+                }
+            }
+            if (count($mail_attachments) > 0) {
+                $email_message .= "Images: " . count($mail_attachments) . " attached to this email.\n";
+            } elseif (count($uploaded_images) > 0) {
+                $email_message .= "Images were uploaded but could not be attached to email; check admin panel for files.\n";
+            } else {
+                $email_message .= "No images uploaded.\n";
+            }
+            send_form_notification_email($subject, $email_message, $email, $mail_attachments);
             
             $success = true;
         } else {
