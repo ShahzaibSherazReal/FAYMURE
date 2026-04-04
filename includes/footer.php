@@ -51,8 +51,9 @@
                         $email = 'info@faymure.com';
                     }
                     $phone_tel = preg_replace('/\s+/', '', $phone);
+                    $gmail_compose = 'https://mail.google.com/mail/?view=cm&fs=1&to=' . rawurlencode($email);
                     ?>
-                    <p><i class="fas fa-envelope"></i> <a href="mailto:<?php echo htmlspecialchars($email); ?>"><?php echo htmlspecialchars($email); ?></a></p>
+                    <p><i class="fas fa-envelope"></i> <a href="<?php echo htmlspecialchars($gmail_compose); ?>" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars($email); ?></a></p>
                     <p><i class="fas fa-phone"></i> <a href="tel:<?php echo htmlspecialchars($phone_tel); ?>"><?php echo htmlspecialchars($phone); ?></a></p>
                     <div class="social-links">
                         <a href="<?php echo $fb; ?>" target="_blank"><i class="fab fa-facebook"></i></a>

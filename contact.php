@@ -117,7 +117,7 @@ if (trim(strtolower($email)) === 'contact@faymure.com') {
                                 <i class="fas fa-envelope"></i>
                             </div>
                             <h3>Email Us</h3>
-                            <p><a href="mailto:<?php echo htmlspecialchars($email); ?>"><?php echo htmlspecialchars($email); ?></a></p>
+                            <p><a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=<?php echo rawurlencode($email); ?>" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars($email); ?></a></p>
                             <span class="contact-label">We'll respond within 24 hours</span>
                         </div>
                         
