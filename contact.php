@@ -126,7 +126,7 @@ if (trim(strtolower($email)) === 'contact@faymure.com') {
                                 <i class="fab fa-whatsapp"></i>
                             </div>
                             <h3>Chat Us</h3>
-                            <p><a href="https://wa.me/923252100730" target="_blank" rel="noopener noreferrer">+92 325 2100730</a></p>
+                            <p><a href="https://wa.me/923450300861" target="_blank" rel="noopener noreferrer">+92 345 0300861</a></p>
                             <span class="contact-label">Mon-Fri, 9AM-6PM EST</span>
                         </div>
                         
@@ -181,7 +181,7 @@ if (trim(strtolower($email)) === 'contact@faymure.com') {
                             </a>
                             <?php endif; ?>
                             
-                            <a href="https://wa.me/923252100730" target="_blank" rel="noopener noreferrer" class="social-link whatsapp">
+                            <a href="https://wa.me/923450300861" target="_blank" rel="noopener noreferrer" class="social-link whatsapp">
                                 <i class="fab fa-whatsapp"></i>
                                 <span>WhatsApp</span>
                             </a>

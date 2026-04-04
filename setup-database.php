@@ -304,7 +304,7 @@ if ($existing_content == 0) {
         ('services_text', 'We offer custom leather goods, bulk orders, and personalized products tailored to your needs.', 'text'),
         ('services_image', 'assets/images/services.jpg', 'image'),
         ('footer_email', 'info@faymure.com', 'text'),
-        ('footer_phone', '+1 (555) 123-4567', 'text'),
+        ('footer_phone', '+92 345 0300861', 'text'),
         ('footer_facebook', 'https://facebook.com/faymure', 'url'),
         ('footer_instagram', 'https://instagram.com/faymure', 'url'),
         ('footer_twitter', 'https://twitter.com/faymure', 'url')");
@@ -323,7 +323,7 @@ if ($existing_content == 0) {
         ['services_text', 'We offer custom leather goods, bulk orders, and personalized products tailored to your needs.', 'text'],
         ['services_image', 'assets/images/services.jpg', 'image'],
         ['footer_email', 'info@faymure.com', 'text'],
-        ['footer_phone', '+1 (555) 123-4567', 'text'],
+        ['footer_phone', '+92 345 0300861', 'text'],
         ['footer_facebook', 'https://facebook.com/faymure', 'url'],
         ['footer_instagram', 'https://instagram.com/faymure', 'url'],
         ['footer_twitter', 'https://twitter.com/faymure', 'url']
@@ -340,6 +340,9 @@ if ($existing_content == 0) {
     }
     echo "<p>✓ Checked and added missing site content keys</p>";
 }
+
+// One-time: replace legacy template footer phone if still in DB
+$conn->query("UPDATE site_content SET content_value = '+92 345 0300861' WHERE content_key = 'footer_phone' AND TRIM(content_value) = '+1 (555) 123-4567'");
 
 // Check reviews table
 $result = $conn->query("SHOW TABLES LIKE 'reviews'");

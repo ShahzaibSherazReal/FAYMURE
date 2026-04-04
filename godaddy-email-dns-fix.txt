@@ -1,0 +1,122 @@
+GoDaddy Email DNS Fix Plan for faymure.com
+==========================================
+
+Situation summary
+-----------------
+You bought email from GoDaddy (secureserver/titan ecosystem), but your DNS zone is currently set for Hostinger Mail.
+That is why GoDaddy/Titan shows:
+- Incorrect SPF
+- Missing DKIM
+- sales@faymure.com cannot receive mail
+
+Your website can stay on Hostinger (A/AAAA/www), but mail records must point to GoDaddy values only.
+
+
+1) Remove or replace conflicting Hostinger mail records
+-------------------------------------------------------
+In Hostinger DNS, remove these mail-related records (or edit if you prefer replacing):
+
+- TXT    Name: @
+  Current: v=spf1 include:_spf.mail.hostinger.com ~all
+  Action: REPLACE with GoDaddy SPF (below)
+
+- MX     Name: @   Priority: 5   Target: mx1.hostinger.com
+- MX     Name: @   Priority: 10  Target: mx2.hostinger.com
+  Action: DELETE both (then add GoDaddy MX below)
+
+- CNAME  Name: hostingermail-a._domainkey
+- CNAME  Name: hostingermail-b._domainkey
+- CNAME  Name: hostingermail-c._domainkey
+  Action: DELETE (GoDaddy DKIM CNAMEs will be added below)
+
+- CNAME  Name: autodiscover  Target: autodiscover.mail.hostinger.com
+  Action: DELETE/REPLACE (GoDaddy SRV/CNAME settings below handle this)
+
+Keep your website records unchanged:
+- A @ -> 151.106.124.163
+- AAAA @ -> 2a02:4780:3:647:0:1c32:2975:2
+- CNAME www -> faymure.com
+- FTP record (if needed for hosting)
+
+
+2) Add the exact GoDaddy mail DNS records
+-----------------------------------------
+Add these values exactly as provided by GoDaddy:
+
+SPF (TXT)
+- Type: TXT
+- Host/Name: @
+- Value: v=spf1 include:secureserver.net -all
+
+DKIM (CNAME)
+- Type: CNAME
+- Host/Name: secureserver1._domainkey
+- Points to: s1.dkim.faymure_com.96d.onsecureserver.net.
+
+- Type: CNAME
+- Host/Name: secureserver2._domainkey
+- Points to: s2.dkim.faymure_com.96d.onsecureserver.net.
+
+Mail routing
+- Type: CNAME
+- Host/Name: email
+- Points to: email.secureserver.net
+
+- Type: MX
+- Host/Name: @
+- Priority: 10
+- Points to: mailstore1.secureserver.net
+
+- Type: MX
+- Host/Name: @
+- Priority: 0
+- Points to: smtp.secureserver.net
+
+Autodiscover
+- Type: SRV
+- Service: _autodiscover
+- Protocol: _tcp
+- Name: @
+- Priority: 100
+- Weight: 1
+- Port: 443
+- Target: autodiscover.secureserver.net
+
+How to enter this in your Hostinger SRV form (as in your screenshot)
+--------------------------------------------------------------------
+In Hostinger, choose Type = SRV, then fill fields like this:
+
+- Name: _autodiscover._tcp
+- Weight: 1
+- Port: 443
+- Priority: 100
+- Target: autodiscover.secureserver.net
+- TTL: 300 (or keep default 14400 if you prefer)
+
+Important:
+- For SRV in Hostinger, put service+protocol together in Name:
+  _autodiscover._tcp
+- Do NOT put "@" in Name for this SRV record in that form style.
+- Target should be the hostname only (no http/https).
+
+
+3) Important checks after saving DNS
+------------------------------------
+- Make sure you have only ONE SPF TXT at host "@". Multiple SPF TXT records cause failures.
+- Remove old Hostinger MX/DKIM to avoid mixed mail routing.
+- TTL can be 300 to propagate faster during setup.
+
+
+4) Propagation and verification
+-------------------------------
+- DNS changes can take a few minutes up to 24 hours.
+- After 15-60 minutes, check in GoDaddy/Titan dashboard again.
+- Send test emails:
+  1) Outbound: sales@faymure.com -> a Gmail account
+  2) Inbound: Gmail -> sales@faymure.com
+
+If SPF/DKIM still fail after propagation:
+- Re-open each record and verify host names and target values are exact (no typo).
+- Confirm no old MX records remain.
+- Confirm only one SPF TXT exists at "@".
+

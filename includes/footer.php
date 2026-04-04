@@ -6,7 +6,7 @@
                     <?php
                     $conn = getDBConnection();
                     $email = 'info@faymure.com';
-                    $phone = '+1 (555) 123-4567';
+                    $phone = '+92 345 0300861';
                     $fb = '#';
                     $ig = '#';
                     $tw = '#';
@@ -22,6 +22,13 @@
                         $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='footer_phone'");
                         if ($result && $row = $result->fetch_assoc()) {
                             $phone = $row['content_value'] ?? $phone;
+                        }
+                        // DB still had the old template phone; migrate once so footer matches live contact
+                        $legacy_footer_phone = '+1 (555) 123-4567';
+                        if (trim((string) $phone) === $legacy_footer_phone) {
+                            $new_phone = '+92 345 0300861';
+                            $conn->query("UPDATE site_content SET content_value = '" . $conn->real_escape_string($new_phone) . "' WHERE content_key = 'footer_phone'");
+                            $phone = $new_phone;
                         }
                         
                         $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='footer_facebook'");
@@ -43,9 +50,10 @@
                     if (trim(strtolower($email)) === 'contact@faymure.com') {
                         $email = 'info@faymure.com';
                     }
+                    $phone_tel = preg_replace('/\s+/', '', $phone);
                     ?>
-                    <p><i class="fas fa-envelope"></i> <a href="mailto:<?php echo $email; ?>"><?php echo $email; ?></a></p>
-                    <p><i class="fas fa-phone"></i> <a href="tel:<?php echo $phone; ?>"><?php echo $phone; ?></a></p>
+                    <p><i class="fas fa-envelope"></i> <a href="mailto:<?php echo htmlspecialchars($email); ?>"><?php echo htmlspecialchars($email); ?></a></p>
+                    <p><i class="fas fa-phone"></i> <a href="tel:<?php echo htmlspecialchars($phone_tel); ?>"><?php echo htmlspecialchars($phone); ?></a></p>
                     <div class="social-links">
                         <a href="<?php echo $fb; ?>" target="_blank"><i class="fab fa-facebook"></i></a>
                         <a href="<?php echo $ig; ?>" target="_blank"><i class="fab fa-instagram"></i></a>
@@ -61,13 +69,6 @@
                     <h3>FAQ</h3>
                     <ul>
                         <li><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/faq">Frequently Asked Questions</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h3>Legal</h3>
-                    <ul>
-                        <li><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/privacy">Privacy Policy</a></li>
-                        <li><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/terms">Terms & Conditions</a></li>
                     </ul>
                 </div>
             </div>

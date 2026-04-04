@@ -222,41 +222,6 @@ endif; ?>
             </div>
         </section>
 
-        <!-- Our Latest Creation Slider -->
-        <section class="homepage-slider-section homepage-latest-creation">
-            <div class="container">
-                <div class="section-header reveal">
-                    <h2 class="section-title">Our Latest Creation</h2>
-                    <p class="section-subtitle">Handpicked products added from admin panel</p>
-                </div>
-                <div class="homepage-slider-wrap">
-                    <button class="homepage-slider-btn prev" data-target="latestCreationSlider" aria-label="Previous latest creation">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <div id="latestCreationSlider" class="homepage-slider-track">
-                        <?php foreach ($latest_products as $product): ?>
-                            <a href="<?php echo $base; ?>/product-detail/<?php echo rawurlencode(!empty($product['slug']) ? $product['slug'] : slugify($product['name'] ?? 'product')); ?>" class="homepage-slide-card latest-creation-card">
-                                <div class="homepage-slide-image">
-                                    <?php if (!empty($product['image'])): ?>
-                                        <img src="<?php echo htmlspecialchars((isset($base) && $base !== '') ? rtrim($base, '/') . '/' . ltrim($product['image'], '/') : '/' . ltrim($product['image'], '/')); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
-                                    <?php else: ?>
-                                        <div class="homepage-slide-placeholder"><i class="fas fa-image"></i></div>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="homepage-slide-content">
-                                    <h3><?php echo htmlspecialchars($product['name']); ?></h3>
-                                    <span class="homepage-slide-cta">Get Quote</span>
-                                </div>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
-                    <button class="homepage-slider-btn next" data-target="latestCreationSlider" aria-label="Next latest creation">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-            </div>
-        </section>
-
         <!-- Explore Options Section -->
         <section class="explore-options-section">
             <div class="container">
@@ -305,6 +270,40 @@ endif; ?>
                             </div>
                         </div>
                     </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Our Latest Creation Slider -->
+        <section class="homepage-slider-section homepage-latest-creation">
+            <div class="container">
+                <div class="section-header reveal">
+                    <h2 class="section-title">Our Latest Creation</h2>
+                    <p class="section-subtitle">Handpicked products added from admin panel</p>
+                </div>
+                <div class="homepage-slider-wrap">
+                    <button class="homepage-slider-btn prev" data-target="latestCreationSlider" aria-label="Previous latest creation">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div id="latestCreationSlider" class="homepage-slider-track">
+                        <?php foreach ($latest_products as $product): ?>
+                            <a href="<?php echo $base; ?>/product-detail/<?php echo rawurlencode(!empty($product['slug']) ? $product['slug'] : slugify($product['name'] ?? 'product')); ?>" class="homepage-slide-card latest-creation-card">
+                                <div class="homepage-slide-image">
+                                    <?php if (!empty($product['image'])): ?>
+                                        <img src="<?php echo htmlspecialchars((isset($base) && $base !== '') ? rtrim($base, '/') . '/' . ltrim($product['image'], '/') : '/' . ltrim($product['image'], '/')); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                                    <?php else: ?>
+                                        <div class="homepage-slide-placeholder"><i class="fas fa-image"></i></div>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="homepage-slide-content latest-creation-card__footer">
+                                    <span class="homepage-slide-cta">Get Quote</span>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                    <button class="homepage-slider-btn next" data-target="latestCreationSlider" aria-label="Next latest creation">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
                 </div>
             </div>
         </section>
@@ -413,10 +412,6 @@ endforeach; ?>
             background: #fff;
         }
 
-        .homepage-latest-creation {
-            padding-top: 20px;
-        }
-
         .homepage-slider-wrap {
             position: relative;
             display: flex;
@@ -504,6 +499,15 @@ endforeach; ?>
             object-position: center;
             padding: 8px;
             background: #fff;
+        }
+
+        .latest-creation-card__footer {
+            text-align: center;
+            padding: 12px 14px 14px;
+        }
+
+        .latest-creation-card__footer .homepage-slide-cta {
+            margin-top: 0;
         }
 
         .homepage-slide-placeholder {
