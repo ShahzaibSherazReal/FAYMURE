@@ -640,12 +640,6 @@ h1, h2, h3, h4, h5, h6,
     border-radius: 3px;
 }
 
-/* Reviews Section */
-.reviews-section {
-    padding: 24px 0 56px 0;
-    background: var(--background-color);
-}
-
 .section-title {
     font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
     text-align: center;
@@ -656,11 +650,6 @@ h1, h2, h3, h4, h5, h6,
     letter-spacing: 1px;
     text-transform: none;
     line-height: 1.2;
-}
-
-.reviews-container {
-    overflow: hidden;
-    position: relative;
 }
 
 .review-card {
@@ -675,31 +664,6 @@ h1, h2, h3, h4, h5, h6,
 .review-card:hover {
     border-color: var(--primary-color);
     box-shadow: 0 4px 20px var(--shadow);
-}
-
-.review-stars {
-    color: var(--primary-color);
-    margin-bottom: 20px;
-    font-size: 14px;
-    letter-spacing: 2px;
-}
-
-.review-text {
-    font-style: italic;
-    margin-bottom: 20px;
-    line-height: 1.8;
-    font-size: 16px;
-    color: var(--text-color);
-    font-weight: 300;
-    letter-spacing: 0.2px;
-}
-
-.review-author {
-    font-weight: 400;
-    color: var(--primary-color);
-    font-size: 13px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
 }
 
 /* Footer */
@@ -1861,28 +1825,9 @@ h1, h2, h3, h4, h5, h6,
         margin-top: 16px;
     }
     
-    /* Reviews Section - Scale down */
-    .reviews-section {
-        padding: 16px 0 32px 0;
-    }
-    
     .section-title {
         font-size: 22px;
         margin-bottom: 22px;
-    }
-    
-    .review-card {
-        min-width: 220px;
-        padding: 20px 18px;
-    }
-    
-    .review-text {
-        font-size: 12px;
-        margin-bottom: 12px;
-    }
-    
-    .review-author {
-        font-size: 11px;
     }
     
     /* Footer - Keep grid, scale down */
@@ -2346,12 +2291,6 @@ h1, h2, h3, h4, h5, h6,
 
     .footer-section {
         min-width: 0;
-    }
-
-    /* Reviews - smaller card min-width so horizontal scroll works */
-    .review-card {
-        min-width: min(260px, 92vw);
-        padding: 14px 16px;
     }
 
     .section-title {

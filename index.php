@@ -23,16 +23,6 @@ if ($columns_check && $columns_check->num_rows > 0) {
     $services = $conn->query("SELECT * FROM site_content WHERE content_key LIKE 'services_%'")->fetch_all(MYSQLI_ASSOC);
 }
 
-// Get reviews (check if table exists)
-$reviews = [];
-$reviews_check = $conn->query("SHOW TABLES LIKE 'reviews'");
-if ($reviews_check && $reviews_check->num_rows > 0) {
-    $reviews_result = $conn->query("SELECT * FROM reviews WHERE status='active' AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 10");
-    if ($reviews_result) {
-        $reviews = $reviews_result->fetch_all(MYSQLI_ASSOC);
-    }
-}
-
 // Organize content
 $vision_data = [];
 $mission_data = [];
@@ -353,46 +343,6 @@ endif; ?>
                         <span class="dot active" onclick="currentSlide(1)"></span>
                         <span class="dot" onclick="currentSlide(2)"></span>
                         <span class="dot" onclick="currentSlide(3)"></span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Reviews Section -->
-        <section class="reviews-section">
-            <div class="container">
-                <h2 class="section-title reveal">What Our Customers Say</h2>
-                <div class="reviews-container">
-                    <div class="marquee reveal">
-                        <div class="marquee__track">
-                            <?php foreach ($reviews as $review): ?>
-                                <div class="review-card">
-                                    <div class="review-stars">
-                                        <?php for ($i = 0; $i < $review['rating']; $i++): ?>
-                                            <i class="fas fa-star"></i>
-                                        <?php
-    endfor; ?>
-                                    </div>
-                                    <p class="review-text">"<?php echo htmlspecialchars($review['review_text']); ?>"</p>
-                                    <p class="review-author">- <?php echo htmlspecialchars($review['customer_name']); ?></p>
-                                </div>
-                            <?php
-endforeach; ?>
-                            <!-- Duplicate for seamless loop -->
-                            <?php foreach ($reviews as $review): ?>
-                                <div class="review-card">
-                                    <div class="review-stars">
-                                        <?php for ($i = 0; $i < $review['rating']; $i++): ?>
-                                            <i class="fas fa-star"></i>
-                                        <?php
-    endfor; ?>
-                                    </div>
-                                    <p class="review-text">"<?php echo htmlspecialchars($review['review_text']); ?>"</p>
-                                    <p class="review-author">- <?php echo htmlspecialchars($review['customer_name']); ?></p>
-                                </div>
-                            <?php
-endforeach; ?>
-                        </div>
                     </div>
                 </div>
             </div>
