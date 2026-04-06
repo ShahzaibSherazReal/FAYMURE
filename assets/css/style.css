@@ -2357,3 +2357,218 @@ h1, h2, h3, h4, h5, h6,
         grid-template-columns: 1fr;
     }
 }
+
+/* Newsletter popup */
+.newsletter-popup {
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.08), transparent 35%),
+        radial-gradient(circle at 82% 88%, rgba(255, 255, 255, 0.06), transparent 40%),
+        rgba(8, 12, 24, 0.72);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+.newsletter-popup.is-open {
+    display: flex;
+    animation: newsletterFadeIn 0.32s ease-out;
+}
+
+.newsletter-popup__content {
+    position: relative;
+    width: min(530px, 100%);
+    background: linear-gradient(160deg, #ffffff 0%, #fafbff 100%);
+    border: 1px solid rgba(0, 31, 63, 0.12);
+    border-radius: 18px;
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.28);
+    padding: 36px 32px 28px;
+    text-align: center;
+    overflow: hidden;
+    animation: newsletterPopIn 0.36s ease-out;
+}
+
+.newsletter-popup__content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+}
+
+.newsletter-popup__close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 0;
+    background: rgba(0, 31, 63, 0.08);
+    color: var(--primary-color);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.newsletter-popup__close:hover {
+    background: var(--primary-color);
+    color: #fff;
+    transform: rotate(90deg);
+}
+
+.newsletter-popup__content h3 {
+    margin-bottom: 12px;
+    color: var(--primary-color);
+    font-size: 34px;
+    font-family: 'TT DRUGS TRIAL REGULAR', sans-serif;
+    letter-spacing: 0.4px;
+    line-height: 1.15;
+}
+
+.newsletter-popup__content p {
+    margin: 0 auto 24px;
+    max-width: 420px;
+    color: var(--text-color);
+    font-size: 15px;
+    line-height: 1.7;
+    opacity: 0.92;
+}
+
+.newsletter-popup__form {
+    display: flex;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid rgba(0, 31, 63, 0.16);
+    border-radius: 999px;
+    padding: 7px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.newsletter-popup__form input {
+    flex: 1;
+    border: 0;
+    padding: 11px 14px;
+    font-size: 15px;
+    border-radius: 999px;
+    outline: none;
+    background: transparent;
+    color: var(--primary-color);
+}
+
+.newsletter-popup__form input::placeholder {
+    color: rgba(0, 31, 63, 0.55);
+}
+
+.newsletter-popup__form button {
+    border: 0;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: #fff;
+    padding: 11px 20px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.newsletter-popup__form button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(0, 31, 63, 0.28);
+    filter: brightness(1.06);
+}
+
+.newsletter-popup__form button:disabled {
+    opacity: 0.75;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.newsletter-popup__feedback {
+    margin-top: 14px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: all 0.25s ease;
+}
+
+.newsletter-popup__feedback.is-show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.newsletter-popup__feedback.is-success {
+    color: #0f5132;
+    background: linear-gradient(135deg, #e8fff3, #d9fce9);
+    border: 1px solid #baf2d2;
+}
+
+.newsletter-popup__feedback.is-error {
+    color: #842029;
+    background: linear-gradient(135deg, #fff0f1, #ffe2e6);
+    border: 1px solid #f5c2c7;
+}
+
+@keyframes newsletterFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes newsletterPopIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (max-width: 575px) {
+    .newsletter-popup {
+        padding: 14px;
+    }
+
+    .newsletter-popup__content {
+        padding: 30px 18px 20px;
+        border-radius: 14px;
+    }
+
+    .newsletter-popup__content h3 {
+        font-size: 24px;
+    }
+
+    .newsletter-popup__form {
+        flex-direction: column;
+        border-radius: 12px;
+        padding: 10px;
+    }
+
+    .newsletter-popup__form input,
+    .newsletter-popup__form button {
+        border-radius: 10px;
+    }
+}

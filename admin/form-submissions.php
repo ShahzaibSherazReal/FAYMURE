@@ -9,7 +9,7 @@ if (isset($_GET['updated']) && $_GET['updated'] == '1') {
     $success = true;
 }
 
-$allowed_tables = ['custom_designs', 'product_customizations', 'quote_requests'];
+$allowed_tables = ['custom_designs', 'product_customizations', 'quote_requests', 'newsletter_subscribers'];
 
 // Handle form updates and clear/delete
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -82,6 +82,7 @@ $search_filter = $_GET['search'] ?? '';
 $custom_designs = [];
 $product_customizations = [];
 $quote_requests = [];
+$newsletter_subscribers = [];
 
 // 1. Design Your Own Product (custom_designs)
 $custom_designs_query = "SELECT cd.*, u.username FROM custom_designs cd LEFT JOIN users u ON cd.user_id = u.id WHERE 1=1";
@@ -122,6 +123,22 @@ $product_customizations_query .= " ORDER BY pc.created_at DESC";
 $res = $conn->query($product_customizations_query);
 $product_customizations = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
 
+// 4. Newsletter subscribers
+$newsletter_table_exists = $conn->query("SHOW TABLES LIKE 'newsletter_subscribers'");
+if ($newsletter_table_exists && $newsletter_table_exists->num_rows > 0) {
+    $newsletter_query = "SELECT ns.* FROM newsletter_subscribers ns WHERE 1=1";
+    if ($status_filter) {
+        $newsletter_query .= " AND ns.status = '" . $conn->real_escape_string($status_filter) . "'";
+    }
+    if ($search_filter) {
+        $search_escaped = $conn->real_escape_string($search_filter);
+        $newsletter_query .= " AND ns.email LIKE '%$search_escaped%'";
+    }
+    $newsletter_query .= " ORDER BY ns.created_at DESC";
+    $res = $conn->query($newsletter_query);
+    $newsletter_subscribers = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+}
+
 $base = defined('BASE_PATH') ? rtrim(BASE_PATH, '/') : '';
 
 // Status options per table (for dropdown)
@@ -129,6 +146,7 @@ $status_options = [
     'custom_designs' => ['pending', 'processing', 'completed', 'cancelled'],
     'quote_requests' => ['pending', 'quoted', 'accepted', 'rejected', 'cancelled'],
     'product_customizations' => ['pending', 'reviewing', 'approved', 'rejected', 'cancelled'],
+    'newsletter_subscribers' => ['active', 'unsubscribed'],
 ];
 
 $conn->close();
@@ -269,11 +287,17 @@ $conn->close();
                    class="tab-link <?php echo $active_tab == 'product_customizations' ? 'active' : ''; ?>">
                     <i class="fas fa-paint-brush"></i> Customizations
                 </a>
+                <a href="?tab=newsletter_subscribers<?php echo $status_filter ? '&status=' . urlencode($status_filter) : ''; ?><?php echo $search_filter ? '&search=' . urlencode($search_filter) : ''; ?>" 
+                   class="tab-link <?php echo $active_tab == 'newsletter_subscribers' ? 'active' : ''; ?>">
+                    <i class="fas fa-envelope-open-text"></i> Newsletter
+                </a>
             </div>
             
             <!-- Filters and PDF export -->
             <div class="filter-section">
+                <?php if ($active_tab !== 'newsletter_subscribers'): ?>
                 <a href="<?php echo htmlspecialchars($base); ?>/admin/form-submissions-pdf?table=<?php echo urlencode($active_tab); ?>" class="btn-primary" style="margin-right: 15px;"><i class="fas fa-file-pdf"></i> Download all as PDF</a>
+                <?php endif; ?>
                 <form method="GET" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
                     <input type="hidden" name="tab" value="<?php echo htmlspecialchars($active_tab); ?>">
                     <input type="text" name="search" placeholder="Search..." value="<?php echo htmlspecialchars($search_filter); ?>" style="min-width: 200px;">
@@ -285,6 +309,8 @@ $conn->close();
                             $statuses = ['pending', 'processing', 'completed', 'cancelled'];
                         } elseif ($active_tab == 'product_customizations') {
                             $statuses = ['pending', 'reviewing', 'approved', 'rejected', 'cancelled'];
+                        } elseif ($active_tab == 'newsletter_subscribers') {
+                            $statuses = ['active', 'unsubscribed'];
                         } else {
                             $statuses = ['pending', 'quoted', 'accepted', 'rejected', 'cancelled'];
                         }
@@ -505,6 +531,62 @@ $conn->close();
                         </tbody>
                     </table>
                 </div>
+
+            <!-- Newsletter Tab -->
+            <?php elseif ($active_tab == 'newsletter_subscribers'): ?>
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAllNewsletter" title="Select all"></th>
+                                <th>ID</th>
+                                <th>Email</th>
+                                <th>Source</th>
+                                <th>Status</th>
+                                <th>Subscribed On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($newsletter_subscribers)): ?>
+                                <tr>
+                                    <td colspan="7">No newsletter subscribers found</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($newsletter_subscribers as $item): ?>
+                                    <tr class="submission-row" onclick="viewSubmission('newsletter_subscribers', <?php echo htmlspecialchars(json_encode($item)); ?>)">
+                                        <td onclick="event.stopPropagation();"><input type="checkbox" class="row-check" name="ids[]" value="<?php echo (int)$item['id']; ?>" form="bulkClearForm"></td>
+                                        <td><?php echo (int)$item['id']; ?></td>
+                                        <td><?php echo htmlspecialchars($item['email'] ?? 'N/A'); ?></td>
+                                        <td><?php echo htmlspecialchars($item['source'] ?? 'popup'); ?></td>
+                                        <td onclick="event.stopPropagation();">
+                                            <form method="POST" class="status-dropdown-form" style="display:inline;">
+                                                <input type="hidden" name="update_status" value="1">
+                                                <input type="hidden" name="id" value="<?php echo (int)$item['id']; ?>">
+                                                <input type="hidden" name="table" value="newsletter_subscribers">
+                                                <?php if ($status_filter !== ''): ?><input type="hidden" name="status_filter" value="<?php echo htmlspecialchars($status_filter); ?>"><?php endif; ?>
+                                                <?php if ($search_filter !== ''): ?><input type="hidden" name="search_filter" value="<?php echo htmlspecialchars($search_filter); ?>"><?php endif; ?>
+                                                <select name="status" onchange="this.form.submit()" class="status-select">
+                                                    <?php foreach ($status_options['newsletter_subscribers'] as $opt): ?>
+                                                        <option value="<?php echo htmlspecialchars($opt); ?>" <?php echo ($item['status'] ?? '') === $opt ? 'selected' : ''; ?>><?php echo ucfirst($opt); ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </form>
+                                        </td>
+                                        <td><?php echo !empty($item['created_at']) ? date('M d, Y', strtotime($item['created_at'])) : 'N/A'; ?></td>
+                                        <td class="actions" onclick="event.stopPropagation();">
+                                            <button type="button" onclick="viewSubmission('newsletter_subscribers', <?php echo htmlspecialchars(json_encode($item)); ?>)" class="btn-view" title="View"><i class="fas fa-eye"></i></button>
+                                            <form method="POST" style="display:inline;" onsubmit="return confirm('Remove this subscriber?');">
+                                                <input type="hidden" name="clear_one" value="1"><input type="hidden" name="table" value="newsletter_subscribers"><input type="hidden" name="id" value="<?php echo (int)$item['id']; ?>">
+                                                <button type="submit" class="btn-delete" title="Clear"><i class="fas fa-trash"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             
             <?php endif; ?>
         </div>
@@ -560,6 +642,14 @@ $conn->close();
                     <p><strong>Status:</strong> ${data.status || 'pending'}</p>
                     <p><strong>Created:</strong> ${new Date(data.created_at).toLocaleString()}</p>
                 `;
+            } else if (table == 'newsletter_subscribers') {
+                html = `
+                    <p><strong>Email:</strong> ${data.email || 'N/A'}</p>
+                    <p><strong>Source:</strong> ${data.source || 'popup'}</p>
+                    <p><strong>Status:</strong> ${data.status || 'active'}</p>
+                    <p><strong>Subscribed:</strong> ${data.created_at ? new Date(data.created_at).toLocaleString() : 'N/A'}</p>
+                    <p><strong>Updated:</strong> ${data.updated_at ? new Date(data.updated_at).toLocaleString() : 'N/A'}</p>
+                `;
             }
             
             document.getElementById('modalBody').innerHTML = html;
@@ -582,6 +672,7 @@ $conn->close();
             var selectAllDesign = document.getElementById('selectAllDesign');
             var selectAllQuote = document.getElementById('selectAllQuote');
             var selectAllCustom = document.getElementById('selectAllCustom');
+            var selectAllNewsletter = document.getElementById('selectAllNewsletter');
             var rowChecks = document.querySelectorAll('.row-check');
             var btnClearSelected = document.getElementById('btnClearSelected');
 
@@ -590,7 +681,7 @@ $conn->close();
                 if (btnClearSelected) btnClearSelected.style.display = any ? 'inline-block' : 'none';
             }
 
-            [selectAllDesign, selectAllQuote, selectAllCustom].forEach(function(header) {
+            [selectAllDesign, selectAllQuote, selectAllCustom, selectAllNewsletter].forEach(function(header) {
                 if (!header) return;
                 header.onclick = function() {
                     var t = header.closest('table');

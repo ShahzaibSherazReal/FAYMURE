@@ -166,3 +166,137 @@ forms.forEach(form => {
         }
     }, 25000);
 })();
+
+// Newsletter popup
+(function () {
+    const popup = document.getElementById('newsletterPopup');
+    const closeBtn = document.getElementById('newsletterPopupClose');
+    const form = document.getElementById('newsletterPopupForm');
+    const emailInput = document.getElementById('newsletterPopupEmail');
+    const feedback = document.getElementById('newsletterPopupFeedback');
+    const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+
+    if (!popup) return;
+
+    function getSubscribeUrl() {
+        const basePath = (typeof window.BASE_PATH !== 'undefined' && window.BASE_PATH) ? window.BASE_PATH : '';
+        return basePath + '/newsletter-subscribe';
+    }
+
+    function getSubscribeUrlCandidates() {
+        const fromBase = getSubscribeUrl();
+        const candidates = [fromBase, '/newsletter-subscribe', 'newsletter-subscribe'];
+        return candidates.filter((url, index) => url && candidates.indexOf(url) === index);
+    }
+
+    function setFeedback(message, isSuccess) {
+        if (!feedback) return;
+        feedback.textContent = message;
+        feedback.classList.remove('is-success', 'is-error', 'is-show');
+        feedback.classList.add(isSuccess ? 'is-success' : 'is-error', 'is-show');
+    }
+
+    function openPopup() {
+        popup.classList.add('is-open');
+        popup.setAttribute('aria-hidden', 'false');
+        if (feedback) {
+            feedback.classList.remove('is-success', 'is-error', 'is-show');
+            feedback.textContent = '';
+        }
+    }
+
+    function closePopup() {
+        popup.classList.remove('is-open');
+        popup.setAttribute('aria-hidden', 'true');
+    }
+
+    function scheduleOpen() {
+        setTimeout(openPopup, 250);
+    }
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        scheduleOpen();
+    } else {
+        document.addEventListener('DOMContentLoaded', scheduleOpen);
+        window.addEventListener('load', scheduleOpen);
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closePopup);
+    }
+
+    popup.addEventListener('click', (event) => {
+        if (event.target === popup) {
+            closePopup();
+        }
+    });
+
+    if (form) {
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const email = emailInput ? emailInput.value.trim() : '';
+            if (!email) {
+                setFeedback('Please enter your email address.', false);
+                return;
+            }
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Subscribing...';
+            }
+
+            try {
+                const urls = getSubscribeUrlCandidates();
+                let lastError = '';
+                let successHandled = false;
+
+                for (const endpoint of urls) {
+                    try {
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                            },
+                            body: 'email=' + encodeURIComponent(email),
+                            credentials: 'same-origin'
+                        });
+
+                        const text = await response.text();
+                        let data = null;
+                        try {
+                            data = JSON.parse(text);
+                        } catch (e) {
+                            lastError = text ? 'Server returned invalid response.' : 'Empty server response.';
+                            continue;
+                        }
+
+                        if (!response.ok || !data.success) {
+                            lastError = data.message || 'Subscription failed. Please try again.';
+                            continue;
+                        }
+
+                        setFeedback(data.message || 'Subscribed successfully! Welcome to FAYMURE updates.', true);
+                        form.reset();
+                        setTimeout(closePopup, 1600);
+                        successHandled = true;
+                        break;
+                    } catch (e) {
+                        lastError = 'Connection failed.';
+                    }
+                }
+
+                if (!successHandled) {
+                    setFeedback(lastError || 'Could not connect. Please try again in a moment.', false);
+                }
+            } catch (err) {
+                setFeedback('Could not connect. Please try again in a moment.', false);
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Subscribe';
+                }
+            }
+        });
+    }
+})();

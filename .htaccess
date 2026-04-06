@@ -51,11 +51,12 @@ php_value upload_max_filesize 10M
 php_value post_max_size 10M
 
 # ----- Redirect .php URLs to clean URLs (301) -----
-# Exception: hash-password.php, add-product-columns.php, user-logs.php (iframe in admin) must stay as .php
+# Exception: hash-password.php, add-product-columns.php, user-logs.php, newsletter-subscribe.php must stay as .php
 RewriteCond %{THE_REQUEST} \s/FAYMURE/([^.]+)\.php(\?[^\s]*)? [NC]
 RewriteCond %{THE_REQUEST} !hash-password\.php [NC]
 RewriteCond %{THE_REQUEST} !add-product-columns\.php [NC]
 RewriteCond %{THE_REQUEST} !user-logs\.php [NC]
+RewriteCond %{THE_REQUEST} !newsletter-subscribe\.php [NC]
 RewriteRule ^ /FAYMURE/%1%2 [R=301,L]
 
 # ----- Serve real files and directories as-is -----
@@ -94,6 +95,7 @@ RewriteRule ^add-review/?$ add-review.php [L,QSA]
 RewriteRule ^setup-database/?$ setup-database.php [L,QSA]
 RewriteRule ^track-visit/?$ track-visit.php [L,QSA]
 RewriteRule ^track-event/?$ track-event.php [L,QSA]
+RewriteRule ^newsletter-subscribe/?$ newsletter-subscribe.php [L,QSA]
 
 # ----- Blog: clean URLs -----
 RewriteRule ^blog/?$ blog/index.php [L,QSA]

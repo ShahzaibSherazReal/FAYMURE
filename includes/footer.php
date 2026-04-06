@@ -79,7 +79,20 @@
         </div>
     </footer>
 
-    <script src="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/assets/js/main.js"></script>
+    <div class="newsletter-popup" id="newsletterPopup" aria-hidden="true">
+        <div class="newsletter-popup__content" role="dialog" aria-modal="true" aria-labelledby="newsletterPopupTitle">
+            <button type="button" class="newsletter-popup__close" id="newsletterPopupClose" aria-label="Close newsletter popup">&times;</button>
+            <h3 id="newsletterPopupTitle">Join Our Newsletter</h3>
+            <p>Get updates on new arrivals, exclusive offers, and leather care tips.</p>
+            <form class="newsletter-popup__form" id="newsletterPopupForm">
+                <input type="email" id="newsletterPopupEmail" placeholder="Enter your email" required>
+                <button type="submit">Subscribe</button>
+            </form>
+            <div class="newsletter-popup__feedback" id="newsletterPopupFeedback" aria-live="polite"></div>
+        </div>
+    </div>
+
+    <script src="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/assets/js/main.js?v=<?php echo time(); ?>"></script>
     <script defer src="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/assets/js/visitor-tracker.js?v=<?php echo time(); ?>"></script>
     <script defer src="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/assets/js/motion.js"></script>
 </body>
