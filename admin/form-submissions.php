@@ -4,6 +4,7 @@ require_once 'check-auth.php';
 $conn = getDBConnection();
 
 $success = false;
+$success_message = 'Changes saved successfully!';
 $error = '';
 if (isset($_GET['updated']) && $_GET['updated'] == '1') {
     $success = true;
@@ -13,7 +14,73 @@ $allowed_tables = ['custom_designs', 'product_customizations', 'quote_requests',
 
 // Handle form updates and clear/delete
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if (isset($_POST['update_status'])) {
+    if (isset($_POST['send_newsletter'])) {
+        $table = $_POST['table'] ?? '';
+        $scope = $_POST['send_scope'] ?? 'selected';
+        $subject = trim((string)($_POST['newsletter_subject'] ?? ''));
+        $message = trim((string)($_POST['newsletter_message'] ?? ''));
+
+        if ($table !== 'newsletter_subscribers') {
+            $error = 'Invalid newsletter request.';
+        } elseif ($message === '') {
+            $error = 'Newsletter message is required.';
+        } else {
+            $recipients = [];
+            if ($scope === 'all') {
+                $res = $conn->query("SELECT email FROM newsletter_subscribers WHERE status = 'active' ORDER BY created_at DESC");
+                if ($res) {
+                    while ($row = $res->fetch_assoc()) {
+                        if (!empty($row['email'])) {
+                            $recipients[] = $row['email'];
+                        }
+                    }
+                }
+            } else {
+                $ids = $_POST['newsletter_ids'] ?? [];
+                if (!is_array($ids)) {
+                    $ids = [];
+                }
+                $ids = array_map('intval', $ids);
+                $ids = array_values(array_filter($ids, function ($i) { return $i > 0; }));
+                if (empty($ids)) {
+                    $error = 'Select at least one subscriber to send newsletter.';
+                } else {
+                    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+                    $stmt = $conn->prepare("SELECT email FROM newsletter_subscribers WHERE status = 'active' AND id IN ($placeholders)");
+                    if ($stmt) {
+                        $stmt->bind_param(str_repeat('i', count($ids)), ...$ids);
+                        $stmt->execute();
+                        $stmt->bind_result($recipient_email);
+                        while ($stmt->fetch()) {
+                            if (!empty($recipient_email)) {
+                                $recipients[] = $recipient_email;
+                            }
+                        }
+                        $stmt->close();
+                    }
+                }
+            }
+
+            if ($error === '') {
+                $recipients = array_values(array_unique($recipients));
+                if (empty($recipients)) {
+                    $error = 'No active subscribers found for this action.';
+                } else {
+                    $sent_count = 0;
+                    $failed_count = 0;
+                    foreach ($recipients as $to) {
+                        if (send_newsletter_email($to, $subject, $message)) {
+                            $sent_count++;
+                        } else {
+                            $failed_count++;
+                        }
+                    }
+                    $success = true;
+                    $success_message = "Newsletter sent to {$sent_count} subscriber(s)." . ($failed_count > 0 ? " Failed: {$failed_count}." : '');
+                }
+            }
+        }
+    } elseif (isset($_POST['update_status'])) {
         $id = intval($_POST['id']);
         $status = sanitize($_POST['status']);
         $table = $_POST['table'] ?? '';
@@ -22,6 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $stmt->bind_param("si", $status, $id);
             if ($stmt->execute()) {
                 $success = true;
+                $success_message = 'Changes saved successfully!';
             } else {
                 $error = "Failed to update status.";
             }
@@ -47,6 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (in_array($table, $allowed_tables) && $id > 0) {
             $conn->query("DELETE FROM $table WHERE id = $id");
             $success = true;
+            $success_message = 'Submission removed successfully.';
         }
     } elseif (isset($_POST['clear_selected']) && isset($_POST['table']) && !empty($_POST['ids']) && is_array($_POST['ids'])) {
         $table = $_POST['table'];
@@ -60,6 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $stmt->execute();
                 $stmt->close();
                 $success = true;
+                $success_message = 'Selected submissions removed successfully.';
             }
         }
     } elseif (isset($_POST['clear_all']) && isset($_POST['table'])) {
@@ -67,6 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (in_array($table, $allowed_tables)) {
             $conn->query("DELETE FROM $table");
             $success = true;
+            $success_message = 'All submissions in this section were removed.';
         }
     }
 }
@@ -250,6 +321,42 @@ $conn->close();
             border-color: var(--dark-color, #1a1a1a);
             color: #fff;
         }
+        .newsletter-composer {
+            border: 1px solid #e5e5e5;
+            background: #fff;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .newsletter-composer h3 {
+            margin: 0 0 12px;
+            font-size: 1.05rem;
+        }
+        .newsletter-composer .row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .newsletter-composer input[type="text"],
+        .newsletter-composer textarea {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .newsletter-composer textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        .newsletter-composer .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -263,7 +370,7 @@ $conn->close();
             
             <?php if ($success): ?>
                 <div class="success-notification">
-                    <i class="fas fa-check-circle"></i> Changes saved successfully!
+                    <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($success_message); ?>
                 </div>
             <?php endif; ?>
             
@@ -534,6 +641,28 @@ $conn->close();
 
             <!-- Newsletter Tab -->
             <?php elseif ($active_tab == 'newsletter_subscribers'): ?>
+                <div class="newsletter-composer">
+                    <h3><i class="fas fa-paper-plane"></i> Send Newsletter</h3>
+                    <form method="POST" id="newsletterSendForm">
+                        <input type="hidden" name="send_newsletter" value="1">
+                        <input type="hidden" name="table" value="newsletter_subscribers">
+                        <div class="row">
+                            <input type="text" name="newsletter_subject" placeholder="Subject (optional)" value="<?php echo isset($_POST['newsletter_subject']) ? htmlspecialchars((string)$_POST['newsletter_subject']) : ''; ?>">
+                        </div>
+                        <div class="row">
+                            <textarea name="newsletter_message" placeholder="Write your newsletter message here..." required><?php echo isset($_POST['newsletter_message']) ? htmlspecialchars((string)$_POST['newsletter_message']) : ''; ?></textarea>
+                        </div>
+                        <div id="newsletterSelectedIds"></div>
+                        <div class="actions">
+                            <button type="submit" name="send_scope" value="selected" class="btn-primary" onclick="return prepareNewsletterSelected(this.form);">
+                                <i class="fas fa-paper-plane"></i> Send to Selected
+                            </button>
+                            <button type="submit" name="send_scope" value="all" class="btn-secondary" onclick="return confirm('Send this newsletter to all active subscribers?');">
+                                <i class="fas fa-bullhorn"></i> Send to All Active
+                            </button>
+                        </div>
+                    </form>
+                </div>
                 <div class="table-container">
                     <table class="admin-table">
                         <thead>
@@ -602,6 +731,25 @@ $conn->close();
     </div>
     
     <script>
+        function prepareNewsletterSelected(form) {
+            var checks = document.querySelectorAll('.row-check:checked');
+            if (!checks.length) {
+                alert('Select at least one subscriber.');
+                return false;
+            }
+            var container = document.getElementById('newsletterSelectedIds');
+            if (!container) return true;
+            container.innerHTML = '';
+            checks.forEach(function (cb) {
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'newsletter_ids[]';
+                input.value = cb.value;
+                container.appendChild(input);
+            });
+            return confirm('Send this newsletter to ' + checks.length + ' selected subscriber(s)?');
+        }
+
         function viewSubmission(table, data) {
             let html = '';
             

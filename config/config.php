@@ -315,5 +315,25 @@ function send_form_notification_email($subject, $body, $reply_to = null, array $
 
     @mail($to, $subject, $msg, $headers);
 }
+
+/**
+ * Send newsletter email directly to a subscriber.
+ * Returns true when mail() accepts the message for delivery.
+ */
+function send_newsletter_email($to, $subject, $body) {
+    $to = trim((string) $to);
+    if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        return false;
+    }
+    $from = form_notification_recipient();
+    $subj = trim((string) $subject);
+    if ($subj === '') {
+        $subj = SITE_NAME . ' Newsletter';
+    }
+    $headers = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+    $headers .= 'From: ' . SITE_NAME . ' <' . $from . ">\r\n";
+    return (bool) @mail($to, $subj, (string) $body, $headers);
+}
 ?>
 
