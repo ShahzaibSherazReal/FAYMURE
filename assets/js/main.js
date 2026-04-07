@@ -175,6 +175,7 @@ forms.forEach(form => {
     const emailInput = document.getElementById('newsletterPopupEmail');
     const feedback = document.getElementById('newsletterPopupFeedback');
     const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+    const footerOpenBtn = document.getElementById('openNewsletterFromFooter');
 
     if (!popup) return;
 
@@ -196,6 +197,21 @@ forms.forEach(form => {
         feedback.classList.add(isSuccess ? 'is-success' : 'is-error', 'is-show');
     }
 
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return '';
+    }
+
+    function markPopupSeenForSession() {
+        document.cookie = 'newsletter_popup_seen=1; path=/; SameSite=Lax';
+    }
+
+    function shouldAutoShowPopup() {
+        return getCookie('newsletter_popup_seen') !== '1';
+    }
+
     function openPopup() {
         popup.classList.add('is-open');
         popup.setAttribute('aria-hidden', 'false');
@@ -208,17 +224,20 @@ forms.forEach(form => {
     function closePopup() {
         popup.classList.remove('is-open');
         popup.setAttribute('aria-hidden', 'true');
+        markPopupSeenForSession();
     }
 
     function scheduleOpen() {
         setTimeout(openPopup, 250);
     }
 
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        scheduleOpen();
-    } else {
-        document.addEventListener('DOMContentLoaded', scheduleOpen);
-        window.addEventListener('load', scheduleOpen);
+    if (shouldAutoShowPopup()) {
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            scheduleOpen();
+        } else {
+            document.addEventListener('DOMContentLoaded', scheduleOpen);
+            window.addEventListener('load', scheduleOpen);
+        }
     }
 
     if (closeBtn) {
@@ -230,6 +249,12 @@ forms.forEach(form => {
             closePopup();
         }
     });
+
+    if (footerOpenBtn) {
+        footerOpenBtn.addEventListener('click', () => {
+            openPopup();
+        });
+    }
 
     if (form) {
         form.addEventListener('submit', async (event) => {
@@ -278,6 +303,7 @@ forms.forEach(form => {
 
                         setFeedback(data.message || 'Subscribed successfully! Welcome to FAYMURE updates.', true);
                         form.reset();
+                        markPopupSeenForSession();
                         setTimeout(closePopup, 1600);
                         successHandled = true;
                         break;

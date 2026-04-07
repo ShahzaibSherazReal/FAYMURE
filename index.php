@@ -176,6 +176,7 @@ endif; ?>
                         <?php foreach ($homepage_categories as $category): ?>
                             <a href="<?php echo $base; ?>/products?category=<?php echo urlencode($category['slug']); ?>" class="homepage-slide-card">
                                 <div class="homepage-slide-image">
+                                    <span class="homepage-tag">Customizable</span>
                                     <?php
                                     $cat_imgs = [];
                                     if (!empty($category['images'])) {
@@ -279,6 +280,7 @@ endif; ?>
                         <?php foreach ($latest_products as $product): ?>
                             <a href="<?php echo $base; ?>/product-detail/<?php echo rawurlencode(!empty($product['slug']) ? $product['slug'] : slugify($product['name'] ?? 'product')); ?>" class="homepage-slide-card latest-creation-card">
                                 <div class="homepage-slide-image">
+                                    <span class="homepage-tag homepage-tag--latest">Latest</span>
                                     <?php if (!empty($product['image'])): ?>
                                         <img src="<?php echo htmlspecialchars((isset($base) && $base !== '') ? rtrim($base, '/') . '/' . ltrim($product['image'], '/') : '/' . ltrim($product['image'], '/')); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
                                     <?php else: ?>

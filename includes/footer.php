@@ -72,6 +72,13 @@
                         <li><a href="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/faq">Frequently Asked Questions</a></li>
                     </ul>
                 </div>
+                <div class="footer-section">
+                    <h3>Newsletter</h3>
+                    <p>Get new arrivals and offers in your inbox.</p>
+                    <button type="button" class="footer-newsletter-btn" id="openNewsletterFromFooter">
+                        <i class="fas fa-envelope"></i> Subscribe
+                    </button>
+                </div>
             </div>
             <div class="footer-bottom">
                 <p>&copy; <?php echo date('Y'); ?> <?php echo SITE_NAME; ?>. All rights reserved.</p>
