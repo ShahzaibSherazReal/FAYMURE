@@ -18,6 +18,7 @@ if ($t && $t->num_rows > 0) $hasEvents = true;
 $profile = null;
 $sessions = [];
 $events = [];
+$visitor_country = 'Unknown';
 
 if ($hasEvents) {
     $stmt = $conn->prepare("SELECT * FROM visitor_profiles WHERE guest_id = ? LIMIT 1");
@@ -34,6 +35,22 @@ if ($hasEvents) {
         $stmt->execute();
         $sessions = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
+    }
+
+    // Determine visitor country from best available IP (profile last_ip -> first_ip -> latest session ip)
+    $country_ip = '';
+    if (!empty($profile['last_ip'])) {
+        $country_ip = (string)$profile['last_ip'];
+    } elseif (!empty($profile['first_ip'])) {
+        $country_ip = (string)$profile['first_ip'];
+    } elseif (!empty($sessions) && !empty($sessions[0]['ip_address'])) {
+        $country_ip = (string)$sessions[0]['ip_address'];
+    }
+    if ($country_ip !== '') {
+        $visitor_country = get_country_from_ip($country_ip);
+        if (!is_string($visitor_country) || trim($visitor_country) === '') {
+            $visitor_country = 'Unknown';
+        }
     }
 
     $stmt = $conn->prepare("SELECT id, session_id, event_type, page_path, product_id, category_id, search_term, button_name, duration_seconds, created_at
@@ -98,6 +115,9 @@ $base = defined('BASE_PATH') ? BASE_PATH : '';
           <div style="margin-top:10px;"></div>
           <div class="k">Last seen</div>
           <div class="v"><?php echo htmlspecialchars($profile['last_seen_at'] ?? '—'); ?></div>
+          <div style="margin-top:10px;"></div>
+          <div class="k">Country</div>
+          <div class="v"><?php echo htmlspecialchars($visitor_country); ?></div>
         </div>
         <div class="card">
           <div class="k">Event breakdown (last 400)</div>

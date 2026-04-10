@@ -34,7 +34,7 @@ $summary = [
     'checkout_completed_today' => 0,
 ];
 
-$events = [];
+$visitors = [];
 $totalRows = 0;
 $totalPages = 1;
 
@@ -95,8 +95,8 @@ if ($hasEvents) {
 
     $where = $filters ? ('WHERE ' . implode(' AND ', $filters)) : '';
 
-    // Count
-    $stmt = $conn->prepare("SELECT COUNT(*) AS c FROM visitor_events $where");
+    // Count unique visitors (grouped view)
+    $stmt = $conn->prepare("SELECT COUNT(DISTINCT guest_id) AS c FROM visitor_events $where");
     if ($stmt) {
         if ($types !== '') $stmt->bind_param($types, ...$params);
         $stmt->execute();
@@ -105,11 +105,20 @@ if ($hasEvents) {
     }
     $totalPages = max(1, (int)ceil($totalRows / $perPage));
 
-    // Fetch
-    $sql = "SELECT id, guest_id, user_id, session_id, event_type, page_path, product_id, category_id, search_term, button_name, ip_address, user_agent, created_at
+    // Fetch grouped visitor slots
+    $sql = "SELECT 
+                guest_id,
+                MAX(user_id) AS user_id,
+                COUNT(*) AS total_events,
+                COUNT(DISTINCT session_id) AS total_sessions,
+                MAX(created_at) AS last_activity,
+                SUBSTRING_INDEX(GROUP_CONCAT(event_type ORDER BY created_at DESC SEPARATOR ','), ',', 1) AS last_event,
+                SUBSTRING_INDEX(GROUP_CONCAT(page_path ORDER BY created_at DESC SEPARATOR ','), ',', 1) AS last_page,
+                SUBSTRING_INDEX(GROUP_CONCAT(ip_address ORDER BY created_at DESC SEPARATOR ','), ',', 1) AS last_ip
             FROM visitor_events
             $where
-            ORDER BY id DESC
+            GROUP BY guest_id
+            ORDER BY last_activity DESC
             LIMIT ?, ?";
     $stmt = $conn->prepare($sql);
     if ($stmt) {
@@ -119,7 +128,7 @@ if ($hasEvents) {
         $params2[] = $perPage;
         $stmt->bind_param($types2, ...$params2);
         $stmt->execute();
-        $events = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $visitors = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
     }
 }
@@ -209,20 +218,19 @@ $base = defined('BASE_PATH') ? BASE_PATH : '';
           <thead>
             <tr>
               <th>Visitor</th>
-              <th>Session</th>
-              <th>Event</th>
-              <th>Page</th>
-              <th>Info</th>
+              <th>Sessions</th>
+              <th>Total Events</th>
+              <th>Last Event</th>
+              <th>Last Page</th>
               <th>IP</th>
-              <th>User agent</th>
-              <th>Time</th>
+              <th>Last Activity</th>
             </tr>
           </thead>
           <tbody>
-          <?php if (empty($events)): ?>
-            <tr><td colspan="8">No events found.</td></tr>
+          <?php if (empty($visitors)): ?>
+            <tr><td colspan="7">No visitors found.</td></tr>
           <?php else: ?>
-            <?php foreach ($events as $e): ?>
+            <?php foreach ($visitors as $e): ?>
               <tr>
                 <td>
                   <span class="pill"><?php echo $e['user_id'] ? 'user' : 'guest'; ?></span><br>
@@ -231,18 +239,12 @@ $base = defined('BASE_PATH') ? BASE_PATH : '';
                   </a>
                   <?php if ($e['user_id']): ?><br><small>User #<?php echo (int)$e['user_id']; ?></small><?php endif; ?>
                 </td>
-                <td><?php echo htmlspecialchars($e['session_id'] ?: '—'); ?></td>
-                <td><?php echo htmlspecialchars($e['event_type']); ?></td>
-                <td><?php echo htmlspecialchars($e['page_path'] ?: '—'); ?></td>
-                <td>
-                  <?php if (!empty($e['product_id'])): ?>Product #<?php echo (int)$e['product_id']; ?><br><?php endif; ?>
-                  <?php if (!empty($e['category_id'])): ?>Category #<?php echo (int)$e['category_id']; ?><br><?php endif; ?>
-                  <?php if (!empty($e['search_term'])): ?>Search: <?php echo htmlspecialchars($e['search_term']); ?><br><?php endif; ?>
-                  <?php if (!empty($e['button_name'])): ?>Btn: <?php echo htmlspecialchars($e['button_name']); ?><?php endif; ?>
-                </td>
-                <td><?php echo htmlspecialchars($e['ip_address'] ?: ''); ?></td>
-                <td><span class="ua" title="<?php echo htmlspecialchars($e['user_agent'] ?: ''); ?>"><?php echo htmlspecialchars($e['user_agent'] ?: ''); ?></span></td>
-                <td><?php echo htmlspecialchars($e['created_at']); ?></td>
+                <td><?php echo (int)$e['total_sessions']; ?></td>
+                <td><?php echo (int)$e['total_events']; ?></td>
+                <td><?php echo htmlspecialchars($e['last_event'] ?: '—'); ?></td>
+                <td><?php echo htmlspecialchars($e['last_page'] ?: '—'); ?></td>
+                <td><?php echo htmlspecialchars($e['last_ip'] ?: '—'); ?></td>
+                <td><?php echo htmlspecialchars($e['last_activity']); ?></td>
               </tr>
             <?php endforeach; ?>
           <?php endif; ?>
