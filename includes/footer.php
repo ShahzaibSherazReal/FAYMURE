@@ -99,6 +99,10 @@
         </div>
     </div>
 
+    <a class="floating-whatsapp-btn" href="https://wa.me/923252100730?text=<?php echo rawurlencode('Hi FAYMURE, I would like to know more about your products.'); ?>" target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
     <script src="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/assets/js/main.js?v=<?php echo time(); ?>"></script>
     <script defer src="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/assets/js/visitor-tracker.js?v=<?php echo time(); ?>"></script>
     <script defer src="<?php echo (defined('BASE_PATH') ? BASE_PATH : ''); ?>/assets/js/motion.js"></script>
