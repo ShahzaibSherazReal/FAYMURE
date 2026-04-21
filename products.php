@@ -62,7 +62,7 @@ if ($filter_gender != 'all') {
     $types .= "s";
 }
 
-$query .= " ORDER BY created_at DESC";
+$query .= " ORDER BY sort_order, created_at DESC";
 
 $stmt = $conn->prepare($query);
 if (count($params) > 1) {

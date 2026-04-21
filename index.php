@@ -112,6 +112,26 @@ if ($latest_products_result) {
     $latest_products = $latest_products_result->fetch_all(MYSQLI_ASSOC);
 }
 
+$homepage_sections_order = ['catalog', 'choose_path', 'latest_creation', 'info_carousel'];
+if ($columns_check && $columns_check->num_rows > 0) {
+    $result = $conn->query("SELECT content_value FROM site_content WHERE content_key='homepage_sections_order' LIMIT 1");
+    if ($result && $row = $result->fetch_assoc()) {
+        $saved = json_decode((string)($row['content_value'] ?? ''), true);
+        if (is_array($saved)) {
+            $clean = [];
+            foreach ($saved as $item) {
+                if (in_array($item, $homepage_sections_order, true) && !in_array($item, $clean, true)) {
+                    $clean[] = $item;
+                }
+            }
+            foreach ($homepage_sections_order as $item) {
+                if (!in_array($item, $clean, true)) $clean[] = $item;
+            }
+            $homepage_sections_order = $clean;
+        }
+    }
+}
+
 $conn->close();
 ?>
     <main>
@@ -161,6 +181,9 @@ endif; ?>
             </div>
         </section>
 
+        <?php
+        ob_start();
+        ?>
         <!-- Catalog Categories Slider -->
         <section class="homepage-slider-section">
             <div class="container">
@@ -212,6 +235,11 @@ endif; ?>
                 </div>
             </div>
         </section>
+        <?php
+        $homepage_sections_markup = [];
+        $homepage_sections_markup['catalog'] = ob_get_clean();
+        ob_start();
+        ?>
 
         <!-- Explore Options Section -->
         <section class="explore-options-section">
@@ -264,6 +292,10 @@ endif; ?>
                 </div>
             </div>
         </section>
+        <?php
+        $homepage_sections_markup['choose_path'] = ob_get_clean();
+        ob_start();
+        ?>
 
         <!-- Our Latest Creation Slider -->
         <section class="homepage-slider-section homepage-latest-creation">
@@ -299,6 +331,10 @@ endif; ?>
                 </div>
             </div>
         </section>
+        <?php
+        $homepage_sections_markup['latest_creation'] = ob_get_clean();
+        ob_start();
+        ?>
 
         <!-- Vision, Mission, Services Carousel -->
         <section class="info-carousel-section">
@@ -349,6 +385,14 @@ endif; ?>
                 </div>
             </div>
         </section>
+        <?php
+        $homepage_sections_markup['info_carousel'] = ob_get_clean();
+        foreach ($homepage_sections_order as $section_key) {
+            if (isset($homepage_sections_markup[$section_key])) {
+                echo $homepage_sections_markup[$section_key];
+            }
+        }
+        ?>
     </main>
 
     <style>
