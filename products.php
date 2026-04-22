@@ -221,26 +221,6 @@ else: ?>
                                                 </div>
                                             </div>
                                             
-                                            <div class="product-rating">
-                                                <div class="stars">
-                                                    <?php
-        $rating = 4.5; // Default rating, can be fetched from reviews table if available
-        $fullStars = floor($rating);
-        $hasHalfStar = ($rating - $fullStars) >= 0.5;
-        for ($i = 0; $i < $fullStars; $i++) {
-            echo '<i class="fas fa-star"></i>';
-        }
-        if ($hasHalfStar) {
-            echo '<i class="fas fa-star-half-alt"></i>';
-        }
-        for ($i = $fullStars + ($hasHalfStar ? 1 : 0); $i < 5; $i++) {
-            echo '<i class="far fa-star"></i>';
-        }
-?>
-                                                </div>
-                                                <span class="rating-value"><?php echo number_format($rating, 1); ?>/5.0</span>
-                                                <span class="rating-count">(<?php echo rand(5, 50); ?>)</span>
-                                            </div>
                                         </div>
                                     </a>
                                 </div>
@@ -438,32 +418,6 @@ endif; ?>
         
         .seller-country i {
             font-size: 11px;
-        }
-        
-        .product-rating {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-        }
-        
-        .stars {
-            display: flex;
-            gap: 2px;
-            color: #ffc107;
-        }
-        
-        .stars i {
-            font-size: 12px;
-        }
-        
-        .rating-value {
-            font-weight: 500;
-            color: #333;
-        }
-        
-        .rating-count {
-            color: #999;
         }
         
         @media (max-width: 768px) {

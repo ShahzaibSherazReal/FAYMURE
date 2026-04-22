@@ -10,7 +10,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete'])) {
     }
 }
 
-$users = $conn->query("SELECT * FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC")->fetch_all(MYSQLI_ASSOC);
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['restore'])) {
+    $id = intval($_POST['id']);
+    if ($id > 0) {
+        $conn->query("UPDATE users SET deleted_at = NULL WHERE id = $id");
+    }
+}
+
+$users_sql = "SELECT
+                u.*,
+                COALESCE(v.total_events, 0) AS total_events,
+                v.last_activity
+              FROM users u
+              LEFT JOIN (
+                SELECT user_id, COUNT(*) AS total_events, MAX(created_at) AS last_activity
+                FROM visitor_events
+                WHERE user_id IS NOT NULL
+                GROUP BY user_id
+              ) v ON v.user_id = u.id
+              ORDER BY u.created_at DESC";
+$users_result = $conn->query($users_sql);
+$users = $users_result ? $users_result->fetch_all(MYSQLI_ASSOC) : [];
 $conn->close();
 ?>
 <!DOCTYPE html>
@@ -38,6 +58,9 @@ $conn->close();
                             <th>Username</th>
                             <th>Email</th>
                             <th>Admin</th>
+                            <th>Status</th>
+                            <th>Events</th>
+                            <th>Last Activity</th>
                             <th>Created</th>
                             <th>Actions</th>
                         </tr>
@@ -45,7 +68,7 @@ $conn->close();
                     <tbody>
                         <?php if (empty($users)): ?>
                             <tr>
-                                <td colspan="6">No users found</td>
+                                <td colspan="9">No users found</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($users as $user): ?>
@@ -54,6 +77,15 @@ $conn->close();
                                     <td><?php echo htmlspecialchars($user['username']); ?></td>
                                     <td><?php echo htmlspecialchars($user['email']); ?></td>
                                     <td><?php echo $user['is_admin'] ? '<span class="badge">Yes</span>' : 'No'; ?></td>
+                                    <td>
+                                        <?php if (!empty($user['deleted_at'])): ?>
+                                            <span class="badge" style="background:#8b96a6;">Deleted</span>
+                                        <?php else: ?>
+                                            <span class="badge">Active</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><?php echo (int)($user['total_events'] ?? 0); ?></td>
+                                    <td><?php echo !empty($user['last_activity']) ? date('M d, Y H:i', strtotime($user['last_activity'])) : '—'; ?></td>
                                     <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
                                     <td class="actions">
                                         <button type="button"
@@ -63,10 +95,15 @@ $conn->close();
                                             title="View user activity">
                                             <i class="fas fa-eye"></i>
                                         </button>
-                                        <?php if ($user['id'] != $_SESSION['user_id']): ?>
+                                        <?php if ($user['id'] != $_SESSION['user_id'] && empty($user['deleted_at'])): ?>
                                             <form method="POST" style="display:inline;" onsubmit="return confirm('Delete this user?');">
                                                 <input type="hidden" name="id" value="<?php echo $user['id']; ?>">
                                                 <button type="submit" name="delete" class="btn-delete"><i class="fas fa-trash"></i></button>
+                                            </form>
+                                        <?php elseif (!empty($user['deleted_at'])): ?>
+                                            <form method="POST" style="display:inline;">
+                                                <input type="hidden" name="id" value="<?php echo $user['id']; ?>">
+                                                <button type="submit" name="restore" class="btn-view btn-icon-small" title="Restore user"><i class="fas fa-undo"></i></button>
                                             </form>
                                         <?php endif; ?>
                                     </td>

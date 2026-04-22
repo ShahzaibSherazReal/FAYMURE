@@ -89,27 +89,51 @@ function get_or_create_visitor_code() {
 }
 
 /**
- * Get country from IP (Cloudflare header or ipapi.co).
+ * Get visitor country from IP using free lookup sources.
  */
 function get_country_from_ip($ip) {
+    // Cloudflare can provide ISO country code directly without any external API call.
     if (!empty($_SERVER['HTTP_CF_IPCOUNTRY'])) {
-        return $_SERVER['HTTP_CF_IPCOUNTRY'];
-    }
-    $country = 'Unknown';
-    $ip = ($ip === '::1' || $ip === '') ? '127.0.0.1' : $ip;
-    if (filter_var($ip, FILTER_VALIDATE_IP)) {
-        $ch = @curl_init();
-        if ($ch) {
-            curl_setopt($ch, CURLOPT_URL, 'https://ipapi.co/' . $ip . '/country_name/');
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 2);
-            $res = @curl_exec($ch);
-            if ($res && !curl_errno($ch)) {
-                $country = trim($res) ?: 'Unknown';
-            }
-            curl_close($ch);
+        $cf_country = trim((string)$_SERVER['HTTP_CF_IPCOUNTRY']);
+        if (preg_match('/^[A-Z]{2}$/', $cf_country)) {
+            return $cf_country;
         }
     }
+
+    $ip = trim((string)$ip);
+    $ip = ($ip === '::1' || $ip === '') ? '127.0.0.1' : $ip;
+    if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+        return 'Unknown';
+    }
+
+    $ch = @curl_init();
+    if (!$ch) {
+        return 'Unknown';
+    }
+
+    curl_setopt($ch, CURLOPT_URL, 'https://ipwho.is/' . rawurlencode($ip));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+
+    $res = @curl_exec($ch);
+    $err = curl_errno($ch);
+    curl_close($ch);
+
+    if ($res === false || $err) {
+        return 'Unknown';
+    }
+
+    $data = json_decode((string)$res, true);
+    if (!is_array($data) || empty($data['success'])) {
+        return 'Unknown';
+    }
+
+    $country = trim((string)($data['country'] ?? ''));
+    if ($country === '' || strlen($country) > 80) {
+        return 'Unknown';
+    }
+
     return $country;
 }
 
